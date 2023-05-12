@@ -17,8 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.service.aai;
 
+import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.model.IUserInfo;
 
 public interface IAuthenticationService {
-    IUserInfo userInfo();
+    Mono<IUserInfo> userInfo();
 }

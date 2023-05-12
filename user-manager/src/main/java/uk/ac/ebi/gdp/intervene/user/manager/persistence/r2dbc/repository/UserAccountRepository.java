@@ -15,11 +15,16 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.user.manager.service;
+package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository;
 
+import org.springframework.data.r2dbc.repository.Query;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 
-public interface IUserManagerService {
-    Mono<UserAccount> createUserAccount(String authUserAccountId);
+public interface UserAccountRepository extends ReactiveCrudRepository<UserAccount, String> {
+
+    @Query(value = "CALL GET_NEXT_INTERVENE_USER_ACCOUNT_ID('');")
+    Mono<String> getNextUserAccount();
 }
+

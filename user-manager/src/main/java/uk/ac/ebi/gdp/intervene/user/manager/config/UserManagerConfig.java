@@ -17,25 +17,20 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.config;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.client.ResponseErrorHandler;
-import org.springframework.web.client.RestTemplate;
-import uk.ac.ebi.gdp.intervene.user.manager.handler.RestTemplateErrorResponseHandler;
-import uk.ac.ebi.gdp.intervene.user.manager.persistence.repository.AuthUserAccountRepository;
-import uk.ac.ebi.gdp.intervene.user.manager.persistence.repository.UserAccountDetailsRepository;
-import uk.ac.ebi.gdp.intervene.user.manager.persistence.repository.UserAccountRepository;
+import org.springframework.context.annotation.Import;
+import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
+import uk.ac.ebi.gdp.intervene.user.manager.auth.AuthenticationContext;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.AuthUserAccountRepository;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountDetailsRepository;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.IUserAccountPersistenceService;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.UserAccountPersistenceService;
 import uk.ac.ebi.gdp.intervene.user.manager.service.IUserManagerService;
 import uk.ac.ebi.gdp.intervene.user.manager.service.UserManagerService;
-import uk.ac.ebi.gdp.intervene.user.manager.service.aai.AuthenticationContext;
 
-import static java.time.Duration.ofSeconds;
-
+@Import(ReactiveExceptionHandler.class)
 @Configuration
 public class UserManagerConfig {
 
@@ -55,37 +50,5 @@ public class UserManagerConfig {
     @Bean
     public IUserManagerService userManagerService(final IUserAccountPersistenceService userAccountPersistenceService) {
         return new UserManagerService(userAccountPersistenceService);
-    }
-
-    @Bean
-    public ResponseErrorHandler initErrorResponseHandler() {
-        return new RestTemplateErrorResponseHandler();
-    }
-
-    @Bean("elixirRestTemplate")
-    public RestTemplate initElixirRestTemplate(final RestTemplateBuilder restTemplateBuilder,
-                                               final ResponseErrorHandler responseErrorHandler,
-                                               @Value("${elixir.oidc.request.connection.timeout}") final long connectionTimeout,
-                                               @Value("${elixir.oidc.request.read.timeout}") final long readTimeout) {
-        return initRestTemplate(restTemplateBuilder,
-                responseErrorHandler,
-                connectionTimeout,
-                readTimeout);
-    }
-
-    private RestTemplate initRestTemplate(final RestTemplateBuilder restTemplateBuilder,
-                                          final ResponseErrorHandler responseErrorHandler,
-                                          final long connectionTimeout,
-                                          final long readTimeout) {
-        return restTemplateBuilder
-                .setConnectTimeout(ofSeconds(connectionTimeout))
-                .setReadTimeout(ofSeconds(readTimeout))
-                .errorHandler(responseErrorHandler)
-                .requestFactory(() -> {
-                    final SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-                    requestFactory.setOutputStreaming(false);
-                    return requestFactory;
-                })
-                .build();
     }
 }
