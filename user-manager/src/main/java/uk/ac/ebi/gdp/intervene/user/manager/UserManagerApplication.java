@@ -19,9 +19,8 @@ package uk.ac.ebi.gdp.intervene.user.manager;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+@SpringBootApplication
 public class UserManagerApplication {
     public static void main(final String... args) {
         SpringApplication.run(UserManagerApplication.class, args);

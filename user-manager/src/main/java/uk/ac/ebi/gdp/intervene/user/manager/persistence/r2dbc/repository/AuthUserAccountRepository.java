@@ -15,11 +15,10 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.user.manager.service;
+package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository;
 
-import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 
-public interface IUserManagerService {
-    Mono<UserAccount> createUserAccount(String authUserAccountId);
+public interface AuthUserAccountRepository extends ReactiveCrudRepository<AuthUserAccount, String>, CustomAuthUserAccountRepository {
 }

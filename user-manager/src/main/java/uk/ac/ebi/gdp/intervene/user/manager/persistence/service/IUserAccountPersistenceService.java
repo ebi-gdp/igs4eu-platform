@@ -17,14 +17,14 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.service;
 
-import uk.ac.ebi.gdp.intervene.user.manager.exception.UserAccountCreationException;
-import uk.ac.ebi.gdp.intervene.user.manager.persistence.entity.AuthUserAccount;
-import uk.ac.ebi.gdp.intervene.user.manager.persistence.entity.UserAccount;
-
-import java.util.Optional;
+import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 
 public interface IUserAccountPersistenceService {
-    Optional<AuthUserAccount> getUserAccount(String authUserAccountId);
+    Mono<AuthUserAccount> getUserAccountByAuthUserAccountId(String authUserAccountId);
 
-    UserAccount createAccount(String authUserAccountId) throws UserAccountCreationException;
+    Mono<UserAccount> createAccount(String authUserAccountId);
+
+    Mono<UserAccount> getUserAccountById(String accountId);
 }

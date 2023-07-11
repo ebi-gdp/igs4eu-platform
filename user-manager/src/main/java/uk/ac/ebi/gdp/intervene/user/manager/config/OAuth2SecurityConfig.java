@@ -19,53 +19,72 @@ package uk.ac.ebi.gdp.intervene.user.manager.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
-import org.springframework.web.client.RestTemplate;
-import uk.ac.ebi.gdp.intervene.user.manager.auth.SecurityContext;
-import uk.ac.ebi.gdp.intervene.user.manager.service.aai.AuthenticationContext;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
+import org.springframework.security.oauth2.server.resource.web.reactive.function.client.ServerBearerExchangeFilterFunction;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.web.reactive.function.client.WebClient;
+import uk.ac.ebi.gdp.intervene.commons.security.GenericOAuth2SecurityConfig;
+import uk.ac.ebi.gdp.intervene.user.manager.auth.AuthenticationContext;
 import uk.ac.ebi.gdp.intervene.user.manager.service.aai.ElixirAuthenticationService;
 
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import static java.net.URI.create;
+import static org.springframework.web.reactive.function.client.WebClient.builder;
 
-@EnableWebSecurity
-public class OAuth2SecurityConfig extends WebSecurityConfigurerAdapter {
+@Configuration
+@EnableWebFluxSecurity
+public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
 
-    @Override
-    protected void configure(final HttpSecurity http) throws Exception {
-        http
-                .authorizeRequests(auths -> auths
-                        .anyRequest()
-                        .authenticated())
-                .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
+    @Bean
+    public SecurityWebFilterChain springSecurityFilterChain(final ServerHttpSecurity http,
+                                                            @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") final String jwkSetURI) {
+        return securityFilterChain(http, jwkSetURI);
+    }
+
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    @Bean
+    public SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http) {
+        return super.securityFilterChainBasicAuth(http, "/user/account/{accountId}");
     }
 
     @Bean
-    public ElixirAuthenticationService elixirAuthenticationService(final SecurityContext securityContext,
-                                                                   final RestTemplate restTemplate,
-                                                                   @Value("${elixir.oidc.url}") final String elixirOidcUrl) throws MalformedURLException, URISyntaxException {
+    public ReactiveUserDetailsService userDetailsService(@Value("${basic.auth.username}") final String username,
+                                                         @Value("${basic.auth.password}") final String password) {
+        return super.userDetailsService(username, password);
+    }
+
+    @Bean
+    public ElixirAuthenticationService elixirAuthenticationService(final WebClient webClient,
+                                                                   @Value("${oidc.user-info.uri}") final String userInfoURI) {
         return new ElixirAuthenticationService(
-                securityContext,
-                restTemplate,
-                new URL(elixirOidcUrl)
-        );
+                webClient,
+                create(userInfoURI));
     }
 
     @Bean
-    public AuthenticationContext authenticationContext(final SecurityContext securityContext,
-                                                       final ElixirAuthenticationService elixirAuthenticationService) {
+    public AuthenticationContext authenticationContext(final ElixirAuthenticationService elixirAuthenticationService) {
         return new AuthenticationContext(
-                securityContext,
                 elixirAuthenticationService
         );
     }
 
-    @Bean
-    public SecurityContext securityContext() {
-        return new SecurityContext();
+    @Bean("elixirWebClient")
+    public WebClient elixirWebClient(@Value("${elixir.oidc.url}") final String elixirOidcUrl) {
+        return webClient(elixirOidcUrl);
+    }
+
+    private WebClient webClient(final String baseURL) {
+        return builder()
+                .filters(exchangeFilterFunctions -> {
+                    exchangeFilterFunctions.add(new ServerBearerExchangeFilterFunction());
+                    exchangeFilterFunctions.add(errorHandler());
+                })
+                .filter(new ServerBearerExchangeFilterFunction())
+                .baseUrl(baseURL)
+                .build();
     }
 }

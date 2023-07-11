@@ -15,40 +15,39 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.user.manager.model;
+package uk.ac.ebi.gdp.intervene.commons.dto.usermanager;
 
-public class UserInfo implements IUserInfo {
-    private final String subject;
-    private final String givenName;
-    private final String familyName;
-    private final String emailId;
+public class UserAccountDTO {
+    private String accountId;
+    private String givenName;
+    private String familyName;
+    private String emailId;
 
-    public UserInfo(final String subject,
-                    final String firstName,
-                    final String familyName,
-                    final String emailId) {
-        this.subject = subject;
-        this.givenName = firstName;
+    private UserAccountDTO() {
+    }
+
+    public UserAccountDTO(final String accountId,
+                          final String givenName,
+                          final String familyName,
+                          final String emailId) {
+        this.accountId = accountId;
+        this.givenName = givenName;
         this.familyName = familyName;
         this.emailId = emailId;
     }
 
-    @Override
-    public String getSubject() {
-        return subject;
+    public String getAccountId() {
+        return accountId;
     }
 
-    @Override
     public String getGivenName() {
         return givenName;
     }
 
-    @Override
     public String getFamilyName() {
         return familyName;
     }
 
-    @Override
     public String getEmailId() {
         return emailId;
     }

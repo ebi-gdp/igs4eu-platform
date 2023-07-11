@@ -15,11 +15,8 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.user.manager.service;
+package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity;
 
-import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
-
-public interface IUserManagerService {
-    Mono<UserAccount> createUserAccount(String authUserAccountId);
+public enum AuthUserAccountStatus {
+    ENABLED, DISABLED;
 }

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2022 EMBL - European Bioinformatics Institute
+ * Copyright 2023 EMBL - European Bioinformatics Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.user.manager.service;
+package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository;
 
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 
-public interface IUserManagerService {
-    Mono<UserAccount> createUserAccount(String authUserAccountId);
+public interface CustomAuthUserAccountRepository {
+    Mono<AuthUserAccount> findAuthUserAccount(String authUserId);
 }

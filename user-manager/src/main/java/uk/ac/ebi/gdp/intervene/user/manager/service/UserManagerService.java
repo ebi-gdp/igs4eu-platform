@@ -17,13 +17,14 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.service;
 
-import uk.ac.ebi.gdp.intervene.user.manager.exception.UserAccountAlreadyExistsException;
-import uk.ac.ebi.gdp.intervene.user.manager.exception.UserAccountCreationException;
-import uk.ac.ebi.gdp.intervene.user.manager.persistence.entity.UserAccount;
+import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.IUserAccountPersistenceService;
 
-public class UserManagerService implements IUserManagerService {
+import static reactor.core.publisher.Mono.error;
+import static uk.ac.ebi.gdp.intervene.user.manager.exception.UserAccountException.accountAlreadyExists;
 
+public class UserManagerService implements IUserManagerService {
     private final IUserAccountPersistenceService userAccountPersistenceService;
 
     public UserManagerService(final IUserAccountPersistenceService userAccountPersistenceService) {
@@ -31,11 +32,11 @@ public class UserManagerService implements IUserManagerService {
     }
 
     @Override
-    public UserAccount createUserAccount(final String authUserAccountId) throws UserAccountAlreadyExistsException, UserAccountCreationException {
-        if (userAccountPersistenceService.getUserAccount(authUserAccountId).isEmpty()) {
-            return userAccountPersistenceService.createAccount(authUserAccountId);
-        } else {
-            throw new UserAccountAlreadyExistsException(String.format("User account having auth id %s already exists", authUserAccountId));
-        }
+    public Mono<UserAccount> createUserAccount(final String authUserAccountId) {
+        return userAccountPersistenceService
+                .getUserAccountByAuthUserAccountId(authUserAccountId)
+                .flatMap(authUserAccountR2DBC -> error(accountAlreadyExists(authUserAccountId)))
+                .switchIfEmpty(userAccountPersistenceService.createAccount(authUserAccountId))
+                .cast(UserAccount.class);
     }
 }

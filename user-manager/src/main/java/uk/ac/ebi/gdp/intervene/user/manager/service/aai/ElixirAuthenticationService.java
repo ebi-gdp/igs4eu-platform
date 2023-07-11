@@ -17,52 +17,44 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.service.aai;
 
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
-import uk.ac.ebi.gdp.intervene.user.manager.auth.SecurityContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.dto.UserInfoDTO;
 import uk.ac.ebi.gdp.intervene.user.manager.model.IUserInfo;
 
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.Objects;
 
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.slf4j.LoggerFactory.getLogger;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.currentUserId;
 
 public class ElixirAuthenticationService implements IAuthenticationService {
+    private static final Logger LOGGER = getLogger(ElixirAuthenticationService.class);
+    private final WebClient webClient;
+    private final URI userInfoURI;
 
-    private final SecurityContext securityContext;
-    private final RestTemplate restTemplate;
-    private final URI requestURI;
-
-    public ElixirAuthenticationService(final SecurityContext securityContext,
-                                       final RestTemplate restTemplate,
-                                       final URL requestURL) throws URISyntaxException {
-        this.securityContext = securityContext;
-        this.restTemplate = restTemplate;
-        this.requestURI = requestURL.toURI();
+    public ElixirAuthenticationService(final WebClient webClient,
+                                       final URI userinfoURI) {
+        this.webClient = webClient;
+        this.userInfoURI = userinfoURI;
     }
 
     @Override
-    public IUserInfo userInfo() {
-        return getUserInfo(securityContext.getAccessToken());
+    public Mono<IUserInfo> userInfo() {
+        return currentUserId()
+                .doOnNext(currentUserId -> LOGGER.debug("Getting user information for {}", currentUserId))
+                .then(getUserInfo());
     }
 
-    private IUserInfo getUserInfo(final String accessToken) {
-        // LOGGER.debug("ega access token: {}", egaAccessToken);
-
-        final HttpHeaders headers = new HttpHeaders();
-        headers.add(AUTHORIZATION, "Bearer " + accessToken);
-
-        final HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(headers);
-        return Objects.requireNonNull(restTemplate
-                        .exchange(requestURI.resolve("userinfo"), HttpMethod.GET, entity, UserInfoDTO.class)
-                        .getBody(), "Call to /userinfo endpoint received null")
-                .toUserInfo();
-
+    private Mono<IUserInfo> getUserInfo() {
+        return webClient
+                .get()
+                .uri(userInfoURI.getPath())
+                .accept(APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(UserInfoDTO.class)
+                .map(UserInfoDTO::toUserInfo);
     }
 }
