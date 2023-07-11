@@ -17,19 +17,23 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.ac.ebi.gdp.file.handler.core.properties.WebClientProperties;
+import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
 import uk.ac.ebi.gdp.intervene.file.handler.service.ega.EGAFileService;
 
+@Import(ReactiveExceptionHandler.class)
 @Configuration
 public class FileHandlerConfig {
 
     @Bean
-    public EGAFileService egaFileService(final WebClient webClient,
+    public EGAFileService egaFileService(@Qualifier("egaWebClient") final WebClient webClient,
                                          final RetryTemplate retryTemplate,
                                          final WebClientProperties webClientProperties,
                                          @Value("${ega.file.storage.path}") final String storagePath) {
