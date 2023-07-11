@@ -17,13 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.config.kafka;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -41,8 +37,19 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.Map;
 
-public class DefaultKafkaConfig {
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES;
+import static com.fasterxml.jackson.databind.MapperFeature.DEFAULT_VIEW_INCLUSION;
+import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE;
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_INSTANCE_ID_CONFIG;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG;
+import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
 
+public class DefaultKafkaConfig {
     private final KafkaProperties kafkaProperties;
     private final String groupInstanceId;
     private final int maxPollIntervalMs;
@@ -67,7 +74,7 @@ public class DefaultKafkaConfig {
 
     protected Map<String, Object> producerConfigs() {
         final Map<String, Object> properties = kafkaProperties.buildProducerProperties();
-        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        properties.put(KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         //  properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);//TMP
         return properties;
     }
@@ -81,7 +88,7 @@ public class DefaultKafkaConfig {
         factory.setConsumerFactory(defaultConsumerFactory());
         factory.getContainerProperties().setPollTimeout(defaultPollTimeout);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
-        factory.setMessageConverter(new StringJsonMessageConverter(getObjectMapper()));
+        factory.setRecordMessageConverter(new StringJsonMessageConverter(getObjectMapper()));
         return factory;
     }
 
@@ -91,24 +98,25 @@ public class DefaultKafkaConfig {
 
     protected Map<String, Object> defaultConsumerConfigs() {
         final Map<String, Object> properties = kafkaProperties.buildConsumerProperties();
-        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        properties.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, maxPollIntervalMs);
-        properties.put(ConsumerConfig.GROUP_INSTANCE_ID_CONFIG, groupInstanceId);
-        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        properties.put(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(MAX_POLL_INTERVAL_MS_CONFIG, maxPollIntervalMs);
+        properties.put(GROUP_INSTANCE_ID_CONFIG, groupInstanceId);
+        properties.put(ENABLE_AUTO_COMMIT_CONFIG, false);
         return properties;
     }
 
     //Common
 
-    protected ObjectMapper getObjectMapper() {
+    public static ObjectMapper getObjectMapper() {
         return JsonMapper
                 .builder()
                 .addModule(new JavaTimeModule())
-                .configure(MapperFeature.DEFAULT_VIEW_INCLUSION, false)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)
+                .configure(ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+                .configure(DEFAULT_VIEW_INCLUSION, false)
+                .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .disable(WRITE_DATES_AS_TIMESTAMPS)
+                .disable(WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)
+                .propertyNamingStrategy(SNAKE_CASE)
                 .build();
-
     }
 }

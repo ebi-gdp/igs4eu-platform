@@ -15,14 +15,12 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.repository;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 
-import org.springframework.data.repository.CrudRepository;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity.PipelineDetails;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity.PipelineStatus;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.stereotype.Repository;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 
-import java.util.Optional;
-
-public interface PipelineDetailsRepository extends CrudRepository<PipelineDetails, String> {
-    Optional<PipelineDetails> findTopByUserIdAndStatusOrderByUpdatedOnDesc(String userId, PipelineStatus pipelineStatus);
+@Repository
+public interface PipelineResultRepository extends ReactiveCrudRepository<PipelineResult, String> {
 }

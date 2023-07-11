@@ -15,39 +15,33 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.domain.Persistable;
+import org.springframework.data.relational.core.mapping.Column;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EntityListeners;
-import javax.persistence.Id;
-import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
-@Entity
-@EntityListeners(AuditingEntityListener.class)
-public class PipelineResult {
+import static org.springframework.util.StringUtils.hasText;
 
+public class PipelineResult implements Persistable<String> {
     @Id
-    @NotNull(message = "Pipeline id can't be null")
-    @Column(name = "pipeline_id")
+    @Column("pipeline_id")
     private String pipelineId;
 
-    @NotNull(message = "Path is required")
-    @Column(name = "file_download_path")
+    @Column("file_download_path")
     private String fileDownloadPath;
 
-    @CreatedDate
     @Column
     private LocalDateTime createdOn;
 
-    @LastModifiedDate
     @Column
     private LocalDateTime updatedOn;
+
+    @Transient
+    private boolean newPipelineResult;
 
     protected PipelineResult() {
     }
@@ -56,6 +50,7 @@ public class PipelineResult {
                           final String fileDownloadPath) {
         this.pipelineId = pipelineId;
         this.fileDownloadPath = fileDownloadPath;
+        this.newPipelineResult = true;
     }
 
     public String getPipelineId() {
@@ -88,5 +83,15 @@ public class PipelineResult {
 
     public void setUpdatedOn(LocalDateTime updatedOn) {
         this.updatedOn = updatedOn;
+    }
+
+    @Override
+    public String getId() {
+        return pipelineId;
+    }
+
+    @Override
+    public boolean isNew() {
+        return newPipelineResult || !hasText(pipelineId);
     }
 }

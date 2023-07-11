@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2022 EMBL - European Bioinformatics Institute
+ * Copyright 2023 EMBL - European Bioinformatics Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,13 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.repository;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.utility;
 
-import org.springframework.data.repository.CrudRepository;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity.PipelineResult;
+import reactor.core.publisher.Mono;
 
-public interface PipelineResultRepository extends CrudRepository<PipelineResult, String> {
+public interface IEmailSender {
+    Mono<Void> sendEmailInHTMLFormat(EmailData emailData);
+
+    record EmailData(String to, String subject, String body) {
+    }
 }
