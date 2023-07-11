@@ -27,7 +27,7 @@ import static java.util.List.copyOf;
 public class GlobusUserIdentityDetailsWrapperDTO {
     private List<GlobusUserIdentityDetails> identities;
 
-    public GlobusUserIdentityDetailsWrapperDTO() {
+    private GlobusUserIdentityDetailsWrapperDTO() {
     }
 
     public List<GlobusUserIdentityDetails> getIdentities() {
@@ -41,7 +41,7 @@ public class GlobusUserIdentityDetailsWrapperDTO {
         private String uid;
         private String username;
 
-        public GlobusUserIdentityDetails() {
+        private GlobusUserIdentityDetails() {
         }
 
         public String getUid() {

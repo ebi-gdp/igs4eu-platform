@@ -28,20 +28,21 @@ public class GlobusDetailsDTO extends GuestCollectionDirResDTO {
     private String userAccountUID;
     private String filesetId;
 
+    private GlobusDetailsDTO() {
+    }
+
+    public GlobusDetailsDTO(final String username,
+                            final String userAccountUID) {
+        this.username = username;
+        this.userAccountUID = userAccountUID;
+    }
+
     public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getUserAccountUID() {
         return userAccountUID;
-    }
-
-    public void setUserAccountUID(String userAccountUID) {
-        this.userAccountUID = userAccountUID;
     }
 
     public String getFilesetId() {

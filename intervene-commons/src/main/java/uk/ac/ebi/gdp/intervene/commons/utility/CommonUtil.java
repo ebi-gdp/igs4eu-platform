@@ -18,23 +18,33 @@
 package uk.ac.ebi.gdp.intervene.commons.utility;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES;
+import static com.fasterxml.jackson.databind.MapperFeature.DEFAULT_VIEW_INCLUSION;
+import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE;
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS;
 
 public abstract class CommonUtil {
-
-    private static final Pattern EMAIL_NAME_EXTRACTION_PATTERN = Pattern.compile("([a-zA-Z]+)[^a-zA-Z@]*(@.*)?");
-    private static final ObjectMapper jsonObjectMapper = new ObjectMapper();
-
-    public static String getNameFromEmail(final String email) {
-        return EMAIL_NAME_EXTRACTION_PATTERN
-                .matcher(email).results()
-                .map(result -> result.group(1))
-                .collect(Collectors.joining(" "));
-    }
+    private static final ObjectMapper jsonObjectMapper = getObjectMapper();
 
     public static ObjectMapper getJsonObjectMapper() {
         return jsonObjectMapper;
+    }
+
+    private static ObjectMapper getObjectMapper() {
+        return JsonMapper
+                .builder()
+                .addModule(new JavaTimeModule())
+                .configure(ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+                .configure(DEFAULT_VIEW_INCLUSION, false)
+                .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .disable(WRITE_DATES_AS_TIMESTAMPS)
+                .disable(WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)
+                .propertyNamingStrategy(SNAKE_CASE)
+                .build();
     }
 }

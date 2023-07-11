@@ -17,35 +17,7 @@
  */
 package uk.ac.ebi.gdp.intervene.commons.dto.usermanager;
 
-public class GlobusUserDetailsDTO {
-    private String globusUsername;
-    private String globusUserUID;
-    private String interveneUserId;
-
-    public GlobusUserDetailsDTO() {
-    }
-
-    public String getGlobusUsername() {
-        return globusUsername;
-    }
-
-    public void setGlobusUsername(String globusUsername) {
-        this.globusUsername = globusUsername;
-    }
-
-    public String getGlobusUserUID() {
-        return globusUserUID;
-    }
-
-    public void setGlobusUserUID(String globusUserUID) {
-        this.globusUserUID = globusUserUID;
-    }
-
-    public String getInterveneUserId() {
-        return interveneUserId;
-    }
-
-    public void setInterveneUserId(String interveneUserId) {
-        this.interveneUserId = interveneUserId;
-    }
+public record GlobusUserDetailsDTO(String globusUsername,
+                                   String globusUserUID,
+                                   String interveneUserId) {
 }

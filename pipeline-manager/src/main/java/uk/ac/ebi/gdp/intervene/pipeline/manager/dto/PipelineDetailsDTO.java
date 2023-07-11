@@ -65,26 +65,4 @@ public class PipelineDetailsDTO {
     public void setGlobusDetails(GlobusDetailsDTO globusDetails) {
         this.globusDetails = globusDetails;
     }
-
-    /*@JsonIgnoreProperties(ignoreUnknown = true)
-    public static class GlobusDetailsDTO extends GuestCollectionDirResDTO {
-        private String userAccountUID;
-        private String filesetId;
-
-        public String getUserAccountUID() {
-            return userAccountUID;
-        }
-
-        public void setUserAccountUID(String userAccountUID) {
-            this.userAccountUID = userAccountUID;
-        }
-
-        public String getFilesetId() {
-            return filesetId;
-        }
-
-        public void setFilesetId(String filesetId) {
-            this.filesetId = filesetId;
-        }
-    }*/
 }

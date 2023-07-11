@@ -27,7 +27,11 @@ import uk.ac.ebi.gdp.intervene.file.handler.service.globus.collection.IFileOpera
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.AuthService;
 
 import java.net.URI;
-import java.nio.file.Paths;
+
+import static java.nio.file.Paths.get;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.web.reactive.function.client.WebClient.builder;
+import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.jsonExchangeStrategies;
 
 @Configuration
 public class GlobusConfig {
@@ -42,12 +46,12 @@ public class GlobusConfig {
     @Bean("globusAuthWebClient")
     public WebClient webClient(@Value("${globus.auth-api.url}") final String authAPIBaseURL,
                                @Value("${globus.auth-api.credentials}") final String credentials) {
-        return WebClient.builder()
+        return builder()
                 .baseUrl(authAPIBaseURL)
-                .defaultHeader("Authorization", "Basic " + credentials)
+                .exchangeStrategies(jsonExchangeStrategies())
+                .defaultHeader(AUTHORIZATION, "Basic " + credentials)
                 .build();
     }
-
 
     @Bean
     public IFileOperationService fileOperationService(@Qualifier("globusWebClient") final WebClient webClient,
@@ -57,7 +61,7 @@ public class GlobusConfig {
                                                       @Value("${globus.endpoint.list-files.uri}") final URI listFilesURI) {
         return new FileOperationService(
                 webClient,
-                Paths.get(guestCollectionHomePath),
+                get(guestCollectionHomePath),
                 mkDirEndpointURI,
                 dirAccessURI,
                 listFilesURI

@@ -94,7 +94,7 @@ public class PipelineManagerService {
                                                     final PipelineExecutionDTO pipelineExecutionDTO) {
         final Set<FileDetails> files = new HashSet<>();
         return globusFileHandlerService
-                .listFilesOnGuestCollection(Paths.get(pipelineExecutionDTO.getGlobusDetails().getDirPathOnGuestCollection()))
+                .listFilesOnGuestCollection(Paths.get(pipelineExecutionDTO.globusDetails().getDirPathOnGuestCollection()))
                 .map(globusFileDetailsWrapperDTO -> globusFileDetailsWrapperDTO
                         .getData()
                         .stream()
@@ -103,7 +103,7 @@ public class PipelineManagerService {
                                         globusFileDetails.getSize())))
                         .collect(toMap(GlobusFileDetailsWrapperDTO.GlobusFileDetails::getProperty, GlobusFileDetailsWrapperDTO.GlobusFileDetails::getFileName)))
                 .map(stringStringMap -> {
-                    stringStringMap.put("sampleset", pipelineExecutionDTO.getSampleSetName());
+                    stringStringMap.put("sampleset", pipelineExecutionDTO.sampleSetName());
                     stringStringMap.put("chrom", null);
                     return of(stringStringMap);
                 })
@@ -121,8 +121,8 @@ public class PipelineManagerService {
         return new TriggerPipelineEvent(
                 buildPipelineParam(targetGenomes, pipelineExecutionDTO, pipelineId),
                 new GuestCollectionDirResDTO(
-                        pipelineExecutionDTO.getGlobusDetails().getGuestCollectionId(),
-                        pipelineExecutionDTO.getGlobusDetails().getDirPathOnGuestCollection(),
+                        pipelineExecutionDTO.globusDetails().getGuestCollectionId(),
+                        pipelineExecutionDTO.globusDetails().getDirPathOnGuestCollection(),
                         files
                 )
         );
@@ -132,9 +132,9 @@ public class PipelineManagerService {
                                              final PipelineExecutionDTO pipelineExecutionDTO,
                                              final String pipelineId) {
         final NXFParamsFile nxfParamsFile = new NXFParamsFile(
-                pipelineExecutionDTO.getPolygenicScoreIds(),
+                pipelineExecutionDTO.polygenicScoreIds(),
                 FormatType.JSON,
-                GenomeBuild.valueOf(pipelineExecutionDTO.getGenomeBuild().toUpperCase()).getGenomeBuildValue());
+                GenomeBuild.valueOf(pipelineExecutionDTO.genomeBuild().toUpperCase()).getGenomeBuildValue());
         return new PipelineParam(
                 targetGenomes,
                 nxfParamsFile,

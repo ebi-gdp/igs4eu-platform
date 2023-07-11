@@ -19,44 +19,8 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO;
 
-public class PipelineExecutionDTO {
-    private String genomeBuild;
-    private String sampleSetName;
-    private String polygenicScoreIds;
-    private GuestCollectionDirResDTO globusDetails;
-
-    private PipelineExecutionDTO() {
-    }
-
-    public String getGenomeBuild() {
-        return genomeBuild;
-    }
-
-    public void setGenomeBuild(String genomeBuild) {
-        this.genomeBuild = genomeBuild;
-    }
-
-    public String getSampleSetName() {
-        return sampleSetName;
-    }
-
-    public void setSampleSetName(String sampleSetName) {
-        this.sampleSetName = sampleSetName;
-    }
-
-    public String getPolygenicScoreIds() {
-        return polygenicScoreIds;
-    }
-
-    public void setPolygenicScoreIds(String polygenicScoreIds) {
-        this.polygenicScoreIds = polygenicScoreIds;
-    }
-
-    public GuestCollectionDirResDTO getGlobusDetails() {
-        return globusDetails;
-    }
-
-    public void setGlobusDetails(GuestCollectionDirResDTO globusDetails) {
-        this.globusDetails = globusDetails;
-    }
+public record PipelineExecutionDTO(String genomeBuild,
+                                   String sampleSetName,
+                                   String polygenicScoreIds,
+                                   GuestCollectionDirResDTO globusDetails) {
 }

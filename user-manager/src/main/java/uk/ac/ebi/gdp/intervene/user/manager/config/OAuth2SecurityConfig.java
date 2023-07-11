@@ -20,7 +20,6 @@ package uk.ac.ebi.gdp.intervene.user.manager.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -33,6 +32,7 @@ import uk.ac.ebi.gdp.intervene.user.manager.auth.AuthenticationContext;
 import uk.ac.ebi.gdp.intervene.user.manager.service.aai.ElixirAuthenticationService;
 
 import static java.net.URI.create;
+import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.web.reactive.function.client.WebClient.builder;
 
 @Configuration
@@ -45,7 +45,7 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
         return securityFilterChain(http, jwkSetURI);
     }
 
-    @Order(Ordered.HIGHEST_PRECEDENCE)
+    @Order(HIGHEST_PRECEDENCE)
     @Bean
     public SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http) {
         return super.securityFilterChainBasicAuth(http, "/user/account/{accountId}");
@@ -72,19 +72,19 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
         );
     }
 
-    @Bean("elixirWebClient")
+    @Bean
     public WebClient elixirWebClient(@Value("${elixir.oidc.url}") final String elixirOidcUrl) {
         return webClient(elixirOidcUrl);
     }
 
     private WebClient webClient(final String baseURL) {
         return builder()
+                .baseUrl(baseURL)
                 .filters(exchangeFilterFunctions -> {
                     exchangeFilterFunctions.add(new ServerBearerExchangeFilterFunction());
                     exchangeFilterFunctions.add(errorHandler());
                 })
                 .filter(new ServerBearerExchangeFilterFunction())
-                .baseUrl(baseURL)
                 .build();
     }
 }

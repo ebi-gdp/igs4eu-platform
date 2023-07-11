@@ -69,11 +69,11 @@ public class CSCPipelineHandler {
         return userManagerService
                 .getUserAccountDetails(pipelineDetails.getUserId())
                 .map(userAccountDTO -> new IEmailSender.EmailData(
-                        userAccountDTO.getEmailId(),
+                        userAccountDTO.emailId(),
                         "Result for Pipeline %s".formatted(pipelineDetails.getPipelineId()),
                         "Dear %s %s, <br/><br/>Please find the report at \"PGS Calculator\" => \"Download most recent results\". <br/><br/>INTERVENE Team"
-                                .formatted(userAccountDTO.getGivenName(),
-                                        userAccountDTO.getFamilyName()
+                                .formatted(userAccountDTO.givenName(),
+                                        userAccountDTO.familyName()
                                 )));
     }
 }

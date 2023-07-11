@@ -31,7 +31,7 @@ public class GuestCollectionDirResDTO {
     private String dirPathOnGuestCollection;
     private Set<FileDetails> files;
 
-    public GuestCollectionDirResDTO() {
+    protected GuestCollectionDirResDTO() {
     }
 
     public GuestCollectionDirResDTO(final String guestCollectionId,
@@ -59,7 +59,7 @@ public class GuestCollectionDirResDTO {
         return dirPathOnGuestCollection;
     }
 
-    public void setDirPathOnGuestCollection(final String dirPathOnGuestCollection) {
+    public void setDirPathOnGuestCollection(String dirPathOnGuestCollection) {
         this.dirPathOnGuestCollection = dirPathOnGuestCollection;
     }
 

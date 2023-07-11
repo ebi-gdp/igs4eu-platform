@@ -20,7 +20,6 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -28,17 +27,19 @@ import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import uk.ac.ebi.gdp.intervene.commons.security.GenericOAuth2SecurityConfig;
 
+import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
+
 @Configuration
 @EnableWebFluxSecurity
 public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
 
     @Bean
     public SecurityWebFilterChain securityFilterChain(final ServerHttpSecurity http,
-                                                            @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") final String jwkSetURI) {
+                                                      @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") final String jwkSetURI) {
         return super.securityFilterChain(http, jwkSetURI);
     }
 
-    @Order(Ordered.HIGHEST_PRECEDENCE)
+    @Order(HIGHEST_PRECEDENCE)
     @Bean
     public SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http) {
         return super.securityFilterChainBasicAuth(http, "/pipeline/csc/notify");

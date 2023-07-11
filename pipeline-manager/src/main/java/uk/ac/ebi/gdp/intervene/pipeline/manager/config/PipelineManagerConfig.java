@@ -158,8 +158,8 @@ public class PipelineManagerConfig {
     private WebClient webClient(final String baseURL) {
         return WebClient
                 .builder()
-                .filter(new ServerBearerExchangeFilterFunction())
                 .baseUrl(baseURL)
+                .filter(new ServerBearerExchangeFilterFunction())
                 .build();
     }
 
