@@ -22,6 +22,8 @@ import org.springframework.http.HttpStatus;
 import java.io.Serial;
 
 import static java.lang.String.format;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.valueOf;
 
@@ -43,5 +45,13 @@ public class ClientException extends GenericException {
 
     public static ClientException resourceNotFound(final String message) {
         return new ClientException(NOT_FOUND, message);
+    }
+
+    public static ClientException badRequest(final String message) {
+        return new ClientException(BAD_REQUEST, message);
+    }
+
+    public static ClientException dataConflict(final String message) {
+        return new ClientException(CONFLICT, message);
     }
 }

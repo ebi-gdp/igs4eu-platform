@@ -27,8 +27,10 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebExceptionHandler;
 import reactor.core.publisher.Mono;
 
+import static com.nimbusds.jose.util.JSONStringUtils.toJSONString;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static reactor.core.publisher.Mono.just;
 
 @Configuration
 public class ReactiveExceptionHandler {
@@ -54,16 +56,16 @@ public class ReactiveExceptionHandler {
         };
     }
 
-    private String buildErrorMsg(final String errorMsg) {
-        return "{\"errorMessage\": \"%s\"}".formatted(errorMsg);
-    }
-
     private Mono<Void> buildResponse(final ServerWebExchange exchange, final String message) {
         final DataBuffer buffer = exchange.getResponse()
                 .bufferFactory()
                 .wrap(buildErrorMsg(message).getBytes());
         return exchange
                 .getResponse()
-                .writeWith(Mono.just(buffer));
+                .writeWith(just(buffer));
+    }
+
+    private String buildErrorMsg(final String errorMsg) {
+        return toJSONString("{\"errorMessage\": \"%s\"}".formatted(errorMsg));
     }
 }

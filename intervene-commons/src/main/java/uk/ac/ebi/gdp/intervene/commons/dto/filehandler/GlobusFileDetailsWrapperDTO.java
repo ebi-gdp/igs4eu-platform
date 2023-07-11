@@ -19,10 +19,11 @@ package uk.ac.ebi.gdp.intervene.commons.dto.filehandler;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSetter;
 import org.apache.commons.io.FilenameUtils;
 
 import java.util.List;
+
+import static java.util.List.copyOf;
 
 public class GlobusFileDetailsWrapperDTO {
     private String path;
@@ -38,29 +39,18 @@ public class GlobusFileDetailsWrapperDTO {
         return path;
     }
 
-    public void setPath(String path) {
-        this.path = path;
-    }
-
     public int getTotal() {
         return total;
     }
 
-    public void setTotal(int total) {
-        this.total = total;
-    }
-
     public List<GlobusFileDetails> getData() {
-        return data;
-    }
-
-    public void setData(List<GlobusFileDetails> data) {
-        this.data = data;
+        return copyOf(data);
     }
 
     public static class GlobusFileDetails {
         private String type;
         private long size;
+        @JsonProperty("name")
         private String fileName;
 
         private GlobusFileDetails() {
@@ -70,16 +60,8 @@ public class GlobusFileDetailsWrapperDTO {
             return type;
         }
 
-        public void setType(String type) {
-            this.type = type;
-        }
-
         public long getSize() {
             return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
         }
 
         public String getFileName() {
@@ -98,11 +80,6 @@ public class GlobusFileDetailsWrapperDTO {
             } else {
                 return getFileNameWithoutExtension();
             }
-        }
-
-        @JsonSetter("name")
-        public void setFileName(String fileName) {
-            this.fileName = fileName;
         }
     }
 }

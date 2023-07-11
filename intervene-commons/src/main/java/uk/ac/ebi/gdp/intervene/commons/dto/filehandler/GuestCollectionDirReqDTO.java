@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2022 EMBL - European Bioinformatics Institute
+ * Copyright 2023 EMBL - European Bioinformatics Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,35 +17,40 @@
  */
 package uk.ac.ebi.gdp.intervene.commons.dto.filehandler;
 
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SharedEndpointRequestDTO {
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class GuestCollectionDirReqDTO {
+    @JsonProperty("directoryName")
+    private String directoryName;
+    @JsonProperty("globusUserUID")
     private String globusUserUID;
+    @JsonProperty("notifyEmail")
     private String notifyEmail;
 
-    private SharedEndpointRequestDTO() {
+    private GuestCollectionDirReqDTO() {
     }
 
-    public SharedEndpointRequestDTO(final String globusUserUID,
+    public GuestCollectionDirReqDTO(final String directoryName,
+                                    final String globusUserUID,
                                     final String notifyEmail) {
+        this.directoryName = directoryName;
         this.globusUserUID = globusUserUID;
         this.notifyEmail = notifyEmail;
+    }
+
+    public String getDirectoryName() {
+        return directoryName;
     }
 
     public String getGlobusUserUID() {
         return globusUserUID;
     }
 
-    @JsonSetter("globus_uid")
-    public void setGlobusUserUID(final String globusUserUID) {
-        this.globusUserUID = globusUserUID;
-    }
-
     public String getNotifyEmail() {
         return notifyEmail;
-    }
-
-    public void setNotifyEmail(final String notifyEmail) {
-        this.notifyEmail = notifyEmail;
     }
 }
