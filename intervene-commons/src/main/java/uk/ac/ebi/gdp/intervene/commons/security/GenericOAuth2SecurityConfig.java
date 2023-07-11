@@ -20,11 +20,17 @@ package uk.ac.ebi.gdp.intervene.commons.security;
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.proc.DefaultJOSEObjectTypeVerifier;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 
+import static org.springframework.security.config.Customizer.withDefaults;
 import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.clientException;
@@ -35,12 +41,23 @@ public class GenericOAuth2SecurityConfig {
     protected SecurityWebFilterChain securityFilterChain(final ServerHttpSecurity http,
                                                          final String jwkSetURI) {
         http
-                .authorizeExchange(exchanges ->
-                        exchanges
-                                .anyExchange().authenticated()
-                )
+                .authorizeExchange(exchanges -> exchanges
+                        .anyExchange()
+                        .authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwtSpec -> jwtSpec.jwtDecoder(reactiveJwtDecoder(jwkSetURI))));
+        return http.build();
+    }
+
+    protected SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http,
+                                                                  final String patternPath) {
+        http.csrf().disable();
+        http
+                .securityMatcher(new PathPatternParserServerWebExchangeMatcher(patternPath))
+                .authorizeExchange((exchanges) -> exchanges
+                        .anyExchange()
+                        .authenticated())
+                .httpBasic(withDefaults());
         return http.build();
     }
 
@@ -64,5 +81,16 @@ public class GenericOAuth2SecurityConfig {
                 return just(clientResponse);
             }
         });
+    }
+
+    protected ReactiveUserDetailsService userDetailsService(final String username,
+                                                            final String password) {
+        final UserDetails user = User
+                .builder()
+                .username(username)
+                .password("{noop}%s".formatted(password))
+                .roles("USER")
+                .build();
+        return new MapReactiveUserDetailsService(user);
     }
 }

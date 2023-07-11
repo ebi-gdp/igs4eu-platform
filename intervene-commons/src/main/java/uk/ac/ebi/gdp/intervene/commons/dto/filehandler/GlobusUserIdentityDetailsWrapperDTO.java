@@ -18,54 +18,38 @@
 package uk.ac.ebi.gdp.intervene.commons.dto.filehandler;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-public class GlobusUserIdentityDetailsWrapperDTO {
+import static java.util.List.copyOf;
 
+public class GlobusUserIdentityDetailsWrapperDTO {
     private List<GlobusUserIdentityDetails> identities;
 
     public GlobusUserIdentityDetailsWrapperDTO() {
     }
 
     public List<GlobusUserIdentityDetails> getIdentities() {
-        return identities;
-    }
-
-    public void setIdentities(final List<GlobusUserIdentityDetails> identities) {
-        this.identities = identities;
+        return copyOf(identities);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class GlobusUserIdentityDetails {
+
+        @JsonProperty("id")
         private String uid;
         private String username;
 
         public GlobusUserIdentityDetails() {
         }
 
-        public GlobusUserIdentityDetails(final String uid,
-                                         final String username) {
-            this.uid = uid;
-            this.username = username;
-        }
-
         public String getUid() {
             return uid;
         }
 
-        @JsonSetter("id")
-        public void setUid(final String uid) {
-            this.uid = uid;
-        }
-
         public String getUsername() {
             return username;
-        }
-
-        public void setUsername(final String username) {
-            this.username = username;
         }
     }
 }
