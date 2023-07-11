@@ -19,6 +19,7 @@ package uk.ac.ebi.gdp.intervene.file.handler.service.ega;
 
 import org.apache.commons.io.IOUtils;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -114,8 +115,8 @@ public class EGAFileService {
                         .path("/elixir/data/metadata/files/{egaFileId}")
                         .build(egaFileId))
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, throwClientError())
-                .onStatus(HttpStatus::is5xxServerError, throwServerError())
+                .onStatus(HttpStatusCode::is4xxClientError, throwClientError())
+                .onStatus(HttpStatusCode::is5xxServerError, throwServerError())
                 .toEntity(EGAFileDetailsDTO.class)
                 .block();
 

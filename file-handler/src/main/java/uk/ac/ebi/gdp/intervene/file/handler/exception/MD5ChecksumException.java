@@ -17,9 +17,12 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.exception;
 
+import java.io.Serial;
+
 import static java.lang.String.format;
 
 public class MD5ChecksumException extends Exception {
+    @Serial
     private static final long serialVersionUID = -6208032664686322248L;
 
     private MD5ChecksumException(final String message) {

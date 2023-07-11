@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021 EMBL - European Bioinformatics Institute
+ * Copyright 2022 EMBL - European Bioinformatics Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,18 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.file.handler.exception;
+package uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint;
 
-import java.io.Serial;
+public enum DataType {
+    ACCESS("access"), MKDIR("mkdir");
 
-public class FileNotFoundException extends Exception {
-    @Serial
-    private static final long serialVersionUID = -7087674527009176711L;
+    private final String dataType;
 
-    public FileNotFoundException(final String message) {
-        super(message);
+    DataType(String dataType) {
+        this.dataType = dataType;
+    }
+
+    public String getDataType() {
+        return dataType;
     }
 }
