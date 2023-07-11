@@ -21,22 +21,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
-import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.message.PipelineResultEvent;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity.PipelineStatus;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.PipelinePersistence;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineResultEvent;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.router.CSCPipelineHandler;
 
 public class PipelineEventListener {
-
     private final Logger LOGGER = LoggerFactory.getLogger(PipelineEventListener.class);
+    private final CSCPipelineHandler cscPipelineHandler;
+    private final IPipelinePersistence pipelinePersistence;
 
-    private final PipelinePersistence pipelinePersistence;
-
-    public PipelineEventListener(final PipelinePersistence pipelinePersistence) {
+    public PipelineEventListener(final CSCPipelineHandler cscPipelineHandler,
+                                 final IPipelinePersistence pipelinePersistence) {
+        this.cscPipelineHandler = cscPipelineHandler;
         this.pipelinePersistence = pipelinePersistence;
     }
 
-    @Transactional(transactionManager = "pipelineManagerTransactionManager")
+    //@Transactional
     @KafkaListener(
             topics = "${kafka.pipeline-status.topic}",
             clientIdPrefix = "${kafka.group.instance-id}",
@@ -44,25 +45,25 @@ public class PipelineEventListener {
             containerFactory = "kafkaListenerContainerFactory")
     public void listenPipelineResultQueue(final PipelineResultEvent pipelineResultEvent,
                                           final Acknowledgment acknowledgment) {
-        switch (PipelineStatus.getPipelineStatusByDescription(pipelineResultEvent.getStatus())) {
+        //TODO: Revisit the logic
+        switch (PipelineStatus.getPipelineStatusByDescription(pipelineResultEvent.status())) {
             case COMPLETED:
-                updatePipelineStatus(pipelineResultEvent);
-                pipelinePersistence.persistPipelineResult(pipelineResultEvent);
-                LOGGER.info("Pipeline completed, id: {}", pipelineResultEvent.getUid());
+                cscPipelineHandler
+                        .handlePipelineOutcome(pipelineResultEvent)
+                        .doOnSuccess(unused -> LOGGER.info("Pipeline completed, id: {}", pipelineResultEvent.pipelineId()))
+                        .doOnError(throwable -> LOGGER.error(String.format("Error while updating status, pipeline completed id: %s", pipelineResultEvent.pipelineId()), throwable))
+                        .subscribe();
                 break;
             case STARTED:
-                updatePipelineStatus(pipelineResultEvent);
+                pipelinePersistence
+                        .updatePipelineDetailsStatus(
+                                pipelineResultEvent.pipelineId(),
+                                PipelineStatus.valueOf(pipelineResultEvent.status().toUpperCase()))
+                        .subscribe();
             default:
-                LOGGER.info("Pipeline id: {}, status: {}", pipelineResultEvent.getUid(), pipelineResultEvent.getStatus());
+                LOGGER.info("Pipeline id: {}, status: {}", pipelineResultEvent.pipelineId(), pipelineResultEvent.status());
         }
         acknowledgment.acknowledge();
         LOGGER.info("Pipeline result has been saved!");
-    }
-
-    private void updatePipelineStatus(final PipelineResultEvent pipelineResultEvent) {
-        pipelinePersistence.updatePipelineDetailsStatus(
-                pipelineResultEvent.getUid(),
-                PipelineStatus.valueOf(pipelineResultEvent.getStatus().toUpperCase())
-        );
     }
 }

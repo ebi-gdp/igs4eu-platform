@@ -26,9 +26,13 @@ import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.mail.javamail.JavaMailSender;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.listener.PipelineEventListener;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.message.TriggerPipelineEvent;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.PipelinePersistence;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.router.CSCPipelineHandler;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.EmailSender;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
 @EnableKafka
 @Configuration
@@ -57,7 +61,14 @@ public class KafkaConfig extends DefaultKafkaConfig {
     }
 
     @Bean
-    public PipelineEventListener pipelineEventListener(final PipelinePersistence pipelinePersistence) {
-        return new PipelineEventListener(pipelinePersistence);
+    public IEmailSender emailService(final JavaMailSender mailSender,
+                                     final @Value("${spring.mail.username}") String emailFrom) {
+        return new EmailSender(mailSender, emailFrom);
+    }
+
+    @Bean
+    public PipelineEventListener pipelineEventListener(final CSCPipelineHandler cscPipelineHandler,
+                                                       final IPipelinePersistence pipelinePersistence) {
+        return new PipelineEventListener(cscPipelineHandler, pipelinePersistence);
     }
 }

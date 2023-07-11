@@ -15,10 +15,10 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
 public enum PipelineStatus {
-    NEW("New"), COMPLETED("Completed"), STARTED("Started");
+    NEW("New"), PENDING("Pending"), COMPLETED("Completed"), STARTED("Started");
 
     private final String pipelineStatus;
 

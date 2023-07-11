@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2022 EMBL - European Bioinformatics Institute
+ * Copyright 2023 EMBL - European Bioinformatics Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,28 +15,28 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.service.message;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.message.TriggerPipelineEvent;
+import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 
-public class MessageService {
-
-    private final Logger LOGGER = LoggerFactory.getLogger(MessageService.class);
-
+public class KafkaMessageService implements MessageService {
+    private final Logger LOGGER = LoggerFactory.getLogger(KafkaMessageService.class);
     private final KafkaTemplate<String, TriggerPipelineEvent> triggerPipelineEventKT;
     private final String startTopicName;
 
-    public MessageService(final KafkaTemplate<String, TriggerPipelineEvent> triggerPipelineEventKT,
-                          final String startTopicName) {
+    public KafkaMessageService(final KafkaTemplate<String, TriggerPipelineEvent> triggerPipelineEventKT,
+                               final String startTopicName) {
         this.triggerPipelineEventKT = triggerPipelineEventKT;
         this.startTopicName = startTopicName;
     }
 
-    public void sendMessage(final String key, final TriggerPipelineEvent message) {
+    public Mono<Void> sendMessage(final String key, final TriggerPipelineEvent message) {
         triggerPipelineEventKT.send(startTopicName, key, message);
         LOGGER.info("Message has been sent, Key: {}, topic: {}", key, startTopicName);
+        return Mono.empty();
     }
 }

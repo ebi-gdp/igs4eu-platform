@@ -15,41 +15,13 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.message;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.message;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PipelineResultEvent {
-
-    private String status;
-    private String uid;
-    private String outdir;
-
-    private PipelineResultEvent() {
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getUid() {
-        return uid;
-    }
-
-    public void setUid(String uid) {
-        this.uid = uid;
-    }
-
-    public String getOutdir() {
-        return outdir;
-    }
-
-    public void setOutdir(String outdir) {
-        this.outdir = outdir;
-    }
+public record PipelineResultEvent(String status,
+                                  String pipelineId,
+                                  @JsonProperty("outdir") String outputFileLocation) {
 }

@@ -17,23 +17,26 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service;
 
-import uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.message.PipelineResultEvent;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity.PipelineDetails;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity.PipelineResult;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity.PipelineStatus;
-
-import java.util.Optional;
+import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineResultEvent;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 
 public interface IPipelinePersistence {
-    PipelineDetails createPipeline(String userId);
+    Mono<PipelineDetails> createPipeline(String userId);
 
-    void updatePipelineDetailsStatus(String pipelineId, PipelineStatus pipelineStatus);
+    Mono<PipelineDetails> updatePipelineDetailsStatus(String pipelineId, PipelineStatus pipelineStatus);
 
-    void persistPipelineResult(PipelineResultEvent pipelineResultEvent);
+    Mono<PipelineResult> persistPipelineResult(PipelineResultEvent pipelineResultEvent);
 
-    Optional<PipelineResult> getLatestPipelineResult(String userId);
+    Mono<PipelineResult> getLatestPipelineResult(String userId);
 
-    Optional<PipelineResult> pipelineResult(String pipelineId);
+    Mono<PipelineResult> getPipelineResult(String pipelineId);
 
-    Optional<PipelineDetails> pipelineDetails(String pipelineId);
+    Mono<PipelineDetails> getPipelineDetails(String pipelineId, String userId);
+
+    Mono<PipelineDetails> getPipelineDetailsRecent(String userId);
+
+    Mono<PipelineDetails> save(PipelineDetails pipelineDetails);
 }

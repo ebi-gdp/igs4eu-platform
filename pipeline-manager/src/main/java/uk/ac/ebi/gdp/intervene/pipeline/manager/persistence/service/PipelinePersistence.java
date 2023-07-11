@@ -18,20 +18,17 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service;
 
 import org.springframework.transaction.annotation.Transactional;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.message.PipelineResultEvent;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity.PipelineDetails;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity.PipelineResult;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity.PipelineStatus;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.repository.PipelineDetailsRepository;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.repository.PipelineResultRepository;
+import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineResultEvent;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineDetailsRepository;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineResultRepository;
 
-import java.util.Optional;
-import java.util.UUID;
-
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.entity.PipelineStatus.NEW;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus.NEW;
 
 public class PipelinePersistence implements IPipelinePersistence {
-
     private final PipelineDetailsRepository pipelineDetailsRepository;
     private final PipelineResultRepository pipelineResultRepository;
 
@@ -41,52 +38,68 @@ public class PipelinePersistence implements IPipelinePersistence {
         this.pipelineResultRepository = pipelineResultRepository;
     }
 
-    @Transactional(transactionManager = "pipelineManagerTransactionManager")
+    @Transactional(transactionManager = "reactiveTransactionManager")
     @Override
-    public PipelineDetails createPipeline(final String userId) {
-        final String randomUUID = "id-" + UUID.randomUUID();
-        final PipelineDetails pipelineDetails = new PipelineDetails(
-                randomUUID,
-                userId,
-                NEW
-        );
-        return pipelineDetailsRepository.save(pipelineDetails);
+    public Mono<PipelineDetails> createPipeline(final String userId) {
+        //Get next pipeline id
+        return pipelineDetailsRepository
+                .getNextPipelineId()
+                .map(nextPipelineId -> new PipelineDetails(
+                        nextPipelineId,
+                        userId,
+                        NEW))
+                .flatMap(pipelineDetailsRepository::save);
     }
 
-    @Transactional(transactionManager = "pipelineManagerTransactionManager")
+    @Transactional(transactionManager = "reactiveTransactionManager")
     @Override
-    public void updatePipelineDetailsStatus(final String pipelineId,
-                                            final PipelineStatus pipelineStatus) {
-        pipelineDetailsRepository
+    public Mono<PipelineDetails> updatePipelineDetailsStatus(final String pipelineId,
+                                                             final PipelineStatus pipelineStatus) {
+        return pipelineDetailsRepository
                 .findById(pipelineId)
-                .ifPresent((pipelineDetails) -> pipelineDetails.setStatus(pipelineStatus));
+                .flatMap(pipelineDetails -> {
+                    pipelineDetails.setStatus(pipelineStatus);
+                    return pipelineDetailsRepository.save(pipelineDetails);
+                    //.then();//TODO, work on this. Use Reactive Kafka & then check @Transactional effect
+                });
     }
 
-    @Transactional(transactionManager = "pipelineManagerTransactionManager")
+    @Transactional(transactionManager = "reactiveTransactionManager")
     @Override
-    public void persistPipelineResult(final PipelineResultEvent pipelineResultEvent) {
+    public Mono<PipelineResult> persistPipelineResult(final PipelineResultEvent pipelineResultEvent) {
         final PipelineResult pipelineResult = new PipelineResult(
-                pipelineResultEvent.getUid(),
-                pipelineResultEvent.getOutdir()
-        );
-        pipelineResultRepository.save(pipelineResult);
+                pipelineResultEvent.pipelineId(),
+                pipelineResultEvent.outputFileLocation());
+        return pipelineResultRepository.save(pipelineResult);
     }
 
     @Override
-    public Optional<PipelineResult> getLatestPipelineResult(final String userId) {
-        final Optional<PipelineDetails> pipelineDetailsOptional = pipelineDetailsRepository
-                .findTopByUserIdAndStatusOrderByUpdatedOnDesc(userId, PipelineStatus.COMPLETED);
-        return pipelineDetailsOptional
-                .flatMap(pipelineDetails -> pipelineResultRepository.findById(pipelineDetailsOptional.get().getPipelineId()));
+    public Mono<PipelineResult> getLatestPipelineResult(final String userId) {
+        return pipelineDetailsRepository
+                .findTopByUserIdAndStatusOrderByUpdatedOnDesc(userId, PipelineStatus.COMPLETED)
+                .flatMap(pipelineDetails -> pipelineResultRepository
+                        .findById(pipelineDetails.getPipelineId()));
     }
 
     @Override
-    public Optional<PipelineResult> pipelineResult(final String pipelineId) {
+    public Mono<PipelineResult> getPipelineResult(final String pipelineId) {
         return pipelineResultRepository.findById(pipelineId);
     }
 
     @Override
-    public Optional<PipelineDetails> pipelineDetails(final String pipelineId) {
-        return pipelineDetailsRepository.findById(pipelineId);
+    public Mono<PipelineDetails> getPipelineDetails(final String pipelineId,
+                                                    final String userId) {
+        return pipelineDetailsRepository.findByPipelineIdAndUserId(pipelineId, userId);
+    }
+
+    @Override
+    public Mono<PipelineDetails> getPipelineDetailsRecent(final String userId) {
+        //return pipelineDetailsRepository.findTopByUserIdOrderByUpdatedOnDesc(userId);
+        return pipelineDetailsRepository.findRecentFullPipelineDetails(userId);
+    }
+
+    @Override
+    public Mono<PipelineDetails> save(final PipelineDetails pipelineDetails) {
+        return pipelineDetailsRepository.save(pipelineDetails);
     }
 }
