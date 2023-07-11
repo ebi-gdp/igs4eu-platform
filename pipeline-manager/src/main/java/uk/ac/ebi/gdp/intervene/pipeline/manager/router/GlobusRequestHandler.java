@@ -67,7 +67,7 @@ public class GlobusRequestHandler {
                                         .map(globusUserIDWDto -> new GlobusUserDetails(
                                                 username,
                                                 globusUserIDWDto.getIdentities().get(0).getUid(),
-                                                userAccountDTO.getAccountId())))
+                                                userAccountDTO.accountId())))
                                 .flatMap(globusUserRepository::save)
                                 .map(globusUserDetailsMapper::toDTO)
                                 .flatMap(globusUserDetailsDTO -> status(CREATED)

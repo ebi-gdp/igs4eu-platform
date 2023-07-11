@@ -17,38 +17,8 @@
  */
 package uk.ac.ebi.gdp.intervene.commons.dto.usermanager;
 
-public class UserAccountDTO {
-    private String accountId;
-    private String givenName;
-    private String familyName;
-    private String emailId;
-
-    private UserAccountDTO() {
-    }
-
-    public UserAccountDTO(final String accountId,
-                          final String givenName,
-                          final String familyName,
-                          final String emailId) {
-        this.accountId = accountId;
-        this.givenName = givenName;
-        this.familyName = familyName;
-        this.emailId = emailId;
-    }
-
-    public String getAccountId() {
-        return accountId;
-    }
-
-    public String getGivenName() {
-        return givenName;
-    }
-
-    public String getFamilyName() {
-        return familyName;
-    }
-
-    public String getEmailId() {
-        return emailId;
-    }
+public record UserAccountDTO(String accountId,
+                             String givenName,
+                             String familyName,
+                             String emailId) {
 }

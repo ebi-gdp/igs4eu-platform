@@ -52,7 +52,7 @@ public class PipelineRequestHandler {
     public Mono<ServerResponse> createPipeline() {
         return userManagerService.
                 getUserAccountDetails()
-                .flatMap(userAccountDTO -> pipelinePersistence.createPipeline(userAccountDTO.getAccountId()))
+                .flatMap(userAccountDTO -> pipelinePersistence.createPipeline(userAccountDTO.accountId()))
                 .map(pipelineDetails -> new PipelineDetailsDTO(pipelineDetails.getPipelineId(), pipelineDetails.getStatus()))
                 .flatMap(pipelineDetailsDTO -> ok().bodyValue(pipelineDetailsDTO));
     }
@@ -62,7 +62,7 @@ public class PipelineRequestHandler {
                 getUserAccountDetails()
                 .flatMap(userAccountDTO -> pipelinePersistence.getPipelineDetails(
                         serverRequest.pathVariable("pipelineId"),
-                        userAccountDTO.getAccountId()))
+                        userAccountDTO.accountId()))
                 .map(pipelineDetailsMapper::toDTO)
                 .flatMap(pipelineDetailsDTO -> ok().bodyValue(pipelineDetailsDTO));
     }
@@ -70,7 +70,7 @@ public class PipelineRequestHandler {
     public Mono<ServerResponse> getPipelineDetailsRecent() {
         return userManagerService.
                 getUserAccountDetails()
-                .flatMap(userAccountDTO -> pipelinePersistence.getPipelineDetailsRecent(userAccountDTO.getAccountId()))
+                .flatMap(userAccountDTO -> pipelinePersistence.getPipelineDetailsRecent(userAccountDTO.accountId()))
                 .map(pipelineDetailsMapper::toDTO)
                 .switchIfEmpty(error(resourceNotFound("No recent submission found!")))
                 .flatMap(pipelineDetailsDTO -> ok().bodyValue(pipelineDetailsDTO));
@@ -83,7 +83,7 @@ public class PipelineRequestHandler {
                         pipelinePersistence
                                 .getPipelineDetails(
                                         serverRequest.pathVariable("pipelineId"),
-                                        userAccount.getAccountId()))
+                                        userAccount.accountId()))
                 .flatMap(pipelineDetails -> serverRequest
                         .bodyToMono(String.class)
                         .map(datasetId -> {
@@ -100,7 +100,7 @@ public class PipelineRequestHandler {
                 .flatMap(userAccountDTO ->
                         pipelinePersistence
                                 .getPipelineDetails(serverRequest.pathVariable("pipelineId"),
-                                        userAccountDTO.getAccountId()))
+                                        userAccountDTO.accountId()))
                 .flatMap(pipelineDetails ->
                         serverRequest
                                 .bodyToMono(PipelineExecutionDTO.class)

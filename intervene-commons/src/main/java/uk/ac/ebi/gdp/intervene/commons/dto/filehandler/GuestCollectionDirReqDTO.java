@@ -19,16 +19,12 @@ package uk.ac.ebi.gdp.intervene.commons.dto.filehandler;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GuestCollectionDirReqDTO {
-    @JsonProperty("directoryName")
     private String directoryName;
-    @JsonProperty("globusUserUID")
     private String globusUserUID;
-    @JsonProperty("notifyEmail")
     private String notifyEmail;
 
     private GuestCollectionDirReqDTO() {

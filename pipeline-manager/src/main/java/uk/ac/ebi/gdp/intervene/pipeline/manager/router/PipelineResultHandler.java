@@ -57,7 +57,7 @@ public class PipelineResultHandler {
     public Mono<ServerResponse> listResultFiles() {
         return userManagerService
                 .getUserAccountDetails()
-                .flatMap(userAccountDTO -> pipelinePersistence.getLatestPipelineResult(userAccountDTO.getAccountId()))
+                .flatMap(userAccountDTO -> pipelinePersistence.getLatestPipelineResult(userAccountDTO.accountId()))
                 .flatMap(pipelineResult -> {
                     final ListObjectsRequest listObjects = new ListObjectsRequest();
                     listObjects.setBucketName(s3Bucket);
@@ -80,7 +80,7 @@ public class PipelineResultHandler {
                 .orElseThrow(RuntimeException::new);
         return userManagerService
                 .getUserAccountDetails()
-                .flatMap(userAccountDTO -> pipelinePersistence.getPipelineDetails(serverRequest.pathVariable("pipelineId"), userAccountDTO.getAccountId()))
+                .flatMap(userAccountDTO -> pipelinePersistence.getPipelineDetails(serverRequest.pathVariable("pipelineId"), userAccountDTO.accountId()))
                 .flatMap(latestPipelineResult -> {
                     final GetObjectRequest objectRequest = new GetObjectRequest(s3Bucket, path);
                     final InputStreamResource inputStreamResource = new InputStreamResource(s3Client

@@ -18,33 +18,11 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
 import java.util.Collection;
+import java.util.Collections;
 
-public class S3ObjectDTO {
-    private String pipelineId;
-    private Collection<String> files;
-
-    private S3ObjectDTO() {
-    }
-
-    public S3ObjectDTO(final String pipelineId,
-                       final Collection<String> files) {
-        this.pipelineId = pipelineId;
-        this.files = files;
-    }
-
-    public String getPipelineId() {
-        return pipelineId;
-    }
-
-    public void setPipelineId(String pipelineId) {
-        this.pipelineId = pipelineId;
-    }
-
-    public Collection<String> getFiles() {
-        return files;
-    }
-
-    public void setFiles(Collection<String> files) {
-        this.files = files;
+public record S3ObjectDTO(String pipelineId,
+                          Collection<String> files) {
+    public Collection<String> files() {
+        return Collections.unmodifiableCollection(files);
     }
 }

@@ -17,10 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.config.kafka;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -37,17 +33,12 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.Map;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES;
-import static com.fasterxml.jackson.databind.MapperFeature.DEFAULT_VIEW_INCLUSION;
-import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE;
-import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
-import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_INSTANCE_ID_CONFIG;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
+import static uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil.getJsonObjectMapper;
 
 public class DefaultKafkaConfig {
     private final KafkaProperties kafkaProperties;
@@ -68,7 +59,7 @@ public class DefaultKafkaConfig {
     protected <KEY, MESSAGE> ProducerFactory<KEY, MESSAGE> defaultProducerFactory() {
         final DefaultKafkaProducerFactory<KEY, MESSAGE> factory =
                 new DefaultKafkaProducerFactory<>(producerConfigs());
-        factory.setValueSerializer(new JsonSerializer<>(getObjectMapper()));
+        factory.setValueSerializer(new JsonSerializer<>(getJsonObjectMapper()));
         return factory;
     }
 
@@ -88,7 +79,7 @@ public class DefaultKafkaConfig {
         factory.setConsumerFactory(defaultConsumerFactory());
         factory.getContainerProperties().setPollTimeout(defaultPollTimeout);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
-        factory.setRecordMessageConverter(new StringJsonMessageConverter(getObjectMapper()));
+        factory.setRecordMessageConverter(new StringJsonMessageConverter(getJsonObjectMapper()));
         return factory;
     }
 
@@ -103,20 +94,5 @@ public class DefaultKafkaConfig {
         properties.put(GROUP_INSTANCE_ID_CONFIG, groupInstanceId);
         properties.put(ENABLE_AUTO_COMMIT_CONFIG, false);
         return properties;
-    }
-
-    //Common
-
-    public static ObjectMapper getObjectMapper() {
-        return JsonMapper
-                .builder()
-                .addModule(new JavaTimeModule())
-                .configure(ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
-                .configure(DEFAULT_VIEW_INCLUSION, false)
-                .configure(FAIL_ON_UNKNOWN_PROPERTIES, false)
-                .disable(WRITE_DATES_AS_TIMESTAMPS)
-                .disable(WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)
-                .propertyNamingStrategy(SNAKE_CASE)
-                .build();
     }
 }

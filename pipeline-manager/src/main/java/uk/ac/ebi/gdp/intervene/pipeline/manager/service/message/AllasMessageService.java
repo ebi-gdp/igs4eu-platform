@@ -22,13 +22,13 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.config.kafka.DefaultKafkaConfig;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.exception.S3Exception;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 
 import java.io.ByteArrayInputStream;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil.getJsonObjectMapper;
 
 public class AllasMessageService implements MessageService {
     private final AmazonS3 s3ClientAllas;
@@ -58,8 +58,7 @@ public class AllasMessageService implements MessageService {
         metadata.setContentType(APPLICATION_JSON_VALUE);
         metadata.addUserMetadata("title", "JSON file for %s pipeline".formatted(key));
 
-        final byte[] messageByteArray = DefaultKafkaConfig
-                .getObjectMapper()
+        final byte[] messageByteArray = getJsonObjectMapper()
                 .writeValueAsBytes(message);
 
         return new PutObjectRequest(
