@@ -27,6 +27,7 @@ import uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType;
 import java.time.LocalDateTime;
 
 import static org.springframework.util.StringUtils.hasText;
+import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccountStatus.ENABLED;
 
 @Table("auth_user_account")
 public class AuthUserAccount implements Persistable<String> {
@@ -59,6 +60,14 @@ public class AuthUserAccount implements Persistable<String> {
     protected AuthUserAccount() {
     }
 
+    public AuthUserAccount(final String authUserId,
+                           final AuthProviderType authProviderType,
+                           final AuthUserAccountStatus status,
+                           final UserAccount userAccount) {
+        this(authUserId, userAccount.getUserId(), authProviderType, status, false);
+        this.userAccount = userAccount;
+    }
+
     private AuthUserAccount(final String authUserId,
                             final String userId,
                             final AuthProviderType authProviderType,
@@ -69,14 +78,6 @@ public class AuthUserAccount implements Persistable<String> {
         this.authProviderType = authProviderType;
         this.status = status;
         this.newAuthUserAccount = newAuthUserAccount;
-    }
-
-    public AuthUserAccount(final String authUserId,
-                           final AuthProviderType authProviderType,
-                           final AuthUserAccountStatus status,
-                           final UserAccount userAccount) {
-        this(authUserId, userAccount.getUserId(), authProviderType, status, false);
-        this.userAccount = userAccount;
     }
 
     public String getAuthUserId() {
@@ -114,7 +115,7 @@ public class AuthUserAccount implements Persistable<String> {
                 authUserId,
                 userId,
                 authProviderType,
-                AuthUserAccountStatus.ENABLED,
+                ENABLED,
                 true
         );
     }

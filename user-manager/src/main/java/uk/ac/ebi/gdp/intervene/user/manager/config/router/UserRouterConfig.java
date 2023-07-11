@@ -26,19 +26,21 @@ import uk.ac.ebi.gdp.intervene.user.manager.mapper.UserAccountMapper;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.IUserAccountPersistenceService;
 import uk.ac.ebi.gdp.intervene.user.manager.service.IUserManagerService;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
+import java.nio.file.Path;
+
+import static java.nio.file.Paths.get;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 @Configuration
 public class UserRouterConfig {
 
     @Bean
-    RouterFunction<ServerResponse> userRoutes(final UserHandler userHandler) {
-        final String userAccountURI = "/user/account";
+    public RouterFunction<ServerResponse> userRoutes(final UserHandler userHandler) {
+        final Path userAccount = get("/user/account");
         return route()
-                .GET(userAccountURI, accept(APPLICATION_JSON), serverRequest -> userHandler.getUserAccount())
-                .POST(userAccountURI, accept(APPLICATION_JSON), serverRequest -> userHandler.createUserAccount())
+                .GET(userAccount.toString(), serverRequest -> userHandler.getCurrentUserAccount())
+                .GET(userAccount.resolve("{accountId}").toString(), userHandler::getUserAccountDetails)
+                .POST(userAccount.toString(), serverRequest -> userHandler.createUserAccount())
                 .build();
     }
 

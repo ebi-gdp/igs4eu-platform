@@ -78,13 +78,11 @@ public class UserAccountPersistenceServiceTest {
                 .findAuthUserAccount(authUserId))
                 .thenReturn(Mono.just(authUserAccount));
 
-        final Mono<AuthUserAccount> userAccount = userAccountPersistenceService.getUserAccount(authUserId);
+        final Mono<AuthUserAccount> userAccount = userAccountPersistenceService.getUserAccountByAuthUserAccountId(authUserId);
 
         StepVerifier
                 .create(userAccount)
-                .consumeNextWith(resultAuthUserAccount -> {
-                    assertEquals(authUserId, resultAuthUserAccount.getAuthUserId());
-                })
+                .consumeNextWith(resultAuthUserAccount -> assertEquals(authUserId, resultAuthUserAccount.getAuthUserId()))
                 .verifyComplete();
     }
 }

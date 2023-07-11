@@ -23,8 +23,9 @@ import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 
 public interface UserAccountRepository extends ReactiveCrudRepository<UserAccount, String> {
-
     @Query(value = "CALL GET_NEXT_INTERVENE_USER_ACCOUNT_ID('');")
     Mono<String> getNextUserAccount();
+
+    Mono<UserAccount> findUserAccountByUserId(String accountId);
 }
 

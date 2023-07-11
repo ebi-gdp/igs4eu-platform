@@ -17,6 +17,7 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.handler;
 
+import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.mapper.UserAccountMapper;
@@ -44,18 +45,27 @@ public class UserHandler {
         this.userAccountMapper = userAccountMapper;
     }
 
-    public Mono<ServerResponse> getUserAccount() {
+    public Mono<ServerResponse> getCurrentUserAccount() {
         return currentUserId()
                 .flatMap(userAccountId -> userAccountPersistenceService
-                        .getUserAccount(userAccountId)
-                        .flatMap(authUserAccountR2DBC -> ok().bodyValue(userAccountMapper.toDTO(authUserAccountR2DBC.getUserAccount())))
+                        .getUserAccountByAuthUserAccountId(userAccountId)
+                        .flatMap(authUserAccountR2DBC -> ok()
+                                .bodyValue(userAccountMapper.toDTO(authUserAccountR2DBC.getUserAccount())))
                         .switchIfEmpty(error(resourceNotFound(format("User account having auth id %s not found",
                                 userAccountId)))));
+    }
+
+    public Mono<ServerResponse> getUserAccountDetails(final ServerRequest serverRequest) {
+        return userAccountPersistenceService
+                .getUserAccountById(serverRequest.pathVariable("accountId"))
+                .flatMap(userAccount -> ok()
+                        .bodyValue(userAccountMapper.toDTO(userAccount)));
     }
 
     public Mono<ServerResponse> createUserAccount() {
         return currentUserId()
                 .flatMap(userManagerService::createUserAccount)
-                .flatMap(userAccountR2DBC -> status(CREATED).bodyValue(userAccountMapper.toDTO((userAccountR2DBC))));
+                .flatMap(userAccountR2DBC -> status(CREATED)
+                        .bodyValue(userAccountMapper.toDTO((userAccountR2DBC))));
     }
 }

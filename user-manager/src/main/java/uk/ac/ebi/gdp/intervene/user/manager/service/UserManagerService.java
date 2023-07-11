@@ -25,7 +25,6 @@ import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.user.manager.exception.UserAccountException.accountAlreadyExists;
 
 public class UserManagerService implements IUserManagerService {
-
     private final IUserAccountPersistenceService userAccountPersistenceService;
 
     public UserManagerService(final IUserAccountPersistenceService userAccountPersistenceService) {
@@ -35,7 +34,7 @@ public class UserManagerService implements IUserManagerService {
     @Override
     public Mono<UserAccount> createUserAccount(final String authUserAccountId) {
         return userAccountPersistenceService
-                .getUserAccount(authUserAccountId)
+                .getUserAccountByAuthUserAccountId(authUserAccountId)
                 .flatMap(authUserAccountR2DBC -> error(accountAlreadyExists(authUserAccountId)))
                 .switchIfEmpty(userAccountPersistenceService.createAccount(authUserAccountId))
                 .cast(UserAccount.class);

@@ -37,7 +37,6 @@ public class AuthUserAccountMapper implements BiFunction<Row, Object, AuthUserAc
                 row.get("email_id", String.class),
                 UserAccountStatus.valueOf(row.get("status", String.class))
         );
-
         return new AuthUserAccount(
                 row.get("auth_user_id", String.class),
                 AuthProviderType.valueOf(row.get("auth_provider", String.class)),

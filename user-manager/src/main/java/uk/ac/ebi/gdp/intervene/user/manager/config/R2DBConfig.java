@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccountStatus;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountStatus;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.AuthUserAccountMapper;
 
 import java.util.List;
 
@@ -106,5 +107,10 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
     @Bean("reactiveTransactionManager")
     public ReactiveTransactionManager transactionManager(final ConnectionFactory connectionFactory) {
         return new R2dbcTransactionManager(connectionFactory);
+    }
+
+    @Bean
+    public AuthUserAccountMapper authUserAccountMapper() {
+        return new AuthUserAccountMapper();
     }
 }

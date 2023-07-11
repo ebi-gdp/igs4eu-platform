@@ -18,7 +18,6 @@
 package uk.ac.ebi.gdp.intervene.user.manager.model;
 
 public class UserInfo implements IUserInfo {
-
     private final String subject;
     private final String givenName;
     private final String familyName;

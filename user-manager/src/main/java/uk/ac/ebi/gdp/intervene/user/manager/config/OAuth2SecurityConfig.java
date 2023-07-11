@@ -20,8 +20,11 @@ package uk.ac.ebi.gdp.intervene.user.manager.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.oauth2.server.resource.web.reactive.function.client.ServerBearerExchangeFilterFunction;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -30,6 +33,7 @@ import uk.ac.ebi.gdp.intervene.user.manager.auth.AuthenticationContext;
 import uk.ac.ebi.gdp.intervene.user.manager.service.aai.ElixirAuthenticationService;
 
 import static java.net.URI.create;
+import static org.springframework.web.reactive.function.client.WebClient.builder;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -39,6 +43,18 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
     public SecurityWebFilterChain springSecurityFilterChain(final ServerHttpSecurity http,
                                                             @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") final String jwkSetURI) {
         return securityFilterChain(http, jwkSetURI);
+    }
+
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    @Bean
+    public SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http) {
+        return super.securityFilterChainBasicAuth(http, "/user/account/{accountId}");
+    }
+
+    @Bean
+    public ReactiveUserDetailsService userDetailsService(@Value("${basic.auth.username}") final String username,
+                                                         @Value("${basic.auth.password}") final String password) {
+        return super.userDetailsService(username, password);
     }
 
     @Bean
@@ -62,8 +78,7 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
     }
 
     private WebClient webClient(final String baseURL) {
-        return WebClient
-                .builder()
+        return builder()
                 .filters(exchangeFilterFunctions -> {
                     exchangeFilterFunctions.add(new ServerBearerExchangeFilterFunction());
                     exchangeFilterFunctions.add(errorHandler());

@@ -22,7 +22,9 @@ import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAcc
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 
 public interface IUserAccountPersistenceService {
-    Mono<AuthUserAccount> getUserAccount(String authUserAccountId);
+    Mono<AuthUserAccount> getUserAccountByAuthUserAccountId(String authUserAccountId);
 
     Mono<UserAccount> createAccount(String authUserAccountId);
+
+    Mono<UserAccount> getUserAccountById(String accountId);
 }

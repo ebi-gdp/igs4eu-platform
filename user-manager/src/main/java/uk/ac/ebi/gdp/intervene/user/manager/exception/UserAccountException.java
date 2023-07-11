@@ -25,6 +25,7 @@ import java.io.Serial;
 import static org.springframework.http.HttpStatus.CONFLICT;
 
 public class UserAccountException extends ClientException {
+
     @Serial
     private static final long serialVersionUID = 8760042428916614428L;
 

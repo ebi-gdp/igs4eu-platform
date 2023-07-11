@@ -31,12 +31,14 @@ import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAcc
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.service.aai.IAuthenticationService;
 
+import static org.slf4j.LoggerFactory.getLogger;
 import static uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType.ELIXIR;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount.newAuthUserAccount;
+import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount.newUserAccount;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountDetails.newUserAccountDetailsR2DBC;
 
 public class UserAccountPersistenceService implements IUserAccountPersistenceService {
-    private final Logger LOGGER = LoggerFactory.getLogger(UserAccountPersistenceService.class);
+    private final Logger LOGGER = getLogger(UserAccountPersistenceService.class);
     private final UserAccountRepository userAccountRepository;
     private final UserAccountDetailsRepository userAccountDetailsRepository;
     private final AuthUserAccountRepository authUserAccountRepository;
@@ -50,12 +52,6 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
         this.userAccountDetailsRepository = userAccountDetailsRepository;
         this.authUserAccountRepository = authUserAccountRepository;
         this.authenticationContext = authenticationContext;
-    }
-
-    @Override
-    public Mono<AuthUserAccount> getUserAccount(final String authUserAccountId) {
-        LOGGER.debug("Fetching User Account details for {}", authUserAccountId);
-        return authUserAccountRepository.findAuthUserAccount(authUserAccountId);
     }
 
     @Transactional(
@@ -96,9 +92,20 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
                 });
     }
 
+    @Override
+    public Mono<UserAccount> getUserAccountById(final String platformUserAccountId) {
+        return userAccountRepository.findUserAccountByUserId(platformUserAccountId);
+    }
+
+    @Override
+    public Mono<AuthUserAccount> getUserAccountByAuthUserAccountId(final String authUserAccountId) {
+        LOGGER.debug("Fetching User Account details for {}", authUserAccountId);
+        return authUserAccountRepository.findAuthUserAccount(authUserAccountId);
+    }
+
     private UserAccount buildUserAccount(final String nextUserAccountId,
                                          final IUserInfo userInfo) {
-        return UserAccount.newUserAccount(
+        return newUserAccount(
                 nextUserAccountId,
                 userInfo.getGivenName(),
                 userInfo.getFamilyName(),

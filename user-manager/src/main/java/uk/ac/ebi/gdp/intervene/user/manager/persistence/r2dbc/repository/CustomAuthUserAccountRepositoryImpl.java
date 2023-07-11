@@ -22,11 +22,13 @@ import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 
 public class CustomAuthUserAccountRepositoryImpl implements CustomAuthUserAccountRepository {
-
     private final DatabaseClient databaseClient;
+    private final AuthUserAccountMapper authUserAccountMapper;
 
-    public CustomAuthUserAccountRepositoryImpl(final DatabaseClient databaseClient) {
+    public CustomAuthUserAccountRepositoryImpl(final DatabaseClient databaseClient,
+                                               final AuthUserAccountMapper authUserAccountMapper) {
         this.databaseClient = databaseClient;
+        this.authUserAccountMapper = authUserAccountMapper;
     }
 
     @Override
@@ -51,7 +53,7 @@ public class CustomAuthUserAccountRepositoryImpl implements CustomAuthUserAccoun
         return databaseClient
                 .sql(query)
                 .bind("authUserId", authUserId)
-                .map((row, rowMetadata) -> new AuthUserAccountMapper().apply(row, rowMetadata))
+                .map(authUserAccountMapper::apply)
                 .one();
     }
 }
