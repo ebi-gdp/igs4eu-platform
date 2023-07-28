@@ -22,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import java.io.Serial;
 
 import static java.lang.String.format;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.valueOf;
 
 public class ServerException extends GenericException {
@@ -34,5 +35,9 @@ public class ServerException extends GenericException {
 
     public static ServerException serverException(final int httpStatusCode, final String message) {
         return new ServerException(valueOf(httpStatusCode), message);
+    }
+
+    public static ServerException serverException(final String message) {
+        return new ServerException(INTERNAL_SERVER_ERROR, message);
     }
 }

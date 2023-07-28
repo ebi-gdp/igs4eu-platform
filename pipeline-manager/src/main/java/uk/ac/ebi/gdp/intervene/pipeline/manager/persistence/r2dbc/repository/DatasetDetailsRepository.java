@@ -18,13 +18,13 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 
 @Repository
-public interface DatasetDetailsRepository extends ReactiveCrudRepository<DatasetDetails, String> {
+public interface DatasetDetailsRepository extends R2dbcRepository<DatasetDetails, String> {
     @Query(value = "CALL GET_NEXT_DATASET_ID('');")
     Mono<String> getNextDatasetId();
 

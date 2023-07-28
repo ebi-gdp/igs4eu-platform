@@ -25,27 +25,37 @@ import java.util.List;
 
 import static java.util.List.copyOf;
 
-public class GlobusFileDetailsWrapperDTO {
+public class GlobusFileDetailsWrapperDTO implements IGlobusFileDetailsWrapper {
+    @JsonProperty("path")
     private String path;
-    private int total;
+
+    @JsonProperty("total")
+    private int totalNoOfFiles;
 
     @JsonProperty("DATA")
-    private List<GlobusFileDetails> data;
+    private List<GlobusFileDetails> fileDetailsList;
 
     private GlobusFileDetailsWrapperDTO() {
     }
 
+    @Override
     public String getPath() {
         return path;
     }
 
-    public int getTotal() {
-        return total;
+    @Override
+    public int getTotalNoOfFiles() {
+        return totalNoOfFiles;
     }
 
-    public List<GlobusFileDetails> getData() {
-        return copyOf(data);
+    @Override
+    public List<GlobusFileDetails> getFileDetailsList() {
+        return copyOf(fileDetailsList);
     }
+
+    /*public List<GlobusFileDetails> getData() {
+        return copyOf(data);
+    }*/
 
     public static class GlobusFileDetails {
         private String type;

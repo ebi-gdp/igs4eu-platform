@@ -20,7 +20,6 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirReqDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
@@ -34,14 +33,16 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.Glo
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.MessageService;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static java.nio.file.Paths.get;
 import static java.util.List.of;
 import static java.util.stream.Collectors.toMap;
+import static reactor.core.publisher.Mono.defer;
+import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO.GlobusFileDetails;
 import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO.FileDetails;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.FormatType;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile;
@@ -75,33 +76,40 @@ public class PipelineManagerService {
                 .flatMap(globusFileHandlerService::createDirectoryOnGuestCollection);
     }
 
-    public Mono<GlobusDetails> createGlobusRecord(final String globusUsername,
-                                                  final String guestCollectionId,
-                                                  final Path dirPathOnGuestCollection) {
+    public Mono<GlobusDetails> createOrUpdateGlobusRecord(final String globusUsername,
+                                                          final String guestCollectionId,
+                                                          final Path dirPathOnGuestCollection) {
         return globusDetailsRepository
-                .getNextFilesetId()
-                .map(nextFilesetId ->
-                        newRecord(
-                                nextFilesetId,
-                                globusUsername,
-                                guestCollectionId,
-                                dirPathOnGuestCollection
-                        ))
-                .flatMap(globusDetailsRepository::save);
+                .findByDirPathOnGuestCollectionEndsWith(dirPathOnGuestCollection.toString())
+                .flatMap(globusDetails -> {
+                    globusDetails.updateGlobusUsername(globusUsername);
+                    return globusDetailsRepository.save(globusDetails);
+                })
+                .switchIfEmpty(defer(() -> globusDetailsRepository
+                        .getNextFilesetId()
+                        .map(nextFilesetId ->
+                                newRecord(
+                                        nextFilesetId,
+                                        globusUsername,
+                                        guestCollectionId,
+                                        dirPathOnGuestCollection
+                                ))
+                        .flatMap(globusDetailsRepository::save))
+                );
     }
 
     public Mono<Void> triggerGeneticScoringPipeline(final String pipelineId,
                                                     final PipelineExecutionDTO pipelineExecutionDTO) {
         final Set<FileDetails> files = new HashSet<>();
         return globusFileHandlerService
-                .listFilesOnGuestCollection(Paths.get(pipelineExecutionDTO.globusDetails().getDirPathOnGuestCollection()))
+                .listFilesOnGuestCollection(get(pipelineExecutionDTO.globusDetails().getDirPathOnGuestCollection()))
                 .map(globusFileDetailsWrapperDTO -> globusFileDetailsWrapperDTO
-                        .getData()
+                        .getFileDetailsList()
                         .stream()
                         .peek(globusFileDetails -> files
                                 .add(new FileDetails(globusFileDetails.getFileName(),
                                         globusFileDetails.getSize())))
-                        .collect(toMap(GlobusFileDetailsWrapperDTO.GlobusFileDetails::getProperty, GlobusFileDetailsWrapperDTO.GlobusFileDetails::getFileName)))
+                        .collect(toMap(GlobusFileDetails::getProperty, GlobusFileDetails::getFileName)))
                 .map(stringStringMap -> {
                     stringStringMap.put("sampleset", pipelineExecutionDTO.sampleSetName());
                     stringStringMap.put("chrom", null);

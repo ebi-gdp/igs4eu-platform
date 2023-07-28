@@ -49,7 +49,7 @@ public class GlobusFileHandlerService {
         return fileHandlerWebClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path(globusUserURI.getPath()/*"/globus/user"*/)
+                        .path(globusUserURI.getPath())
                         .queryParam("username", username)
                         .build())
                 .retrieve()
@@ -60,9 +60,9 @@ public class GlobusFileHandlerService {
         return fileHandlerWebClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path(globusListDirFilesURI.getPath()/*"/globus/collection/shared-endpoint/{sharedEndpointId}/ls"*/)
-                        .queryParam("path", dirPath.toString()/*"/~/"*/)
-                        .build(/*sharedEndpoint*/))
+                        .path(globusListDirFilesURI.getPath())
+                        .queryParam("path", dirPath.toString())
+                        .build())
                 .retrieve()
                 .bodyToMono(GlobusFileDetailsWrapperDTO.class);
     }
@@ -71,7 +71,7 @@ public class GlobusFileHandlerService {
         return fileHandlerWebClient
                 .post()
                 .uri(uriBuilder -> uriBuilder
-                        .path(globusCreatDirURI.getPath()/*"/globus/collection/shared-endpoint"*/)
+                        .path(globusCreatDirURI.getPath())
                         .build())
                 .contentType(APPLICATION_JSON)
                 .accept(APPLICATION_JSON)

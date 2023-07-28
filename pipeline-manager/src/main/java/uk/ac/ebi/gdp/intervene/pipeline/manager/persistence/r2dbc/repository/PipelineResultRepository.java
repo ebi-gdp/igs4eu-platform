@@ -17,10 +17,10 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 
 @Repository
-public interface PipelineResultRepository extends ReactiveCrudRepository<PipelineResult, String> {
+public interface PipelineResultRepository extends R2dbcRepository<PipelineResult, String> {
 }

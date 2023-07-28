@@ -40,6 +40,7 @@ public class GlobusUserIdentityDetailsWrapperDTO {
         @JsonProperty("id")
         private String uid;
         private String username;
+        private String email;
 
         private GlobusUserIdentityDetails() {
         }
@@ -50,6 +51,15 @@ public class GlobusUserIdentityDetailsWrapperDTO {
 
         public String getUsername() {
             return username;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        @JsonProperty
+        public boolean isValidIdentity() {
+            return email != null;
         }
     }
 }

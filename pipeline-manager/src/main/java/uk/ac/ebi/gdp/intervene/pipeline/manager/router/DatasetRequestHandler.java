@@ -26,11 +26,12 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Dataset
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetDetailsRepository;
 
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
+import static reactor.core.publisher.Mono.defer;
 import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
-import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.dataConflict;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType.GLOBUS;
 
 public class DatasetRequestHandler {
@@ -43,28 +44,33 @@ public class DatasetRequestHandler {
         this.datasetMapper = datasetMapper;
     }
 
-    public Mono<ServerResponse> createDatasetDetails(final ServerRequest serverRequest) {
+    public Mono<ServerResponse> createOrUpdateDatasetDetails(final ServerRequest serverRequest) {
         return serverRequest
                 .bodyToMono(DatasetDetailsDTO.class)
                 .flatMap(datasetDetailsDTO ->
                         datasetDetailsRepository
                                 .findByDatasetName(datasetDetailsDTO.getDatasetName())
-                                .flatMap(datasetDetails -> error(dataConflict("")))//TODO: add proper error message
-                                .switchIfEmpty(Mono.defer(() -> buildDataset(datasetDetailsDTO)))
-                                .cast(DatasetDetails.class)
-                                .flatMap(datasetDetailsRepository::save))
-                .flatMap(datasetDetails -> status(CREATED).bodyValue(datasetDetails.getDatasetId()));//TODO: check what details to return
+                                .flatMap(datasetDetails -> {
+                                    datasetDetails.updateGenomeBuild(datasetDetailsDTO.getGenomeBuild());
+                                    return datasetDetailsRepository
+                                            .save(datasetDetails)
+                                            .flatMap(persistedDatasetDetails -> status(OK)
+                                                    .bodyValue(persistedDatasetDetails.getDatasetId()));
+                                })
+                                .switchIfEmpty(
+                                        defer(() -> buildDataset(datasetDetailsDTO))
+                                                .cast(DatasetDetails.class)
+                                                .flatMap(datasetDetailsRepository::save)
+                                                .flatMap(datasetDetails -> status(CREATED)
+                                                        .bodyValue(datasetDetails.getDatasetId()))));//TODO: check what details to return
     }
 
     private Mono<DatasetDetails> buildDataset(final DatasetDetailsDTO datasetDetailsDTO) {
         return datasetDetailsRepository
                 .getNextDatasetId()
-                .map(nextDatasetId -> {
-                    final DatasetDetails datasetDetails = datasetMapper.toModel(datasetDetailsDTO);
-                    datasetDetails.setDatasetId(nextDatasetId);
-                    datasetDetails.setFilesetType(GLOBUS);
-                    return datasetDetails;
-                });
+                .map(nextDatasetId -> datasetMapper.toModel(datasetDetailsDTO,
+                        nextDatasetId,
+                        GLOBUS));
     }
 
     public Mono<ServerResponse> getDatasetDetails(final ServerRequest serverRequest) {

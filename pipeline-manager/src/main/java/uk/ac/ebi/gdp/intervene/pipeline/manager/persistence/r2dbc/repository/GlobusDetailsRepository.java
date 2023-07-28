@@ -18,13 +18,15 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails;
 
 @Repository
-public interface GlobusDetailsRepository extends ReactiveCrudRepository<GlobusDetails, String> {
+public interface GlobusDetailsRepository extends R2dbcRepository<GlobusDetails, String> {
     @Query(value = "CALL GET_NEXT_FILESET_ID('');")
     Mono<String> getNextFilesetId();
+
+    Mono<GlobusDetails> findByDirPathOnGuestCollectionEndsWith(String dirPathOnGuestCollection);
 }

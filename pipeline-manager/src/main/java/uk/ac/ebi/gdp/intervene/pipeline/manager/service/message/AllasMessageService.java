@@ -21,16 +21,22 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.exception.S3Exception;
+import uk.ac.ebi.gdp.intervene.commons.exception.ServerException;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 
 import java.io.ByteArrayInputStream;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static reactor.core.publisher.Mono.empty;
+import static reactor.core.publisher.Mono.error;
+import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
 import static uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil.getJsonObjectMapper;
 
 public class AllasMessageService implements MessageService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AllasMessageService.class);
     private final AmazonS3 s3ClientAllas;
     private final String bucketName;
 
@@ -46,10 +52,11 @@ public class AllasMessageService implements MessageService {
         }
         try {
             s3ClientAllas.putObject(buildObjectRequest(key, message));
+            return empty();
         } catch (Exception e) {
-            return Mono.error(new S3Exception("Unable to upload file to Allas: " + e.getMessage(), e));
+            LOGGER.error(e.getMessage(), e);
+            return error(serverException("Unable to upload file to Allas: " + e.getMessage()));
         }
-        return Mono.empty();
     }
 
     private PutObjectRequest buildObjectRequest(final String key,

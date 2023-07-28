@@ -21,14 +21,17 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.DatasetMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.GlobusUserDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusUserRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
@@ -58,6 +61,7 @@ public class PipelineManagerRouterConfig {
                 .POST(pipelineRoutes.resolve("csc/notify").toString(), cscPipelineHandler::pipelineNotificationCallback)
                 .GET(pipelineRoutes.resolve("{pipelineId}/report").toString(), pipelineResultHandler::streamFileFromS3)
                 .GET(pipelineRoutes.resolve("recent/result").toString(), serverRequest -> pipelineResultHandler.listResultFiles())
+                .POST(pipelineRoutes.resolve("pgs-ids/validate").toString(), pipelineRequestHandler::validatePGSIds)
                 .build();
     }
 
@@ -65,15 +69,16 @@ public class PipelineManagerRouterConfig {
     public RouterFunction<ServerResponse> datasetRoutes(final DatasetRequestHandler datasetRequestHandler) {
         final Path datasetURI = get("/dataset");
         return route()
-                .POST(datasetURI.toString(), datasetRequestHandler::createDatasetDetails)
+                .POST(datasetURI.toString(), datasetRequestHandler::createOrUpdateDatasetDetails)
                 .GET(datasetURI.toString(), datasetRequestHandler::getDatasetDetails)
                 .build();
     }
 
     @Bean
-    public RouterFunction<ServerResponse> globusUserRoutes(final GlobusRequestHandler globusRequestHandler) {
+    public RouterFunction<ServerResponse> globusRoutes(final GlobusRequestHandler globusRequestHandler) {
         return route()
                 .POST(get("/globus/user").toString(), globusRequestHandler::mapGlobusUserId)
+                .GET(get("/globus/files/validate").toString(), globusRequestHandler::validateFiles)
                 .build();
     }
 
@@ -81,13 +86,14 @@ public class PipelineManagerRouterConfig {
     public PipelineRequestHandler pipelineRequestHandler(final PipelineManagerService pipelineManagerService,
                                                          final IPipelinePersistence pipelinePersistence,
                                                          final UserManagerService userManagerService,
-                                                         final PipelineDetailsMapper pipelineDetailsMapper) {
+                                                         final PipelineDetailsMapper pipelineDetailsMapper,
+                                                         final StringRedisTemplate redisTemplate) {
         return new PipelineRequestHandler(
                 pipelineManagerService,
                 pipelinePersistence,
                 userManagerService,
-                pipelineDetailsMapper
-        );
+                pipelineDetailsMapper,
+                redisTemplate);
     }
 
     @Bean
@@ -117,14 +123,15 @@ public class PipelineManagerRouterConfig {
                                                          final UserManagerService userManagerService,
                                                          final GlobusFileHandlerService globusFileHandlerService,
                                                          final GlobusUserRepository globusUserRepository,
-                                                         final GlobusUserDetailsMapper globusUserDetailsMapper) {
+                                                         final GlobusUserDetailsMapper globusUserDetailsMapper,
+                                                         final FileValidations<IGlobusFileDetailsWrapper> fileValidations) {
         return new GlobusRequestHandler(
                 pipelineManagerService,
                 userManagerService,
                 globusFileHandlerService,
                 globusUserRepository,
-                globusUserDetailsMapper
-        );
+                globusUserDetailsMapper,
+                fileValidations);
     }
 
     @Bean
