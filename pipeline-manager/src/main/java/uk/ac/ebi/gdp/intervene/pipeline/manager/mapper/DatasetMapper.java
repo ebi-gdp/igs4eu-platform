@@ -18,12 +18,20 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetDetailsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 
-@Mapper(componentModel = "spring")
+import static org.mapstruct.InjectionStrategy.CONSTRUCTOR;
+
+@Mapper(componentModel = "spring", injectionStrategy = CONSTRUCTOR)
 public interface DatasetMapper {
-    DatasetDetails toModel(DatasetDetailsDTO datasetDetailsDTO);
+    @Mapping(target = "datasetId", source = "datasetId")
+    @Mapping(target = "filesetType", source = "filesetType")
+    DatasetDetails toModel(DatasetDetailsDTO datasetDetailsDTO,
+                           String datasetId,
+                           FilesetType filesetType);
 
     DatasetDetailsDTO toDTO(DatasetDetails datasetDetails);
 }

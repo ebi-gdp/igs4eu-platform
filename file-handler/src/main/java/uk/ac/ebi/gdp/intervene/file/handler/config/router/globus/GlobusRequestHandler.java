@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import static java.nio.file.Paths.get;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
 import static reactor.core.publisher.Mono.error;
@@ -52,25 +53,32 @@ public class GlobusRequestHandler {
                 .flatMap(guestCollectionDirReqDTO -> {
                     final Path fullDirPath = get(guestCollectionDirReqDTO.getNotifyEmail(), guestCollectionDirReqDTO.getDirectoryName());
                     return fileOperationService
-                            .listFiles(fullDirPath.getParent())
-                            .flatMap(globusFileDetailsWrapperDTO -> fileOperationService.createDirectory(fullDirPath))
-                            .onErrorResume(throwable -> {
-                                if (throwable instanceof ClientException ce && NOT_FOUND.equals(ce.getHttpStatus())) {
-                                    return fileOperationService.createDirectory(fullDirPath.getParent())
-                                            .flatMap(ignoreStr -> fileOperationService
-                                                    .createDirectory(fullDirPath))
-                                            .flatMap(ignoreResponse -> grantDirectoryPermission(
-                                                    guestCollectionDirReqDTO.getGlobusUserUID(),
-                                                    guestCollectionDirReqDTO.getNotifyEmail(),
-                                                    fullDirPath.getParent()));
-                                } else {
-                                    return error(throwable);
-                                }
-                            })
-                            .flatMap(ignoreData -> status(CREATED)
+                            .listFiles(fullDirPath)
+                            .flatMap(ignoreData -> status(OK)
                                     .bodyValue(new GuestCollectionDirResDTO(
                                             guestCollectionId,
-                                            fullDirPath.toString())));
+                                            fullDirPath.toString())))
+                            .onErrorResume(listFullPathThrowable -> fileOperationService
+                                    .listFiles(fullDirPath.getParent())
+                                    .flatMap(globusFileDetailsWrapperDTO -> fileOperationService.createDirectory(fullDirPath))
+                                    .onErrorResume(listPArentPathThrowable -> {
+                                        if (listPArentPathThrowable instanceof ClientException ce && NOT_FOUND.equals(ce.getHttpStatus())) {
+                                            return fileOperationService.createDirectory(fullDirPath.getParent())
+                                                    .flatMap(ignoreStr -> fileOperationService
+                                                            .createDirectory(fullDirPath))
+                                                    .flatMap(ignoreResponse -> grantDirectoryPermission(
+                                                            guestCollectionDirReqDTO.getGlobusUserUID(),
+                                                            guestCollectionDirReqDTO.getNotifyEmail(),
+                                                            fullDirPath.getParent()));
+                                        } else {
+                                            return error(listPArentPathThrowable);
+                                        }
+                                    })
+                                    .flatMap(ignoreData -> status(CREATED)
+                                            .bodyValue(new GuestCollectionDirResDTO(
+                                                    guestCollectionId,
+                                                    fullDirPath.toString())))
+                            );
                 });
     }
 

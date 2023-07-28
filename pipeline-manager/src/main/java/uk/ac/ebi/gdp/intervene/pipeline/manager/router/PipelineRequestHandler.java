@@ -17,9 +17,11 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PGSIdsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineDetailsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineExecutionDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
@@ -28,6 +30,8 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
 import static org.springframework.http.HttpStatus.ACCEPTED;
+import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.web.reactive.function.server.ServerResponse.badRequest;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
 import static reactor.core.publisher.Mono.error;
@@ -38,15 +42,18 @@ public class PipelineRequestHandler {
     private final IPipelinePersistence pipelinePersistence;
     private final UserManagerService userManagerService;
     private final PipelineDetailsMapper pipelineDetailsMapper;
+    private final StringRedisTemplate redisTemplate;
 
     public PipelineRequestHandler(final PipelineManagerService pipelineManagerService,
                                   final IPipelinePersistence pipelinePersistence,
                                   final UserManagerService userManagerService,
-                                  final PipelineDetailsMapper pipelineDetailsMapper) {
+                                  final PipelineDetailsMapper pipelineDetailsMapper,
+                                  final StringRedisTemplate redisTemplate) {
         this.pipelineManagerService = pipelineManagerService;
         this.pipelinePersistence = pipelinePersistence;
         this.userManagerService = userManagerService;
         this.pipelineDetailsMapper = pipelineDetailsMapper;
+        this.redisTemplate = redisTemplate;
     }
 
     public Mono<ServerResponse> createPipeline() {
@@ -91,7 +98,7 @@ public class PipelineRequestHandler {
                             return pipelineDetails;
                         }))
                 .flatMap(pipelinePersistence::save)
-                .flatMap(pipelineDetails -> status(ACCEPTED).build());
+                .flatMap(pipelineDetails -> status(OK).build());
     }
 
     public Mono<ServerResponse> executePipeline(final ServerRequest serverRequest) {
@@ -115,5 +122,19 @@ public class PipelineRequestHandler {
                 })
                 .flatMap(pipelinePersistence::save)
                 .flatMap(pipelineDetails -> status(ACCEPTED).bodyValue("Request received!"));
+    }
+
+    public Mono<ServerResponse> validatePGSIds(final ServerRequest serverRequest) {
+        return serverRequest
+                .bodyToMono(PGSIdsDTO.class)
+                .mapNotNull(pgsIdsDTO -> redisTemplate
+                        .opsForSet()
+                        .isMember("pgs_ids_set", pgsIdsDTO.getPgsIds().toArray()))
+                .filter(objectBooleanMap -> objectBooleanMap
+                        .values()
+                        .parallelStream()
+                        .anyMatch(aBoolean -> !aBoolean))
+                .flatMap(ignoreMap -> badRequest().build())
+                .switchIfEmpty(ok().build());
     }
 }

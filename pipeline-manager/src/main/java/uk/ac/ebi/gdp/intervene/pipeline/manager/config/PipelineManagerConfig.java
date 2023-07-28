@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.oauth2.server.resource.web.reactive.function.client.ServerBearerExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
+import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusDetailsRepository;
@@ -39,6 +40,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.Pip
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineResultRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.PipelinePersistence;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
@@ -73,17 +75,6 @@ public class PipelineManagerConfig {
                                               @Value("${allas.s3.bucket-name}") final String bucketName) {
         return new AllasMessageService(s3ClientAllas, bucketName);
     }
-
-    /*@Bean
-    public MessageGateway messageGateway(@Qualifier("kafkaMessageService") final KafkaMessageService kafkaMessageService,
-                                         @Qualifier("allasMessageService") final AllasMessageService allasMessageService,
-                                         @Value("${pipeline-execution.platform}") final MessageGatewayType messageGatewayType) {
-        return new MessageGateway(
-                kafkaMessageService,
-                allasMessageService,
-                messageGatewayType
-        );
-    }*/
 
     @Bean
     public PipelineManagerService pipelineManagerService(final MessageService messageService,
@@ -153,6 +144,11 @@ public class PipelineManagerConfig {
                 secretKey,
                 region
         );
+    }
+
+    @Bean
+    public FileValidations<IGlobusFileDetailsWrapper> fileValidations() {
+        return new FileValidations<>();
     }
 
     private WebClient webClient(final String baseURL) {

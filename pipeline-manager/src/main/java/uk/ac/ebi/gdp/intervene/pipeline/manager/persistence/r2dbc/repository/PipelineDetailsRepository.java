@@ -18,14 +18,14 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 
 import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 
 @Repository
-public interface PipelineDetailsRepository extends ReactiveCrudRepository<PipelineDetails, String>, CustomPipelineDetailsRepository {
+public interface PipelineDetailsRepository extends R2dbcRepository<PipelineDetails, String>, CustomPipelineDetailsRepository {
     Mono<PipelineDetails> findTopByUserIdAndStatusOrderByUpdatedOnDesc(String userId, PipelineStatus pipelineStatus);
 
     @Query(value = "CALL GET_NEXT_INTERVENE_PIPELINE_ID('');")

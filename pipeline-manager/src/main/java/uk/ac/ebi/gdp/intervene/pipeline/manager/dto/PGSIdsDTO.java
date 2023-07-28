@@ -15,11 +15,17 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.exception;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
-public class S3Exception extends RuntimeException {
-    public S3Exception(final String message,
-                       final Throwable throwable) {
-        super(message, throwable);
+import java.util.List;
+
+public class PGSIdsDTO {
+    private List<String> pgsIds;
+
+    private PGSIdsDTO() {
+    }
+
+    public List<String> getPgsIds() {
+        return pgsIds;
     }
 }

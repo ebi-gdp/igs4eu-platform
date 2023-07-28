@@ -23,6 +23,7 @@ import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.Default;
 
 import static org.springframework.util.StringUtils.hasText;
 
@@ -50,7 +51,20 @@ public class DatasetDetails implements Persistable<String> {
     @Transient
     private GlobusDetails globusDetails;
 
-    public DatasetDetails() {
+    protected DatasetDetails() {
+    }
+
+    @Default
+    public DatasetDetails(final String datasetId,
+                          final String datasetName,
+                          final GenomeBuild genomeBuild,
+                          final String filesetId,
+                          final FilesetType filesetType) {
+        this.datasetId = datasetId;
+        this.datasetName = datasetName;
+        this.genomeBuild = genomeBuild;
+        this.filesetId = filesetId;
+        this.filesetType = filesetType;
         newDatasetDetails = true;
     }
 
@@ -70,44 +84,28 @@ public class DatasetDetails implements Persistable<String> {
         return datasetId;
     }
 
-    public void setDatasetId(String datasetId) {
-        this.datasetId = datasetId;
-    }
-
     public String getDatasetName() {
         return datasetName;
-    }
-
-    public void setDatasetName(String datasetName) {
-        this.datasetName = datasetName;
     }
 
     public GenomeBuild getGenomeBuild() {
         return genomeBuild;
     }
 
-    public void setGenomeBuild(GenomeBuild genomeBuild) {
-        this.genomeBuild = genomeBuild;
-    }
-
     public String getFilesetId() {
         return filesetId;
-    }
-
-    public void setFilesetId(String filesetId) {
-        this.filesetId = filesetId;
     }
 
     public FilesetType getFilesetType() {
         return filesetType;
     }
 
-    public void setFilesetType(FilesetType filesetType) {
-        this.filesetType = filesetType;
-    }
-
     public GlobusDetails getGlobusDetails() {
         return globusDetails;
+    }
+
+    public void updateGenomeBuild(GenomeBuild genomeBuild) {
+        this.genomeBuild = genomeBuild;
     }
 
     @Override

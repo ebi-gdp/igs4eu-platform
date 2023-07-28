@@ -15,10 +15,16 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
+package uk.ac.ebi.gdp.intervene.commons.dto.filehandler;
 
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusUserDetails;
+import java.util.List;
 
-public interface GlobusUserRepository extends R2dbcRepository<GlobusUserDetails, String> {
+import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO.GlobusFileDetails;
+
+public interface IGlobusFileDetailsWrapper {
+    String getPath();
+
+    int getTotalNoOfFiles();
+
+    List<GlobusFileDetails> getFileDetailsList();
 }

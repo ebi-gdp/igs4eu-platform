@@ -20,11 +20,15 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.utility;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.exception.EmailServiceException;
+
+import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
 
 public class EmailSender implements IEmailSender {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmailSender.class);
     private final JavaMailSender mailSender;
     private final String emailFrom;
 
@@ -44,10 +48,8 @@ public class EmailSender implements IEmailSender {
             mailSender.send(message);
             return Mono.empty();
         } catch (final MessagingException messagingException) {
-            //TODO: Log exception & throw new
-            throw new EmailServiceException();
+            LOGGER.error("Error while sending message: " + messagingException.getMessage(), messagingException);
+            throw serverException(messagingException.getMessage());
         }
     }
-
-
 }

@@ -132,6 +132,10 @@ public class GlobusDetails implements Persistable<String> {
         this.globusUserDetails = globusUserDetails;
     }
 
+    public void updateGlobusUsername(String globusUsername) {
+        this.globusUsername = globusUsername;
+    }
+
     @Override
     public String getId() {
         return filesetId;
