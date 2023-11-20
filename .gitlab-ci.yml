@@ -21,7 +21,7 @@ include:
 
 .build-module:
   stage: build
-  image: maven:3.8.7-openjdk-18-slim
+  image: maven:3.8.7-eclipse-temurin-19
   script:
     - 'mvn $MAVEN_CLI_OPTS package $SKIP_TESTS'
   artifacts:
@@ -31,7 +31,7 @@ include:
 
 .test-module:
   stage: test
-  image: maven:3.8.7-openjdk-18-slim
+  image: maven:3.8.7-eclipse-temurin-19
   script:
     - 'echo Testing $MODULE'
     - 'mvn $MAVEN_CLI_OPTS surefire:test'
