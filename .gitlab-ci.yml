@@ -23,7 +23,7 @@ include:
   stage: build
   image: maven:3.8.7-eclipse-temurin-19
   script:
-    - 'mvn $MAVEN_CLI_OPTS package $SKIP_TESTS'
+    - 'mvn $MAVEN_CLI_OPTS package $SKIP_TESTS -s ci_settings.xml'
   artifacts:
     paths:
       - target/
@@ -34,7 +34,7 @@ include:
   image: maven:3.8.7-eclipse-temurin-19
   script:
     - 'echo Testing $MODULE'
-    - 'mvn $MAVEN_CLI_OPTS surefire:test'
+    - 'mvn $MAVEN_CLI_OPTS surefire:test -s ci_settings.xml'
 
 .containerize-module:
   stage: containerize
@@ -56,11 +56,6 @@ include:
 #   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
 #   - kubectl -f $MODULE/deployments/
 # only: ['main', 'tags']
-
-build-intervene-commons-module:
-  extends:
-    - .intervene-commons-module
-    - .build-module
 
 build-file-handler-module:
   extends:
