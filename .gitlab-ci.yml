@@ -76,3 +76,8 @@ containerize-file-handler-module:
   extends:
     - .file-handler-module
     - .containerize-module
+
+deploy-file-handler-module:
+  extends:
+    - .file-handler-module
+    - .deploy-module
