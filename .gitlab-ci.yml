@@ -56,8 +56,8 @@ include:
   image: bitnami/kubectl:latest #change to stable version
   script:
     - kubectl config get-contexts
-    - kubectl config use-context default
-    - kubectl get pods
+    - kubectl config use-context gdp/ga4k:k8s-agent
+    - kubectl -n intervene-dev get pods
 #   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
 #   - kubectl -f $MODULE/deployments/
 # only: ['main', 'tags']
