@@ -1,0 +1,6 @@
+.file-handler-module:
+  variables:
+    MODULE: "file-handler"
+  only:
+    changes:
+    - "file-handler/**/*"

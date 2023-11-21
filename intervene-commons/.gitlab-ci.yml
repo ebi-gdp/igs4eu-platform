@@ -1,0 +1,6 @@
+.intervene-commons-module:
+  variables:
+    MODULE: "intervene-commons"
+  only:
+    changes:
+      - "intervene-commons/**/*"

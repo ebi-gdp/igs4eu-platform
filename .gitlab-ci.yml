@@ -1,0 +1,74 @@
+variables:
+  MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -s ci_settings.xml"
+  SKIP_TESTS: "-DskipTests=true -Djacoco.skip=true"
+  CACHE_KEY: $CI_COMMIT_REF_SLUG
+
+cache:
+  key: $CACHE_KEY
+  paths:
+    - .m2/repository/
+
+stages:
+  - build
+  - test
+  - containerize
+  - deploy
+
+include:
+  - local: intervene-commons/.gitlab-ci.yml
+  - local: file-handler/.gitlab-ci.yml
+
+.build-module:
+  stage: build
+  image: maven:3.8.7-eclipse-temurin-19
+  script:
+    - 'echo "Building $MODULE"'
+    - 'mvn $MAVEN_CLI_OPTS -pl $MODULE package $SKIP_TESTS --also-make'
+  artifacts:
+    paths:
+    - "*/target"
+    expire_in: 30 min
+
+.test-module:
+  stage: test
+  image: maven:3.8.7-eclipse-temurin-19
+  script:
+    - 'echo Testing $MODULE'
+    - 'mvn $MAVEN_CLI_OPTS -pl $MODULE surefire:test --also-make'
+
+.containerize-module:
+  stage: containerize
+  image: docker:latest #change to stable version
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -f $MODULE/docker/Dockerfile -t $CI_REGISTRY/gdp/igs4eu-platform:$MODULE-dev-$CI_COMMIT_TAG .
+    - docker push $CI_REGISTRY/gdp/igs4eu-platform:$MODULE-dev-$CI_COMMIT_TAG
+    - docker rmi $CI_REGISTRY/gdp/igs4eu-platform:$MODULE-dev-$CI_COMMIT_TAG
+  only: ['main', 'tags']
+
+.deploy-module:
+  stage: deploy
+  image: bitnami/kubectl:latest #change to stable version
+  script:
+    - kubectl config get-contexts
+    - kubectl config use-context default
+    - kubectl get pods
+#   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
+#   - kubectl -f $MODULE/deployments/
+# only: ['main', 'tags']
+
+build-intervene-commons-module:
+  extends:
+    - .intervene-commons-module
+    - .build-module
+
+build-file-handler-module:
+  extends:
+    - .file-handler-module
+    - .build-module
+
+containerize-file-handler-module:
+  extends:
+    - .file-handler-module
+    - .containerize-module

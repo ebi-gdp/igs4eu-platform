@@ -1,0 +1,6 @@
+.pipeline-manager-module:
+  variables:
+    MODULE: "pipeline-manager"
+  only:
+    changes:
+      - "pipeline-manager/**/*"
