@@ -3,6 +3,8 @@ variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -s ci_settings.xml"
   SKIP_TESTS: "-DskipTests=true -Djacoco.skip=true"
   CACHE_KEY: $CI_COMMIT_REF_SLUG
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2
 
 cache:
   key: $CACHE_KEY
@@ -40,6 +42,8 @@ include:
 .containerize-module:
   stage: containerize
   image: docker:latest #change to stable version
+  services:
+    - docker:dind
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker build -f $MODULE/docker/Dockerfile -t $CI_REGISTRY/gdp/igs4eu-platform:$MODULE-dev-$CI_COMMIT_TAG .
