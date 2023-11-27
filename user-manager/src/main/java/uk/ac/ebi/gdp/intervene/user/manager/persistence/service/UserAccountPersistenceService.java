@@ -31,14 +31,14 @@ import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAcc
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.service.aai.IAuthenticationService;
 
-import static org.slf4j.LoggerFactory.getLogger;
 import static uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType.ELIXIR;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount.newAuthUserAccount;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount.newUserAccount;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountDetails.newUserAccountDetailsR2DBC;
 
+@Transactional(readOnly = true)
 public class UserAccountPersistenceService implements IUserAccountPersistenceService {
-    private final Logger LOGGER = getLogger(UserAccountPersistenceService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserAccountPersistenceService.class);
     private final UserAccountRepository userAccountRepository;
     private final UserAccountDetailsRepository userAccountDetailsRepository;
     private final AuthUserAccountRepository authUserAccountRepository;
@@ -54,8 +54,7 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
         this.authenticationContext = authenticationContext;
     }
 
-    @Transactional(
-            transactionManager = "reactiveTransactionManager",
+    @Transactional(transactionManager = "reactiveTransactionManager",
             rollbackFor = Exception.class)
     @Override
     public Mono<UserAccount> createAccount(final String authUserAccountId) {
@@ -99,7 +98,7 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
 
     @Override
     public Mono<AuthUserAccount> getUserAccountByAuthUserAccountId(final String authUserAccountId) {
-        LOGGER.debug("Fetching User Account details for {}", authUserAccountId);
+        LOGGER.info("Fetching User Account details for {}", authUserAccountId);
         return authUserAccountRepository.findAuthUserAccount(authUserAccountId);
     }
 

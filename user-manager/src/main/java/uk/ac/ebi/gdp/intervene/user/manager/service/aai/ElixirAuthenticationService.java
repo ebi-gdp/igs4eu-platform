@@ -18,7 +18,6 @@
 package uk.ac.ebi.gdp.intervene.user.manager.service.aai;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.dto.UserInfoDTO;

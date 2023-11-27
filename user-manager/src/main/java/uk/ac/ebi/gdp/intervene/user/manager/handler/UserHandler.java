@@ -17,6 +17,8 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.handler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -33,6 +35,7 @@ import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resource
 import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.currentUserId;
 
 public class UserHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserHandler.class);
     private final IUserManagerService userManagerService;
     private final IUserAccountPersistenceService userAccountPersistenceService;
     private final UserAccountMapper userAccountMapper;
@@ -49,6 +52,7 @@ public class UserHandler {
         return currentUserId()
                 .flatMap(userAccountId -> userAccountPersistenceService
                         .getUserAccountByAuthUserAccountId(userAccountId)
+                        .doOnNext(authUserAccountR2DBC -> LOGGER.info("User Id: {}", authUserAccountR2DBC.getUserAccount().getUserId()))
                         .flatMap(authUserAccountR2DBC -> ok()
                                 .bodyValue(userAccountMapper.toDTO(authUserAccountR2DBC.getUserAccount())))
                         .switchIfEmpty(error(resourceNotFound(format("User account having auth id %s not found",

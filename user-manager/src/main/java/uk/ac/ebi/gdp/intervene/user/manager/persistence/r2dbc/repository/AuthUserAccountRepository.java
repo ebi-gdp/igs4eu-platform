@@ -18,7 +18,9 @@
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository;
 
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.stereotype.Repository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 
+@Repository
 public interface AuthUserAccountRepository extends ReactiveCrudRepository<AuthUserAccount, String>, CustomAuthUserAccountRepository {
 }
