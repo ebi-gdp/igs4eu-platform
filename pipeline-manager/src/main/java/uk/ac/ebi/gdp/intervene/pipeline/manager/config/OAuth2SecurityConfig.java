@@ -42,7 +42,7 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
     @Order(HIGHEST_PRECEDENCE)
     @Bean
     public SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http) {
-        return super.securityFilterChainBasicAuth(http, "/pipeline/csc/notify");
+        return super.securityFilterChainBasicAuth(http, "/csc/pipeline/**");
     }
 
     @Bean

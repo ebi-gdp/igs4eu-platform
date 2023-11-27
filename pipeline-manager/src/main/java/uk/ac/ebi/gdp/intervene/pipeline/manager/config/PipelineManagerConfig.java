@@ -22,9 +22,12 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -33,10 +36,12 @@ import org.springframework.security.oauth2.server.resource.web.reactive.function
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
+import uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusUserRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineDetailsRepository;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineExecutionStatusRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineResultRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.PipelinePersistence;
@@ -50,15 +55,20 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.MessageService;
 
 import java.net.URI;
 
+import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.propagateRequestId;
+
 @Import(ReactiveExceptionHandler.class)
 @Configuration
 public class PipelineManagerConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PipelineManagerConfig.class);
 
     @Bean
     public IPipelinePersistence pipelinePersistence(final PipelineDetailsRepository pipelineDetailsRepository,
+                                                    final PipelineExecutionStatusRepository pipelineExecutionStatusRepository,
                                                     final PipelineResultRepository pipelineResultRepository) {
         return new PipelinePersistence(
                 pipelineDetailsRepository,
+                pipelineExecutionStatusRepository,
                 pipelineResultRepository);
     }
 
@@ -72,7 +82,7 @@ public class PipelineManagerConfig {
     @ConditionalOnProperty(value = "pipeline-execution.platform", havingValue = "CSC")
     @Bean("allasMessageService")
     public MessageService allasMessageService(@Qualifier("allasS3") final AmazonS3 s3ClientAllas,
-                                              @Value("${allas.s3.bucket-name}") final String bucketName) {
+                                              @Value("${s3.bucket-name}") final String bucketName) {
         return new AllasMessageService(s3ClientAllas, bucketName);
     }
 
@@ -118,6 +128,15 @@ public class PipelineManagerConfig {
         return webClient(userManagerBaseURL);
     }
 
+    private WebClient webClient(final String baseURL) {
+        return WebClient
+                .builder()
+                .baseUrl(baseURL)
+                .filter(new ServerBearerExchangeFilterFunction())
+                .filter(propagateRequestId(LOGGER))
+                .build();
+    }
+
     @ConditionalOnProperty(value = "pipeline-execution.platform", havingValue = "EBI_EMBASSY")
     @Bean("embassyS3")
     public AmazonS3 embassyS3(@Value("${ebi-embassy.s3.endpoint}") final String endpoint,
@@ -146,19 +165,6 @@ public class PipelineManagerConfig {
         );
     }
 
-    @Bean
-    public FileValidations<IGlobusFileDetailsWrapper> fileValidations() {
-        return new FileValidations<>();
-    }
-
-    private WebClient webClient(final String baseURL) {
-        return WebClient
-                .builder()
-                .baseUrl(baseURL)
-                .filter(new ServerBearerExchangeFilterFunction())
-                .build();
-    }
-
     private AmazonS3 amazonS3(final String endpoint,
                               final String accessKey,
                               final String secretKey,
@@ -169,5 +175,15 @@ public class PipelineManagerConfig {
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey)))
                 .withPathStyleAccessEnabled(true)
                 .build();
+    }
+
+    @Bean
+    public FileValidations<IGlobusFileDetailsWrapper> fileValidations() {
+        return new FileValidations<>();
+    }
+
+    @Bean
+    public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer(@Value("${jackson.date-format}") final String dateFormat) {
+        return CommonUtil.jackson2ObjectMapperBuilderCustomizer(dateFormat);
     }
 }

@@ -15,18 +15,18 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
+import io.r2dbc.spi.Row;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 
-public interface CustomPipelineDetailsRepository {
-    Mono<PipelineDetails> findPipelineDetailsFullRecent(String userId);
+import java.util.function.BiFunction;
 
-    Mono<PipelineDetails> findPipelineDetailsFull(String pipelineId, String userId);
-
-    Flux<PipelineDetails> findAll(String userId, int limit, int offset);
-
-    Mono<PipelineDetails> find(String pipelineId, String userId);
+public interface PipelineResultModelMapper {
+    static BiFunction<Row, Object, PipelineResult> map() {
+        return (row, object) -> new PipelineResult(
+                row.get("pipeline_id", String.class),
+                row.get("file_download_path", String.class)
+        );
+    }
 }

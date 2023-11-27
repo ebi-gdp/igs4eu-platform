@@ -15,18 +15,26 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
+import io.r2dbc.spi.Row;
 
-public interface CustomPipelineDetailsRepository {
-    Mono<PipelineDetails> findPipelineDetailsFullRecent(String userId);
+import java.time.LocalDateTime;
 
-    Mono<PipelineDetails> findPipelineDetailsFull(String pipelineId, String userId);
+import static java.lang.String.join;
 
-    Flux<PipelineDetails> findAll(String userId, int limit, int offset);
+public interface QueryUtil {
+    static String joinQuery(final String... queries) {
+        return join(" ", queries);
+    }
 
-    Mono<PipelineDetails> find(String pipelineId, String userId);
+    static String getString(final Row row,
+                            final String fieldName) {
+        return row.get(fieldName, String.class);
+    }
+
+    static LocalDateTime getDataTime(final Row row,
+                                     final String fieldName) {
+        return row.get(fieldName, LocalDateTime.class);
+    }
 }

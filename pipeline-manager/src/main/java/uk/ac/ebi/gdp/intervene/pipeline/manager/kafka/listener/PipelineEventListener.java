@@ -48,15 +48,16 @@ public class PipelineEventListener {
         //TODO: Revisit the logic
         switch (PipelineStatus.getPipelineStatusByDescription(pipelineResultEvent.status())) {
             case COMPLETED:
-                cscPipelineHandler
+                /*cscPipelineHandler
                         .handlePipelineOutcome(pipelineResultEvent)
                         .doOnSuccess(unused -> LOGGER.info("Pipeline completed, id: {}", pipelineResultEvent.pipelineId()))
                         .doOnError(throwable -> LOGGER.error(String.format("Error while updating status, pipeline completed id: %s", pipelineResultEvent.pipelineId()), throwable))
-                        .subscribe();
+                        .subscribe();*/
+                LOGGER.warn("This is not handled!");
                 break;
             case STARTED:
                 pipelinePersistence
-                        .updatePipelineDetailsStatus(
+                        .updatePipelineStatus(
                                 pipelineResultEvent.pipelineId(),
                                 PipelineStatus.valueOf(pipelineResultEvent.status().toUpperCase()))
                         .subscribe();

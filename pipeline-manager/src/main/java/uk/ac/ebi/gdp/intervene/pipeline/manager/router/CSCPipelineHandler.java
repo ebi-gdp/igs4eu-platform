@@ -17,63 +17,122 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineStatusDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineResultEvent;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
-import static org.springframework.web.reactive.function.server.ServerResponse.status;
+import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 
 public class CSCPipelineHandler {
     private final UserManagerService userManagerService;
     private final IPipelinePersistence pipelinePersistence;
     private final IEmailSender emailService;
+    private final String platformURL;
 
     public CSCPipelineHandler(final UserManagerService userManagerService,
                               final IPipelinePersistence pipelinePersistence,
-                              final IEmailSender emailService) {
+                              final IEmailSender emailService,
+                              final String platformURL) {
         this.userManagerService = userManagerService;
         this.pipelinePersistence = pipelinePersistence;
         this.emailService = emailService;
+        this.platformURL = platformURL;
     }
 
-    public Mono<ServerResponse> pipelineNotificationCallback(final ServerRequest serverRequest) {
+    public Mono<ServerResponse> updatePipelineStatus(final ServerRequest serverRequest) {
         return serverRequest
-                .bodyToMono(PipelineResultEvent.class)
-                .flatMap(this::handlePipelineOutcome)
-                .flatMap(unused -> status(HttpStatus.ACCEPTED).build());
+                .bodyToMono(PipelineStatusDTO.class)
+                .flatMap(pipelineStatusDTO -> pipelinePersistence
+                        .updatePipelineStatus(serverRequest.pathVariable("pipelineId"),
+                                pipelineStatusDTO))
+                .flatMap(pipelineExecutionStatus -> handlePipelineOutcome(pipelineExecutionStatus.getStatus(), pipelineExecutionStatus))
+                .flatMap(pipelineStatusDTO -> ok().build());
     }
 
-    public Mono<Void> handlePipelineOutcome(final PipelineResultEvent pipelineResultEvent) {
-        return updatePipelineStatus(pipelineResultEvent)
-                .flatMap(pipelineDetails -> pipelinePersistence
+    private Mono<Void> handlePipelineOutcome(final PipelineStatus pipelineStatus,
+                                             final PipelineExecutionStatus pipelineExecutionStatus) {
+        switch (pipelineStatus) {
+            case COMPLETED -> {
+                final PipelineResultEvent pipelineResultEvent = new PipelineResultEvent(
+                        "",
+                        pipelineExecutionStatus.getId(),
+                        "");
+                return pipelinePersistence
                         .persistPipelineResult(pipelineResultEvent)
-                        .flatMap(pipelineResult -> buildEmailData(pipelineDetails))
-                        .flatMap(emailService::sendEmailInHTMLFormat));
+                        .flatMap(pipelineResult -> buildSuccessEmailData(pipelineResult.getPipelineId(),
+                                pipelineExecutionStatus.getPipelineDetails().getUserId()))
+                        .flatMap(emailService::sendEmailInHTMLFormat);
+            }
+            case ERROR -> {
+                return buildErrorEmailData(pipelineExecutionStatus.getId(), pipelineExecutionStatus.getPipelineDetails().getUserId(),
+                        pipelineExecutionStatus.getTraceName(), pipelineExecutionStatus.getTraceExit())
+                        .flatMap(emailService::sendEmailInHTMLFormat);
+            }
+            default -> {
+                return Mono.empty();
+            }
+        }
     }
 
-    private Mono<PipelineDetails> updatePipelineStatus(final PipelineResultEvent pipelineResultEvent) {
-        return pipelinePersistence.updatePipelineDetailsStatus(
-                pipelineResultEvent.pipelineId(),
-                PipelineStatus.valueOf(pipelineResultEvent.status().toUpperCase())
-        );
-    }
-
-    private Mono<IEmailSender.EmailData> buildEmailData(final PipelineDetails pipelineDetails) {
+    private Mono<IEmailSender.EmailData> buildSuccessEmailData(final String pipelineId,
+                                                               final String userId) {
         return userManagerService
-                .getUserAccountDetails(pipelineDetails.getUserId())
+                .getUserAccountDetails(userId)
                 .map(userAccountDTO -> new IEmailSender.EmailData(
                         userAccountDTO.emailId(),
-                        "Result for Pipeline %s".formatted(pipelineDetails.getPipelineId()),
-                        "Dear %s %s, <br/><br/>Please find the report at \"PGS Calculator\" => \"Download most recent results\". <br/><br/>INTERVENE Team"
+                        "Result for Pipeline %s".formatted(pipelineId),
+                        "Dear %s %s, <br/><br/>Pipeline %s has been completed successfully!"
                                 .formatted(userAccountDTO.givenName(),
-                                        userAccountDTO.familyName()
+                                        userAccountDTO.familyName(),
+                                        pipelineId) +
+                                "<br><br>Please find download link to the result files" +
+                                "<br><br><a href=" + platformURL.formatted(pipelineId) + ">Download files</a>" +
+                                "<br/><br/>You can always find the most recent report under \"PGS Calculator\" => \"Download most recent results\". <br/><br/>INTERVENE Team")
+                );
+    }
+
+    private Mono<IEmailSender.EmailData> buildErrorEmailData(final String pipelineId,
+                                                             final String userId,
+                                                             final String traceName,
+                                                             final byte traceExit) {
+        return userManagerService
+                .getUserAccountDetails(userId)
+                .map(userAccountDTO -> new IEmailSender.EmailData(
+                        userAccountDTO.emailId(),
+                        "Error running pipeline %s".formatted(pipelineId),
+                        "Dear %s %s,<br/><br/>Your pipeline instance %s has failed.<br/><br/>Please find error message<br/>%s<br/><br/>INTERVENE Team"
+                                .formatted(userAccountDTO.givenName(),
+                                        userAccountDTO.familyName(),
+                                        pipelineId,
+                                        errorMessage(traceName, traceExit)
                                 )));
+    }
+
+    private String errorMessage(final String traceName,
+                                final byte traceExit) {
+        return "<html>" +
+                "<head>" +
+                "<style>" +
+                "table, th, td {" +
+                " border: 1px solid #FF0000;" +
+                " border-collapse: collapse;" +
+                " text-align: left;" +
+                " padding: 10px" +
+                "}" +
+                "</style>" +
+                "</head>" +
+                "<table>" +
+                "<tr><th>Flag</th><th>Value</th></tr>" +
+                "<tr><td>Status</td><td>Error</td></tr>" +
+                "<tr><td>Trace name</td><td>%s</td></tr>".formatted(traceName) +
+                "<tr><td>Trace exit</td><td>%s</td></tr>".formatted(traceExit) +
+                "</table>";
     }
 }

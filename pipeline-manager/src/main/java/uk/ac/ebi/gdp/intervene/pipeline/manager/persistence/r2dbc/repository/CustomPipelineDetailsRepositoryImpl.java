@@ -18,60 +18,65 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 
 import org.springframework.r2dbc.core.DatabaseClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.PipelineDetailsModelMapper.mapDetails;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.PipelineDetailsModelMapper.mapFullDetails;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineQueries.FIND_BY_USER_ID_FULL_DETAILS_ORDER_BY_LIMIT;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineQueries.FIND_BY_USER_ID_FULL_DETAILS_PIPELINE_ID_CONDITION;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineQueries.FIND_BY_USER_ID_ORDER_BY_LIMIT_OFFSET;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineQueries.FIND_BY_USER_ID_PIPELINE_ID_CONDITION;
+
 public class CustomPipelineDetailsRepositoryImpl implements CustomPipelineDetailsRepository {
     private final DatabaseClient databaseClient;
-    private final PipelineDetailsMapper pipelineDetailsMapper;
 
-    public CustomPipelineDetailsRepositoryImpl(final DatabaseClient databaseClient,
-                                               final PipelineDetailsMapper pipelineDetailsMapper) {
+    public CustomPipelineDetailsRepositoryImpl(final DatabaseClient databaseClient) {
         this.databaseClient = databaseClient;
-        this.pipelineDetailsMapper = pipelineDetailsMapper;
     }
 
     @Override
-    public Mono<PipelineDetails> findRecentFullPipelineDetails(final String userId) {
-        //@formatter:off
-        final String query = "SELECT " +
-                             " p.pipeline_id," +
-                             " p.pipeline_uid," +
-                             " p.user_id," +
-                             " p.dataset_id," +
-                             " p.status," +
-                             " d.dataset_name," +
-                             " d.genome_build," +
-                             " d.fileset_id," +
-                             " d.fileset_type," +
-                             " g.globus_username," +
-                             " g.guest_collection_id," +
-                             " g.dir_path_on_guest_collection," +
-                             " u.globus_user_uid " +
-                             "FROM " +
-                             " pipeline_details p " +
-                             "INNER JOIN" +
-                             " dataset_details d " +
-                             " ON p.dataset_id = d.dataset_id " +
-                             "INNER JOIN" +
-                             " globus_guest_collection_files_details g" +
-                             " ON d.fileset_id = g.fileset_id " +
-                             "INNER JOIN" +
-                             " globus_user_details u" +
-                             " ON u.globus_username = g.globus_username " +
-                             "WHERE" +
-//                           " p.pipeline_id = :pipelineId " +
-//                           "AND " +
-                             " p.user_id = :userId " +
-                             "ORDER BY " +
-                             " p.pipeline_id DESC " +
-                             "LIMIT 1";
-        //@formatter:on
+    public Mono<PipelineDetails> findPipelineDetailsFullRecent(final String userId) {
         return databaseClient
-                .sql(query)
-//                .bind("pipelineId", pipelineId)
+                .sql(FIND_BY_USER_ID_FULL_DETAILS_ORDER_BY_LIMIT)
                 .bind("userId", userId)
-                .map(pipelineDetailsMapper::apply)
+                .map(mapFullDetails()::apply)
+                .one();
+    }
+
+    @Override
+    public Mono<PipelineDetails> findPipelineDetailsFull(final String pipelineId,
+                                                         final String userId) {
+        return databaseClient
+                .sql(FIND_BY_USER_ID_FULL_DETAILS_PIPELINE_ID_CONDITION)
+                .bind("pipelineId", pipelineId)
+                .bind("userId", userId)
+                .map(mapFullDetails()::apply)
+                .one();
+    }
+
+    @Override
+    public Flux<PipelineDetails> findAll(final String userId,
+                                         final int limit,
+                                         final int offset) {
+        return databaseClient
+                .sql(FIND_BY_USER_ID_ORDER_BY_LIMIT_OFFSET)
+                .bind("userId", userId)
+                .bind("limit", limit)
+                .bind("offset", offset)
+                .map(mapDetails()::apply)
+                .all();
+    }
+
+    @Override
+    public Mono<PipelineDetails> find(final String pipelineId,
+                                      final String userId) {
+        return databaseClient
+                .sql(FIND_BY_USER_ID_PIPELINE_ID_CONDITION)
+                .bind("userId", userId)
+                .bind("pipelineId", pipelineId)
+                .map(mapDetails()::apply)
                 .one();
     }
 }

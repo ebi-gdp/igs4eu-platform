@@ -22,12 +22,11 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirReqDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.GlobusDetailsDTO;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineExecutionDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusUserRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.MessageService;
@@ -98,11 +97,12 @@ public class PipelineManagerService {
                 );
     }
 
-    public Mono<Void> triggerGeneticScoringPipeline(final String pipelineId,
-                                                    final PipelineExecutionDTO pipelineExecutionDTO) {
+    public Mono<Void> triggerGeneticScoringPipeline(final PipelineDetails pipelineDetails,
+                                                    final String polygenicScoreIds) {
         final Set<FileDetails> files = new HashSet<>();
         return globusFileHandlerService
-                .listFilesOnGuestCollection(get(pipelineExecutionDTO.globusDetails().getDirPathOnGuestCollection()))
+                .listFilesOnGuestCollection(get(pipelineDetails.getDatasetDetails().getGlobusDetails().getGlobusUsername()
+                        + pipelineDetails.getDatasetDetails().getGlobusDetails().getDirPathOnGuestCollection()))
                 .map(globusFileDetailsWrapperDTO -> globusFileDetailsWrapperDTO
                         .getFileDetailsList()
                         .stream()
@@ -111,43 +111,44 @@ public class PipelineManagerService {
                                         globusFileDetails.getSize())))
                         .collect(toMap(GlobusFileDetails::getProperty, GlobusFileDetails::getFileName)))
                 .map(stringStringMap -> {
-                    stringStringMap.put("sampleset", pipelineExecutionDTO.sampleSetName());
+                    stringStringMap.put("sampleset", pipelineDetails.getDatasetDetails().getDatasetName());
                     stringStringMap.put("chrom", null);
                     return of(stringStringMap);
                 })
                 .flatMap(targetGenomes -> messageService
-                        .sendMessage(pipelineId, buildTriggerPipelineEvent(targetGenomes, files, pipelineExecutionDTO, pipelineId))
-                        .doOnRequest(unused -> LOGGER.info("Message is being sent! : {}", pipelineId))
-                        .doOnSuccess(unused -> LOGGER.info("Message sent! : {}", pipelineId))
+                        .sendMessage(pipelineDetails.getPipelineId(), buildTriggerPipelineEvent(pipelineDetails, polygenicScoreIds, targetGenomes, files))
+                        .doOnRequest(unused -> LOGGER.info("Message is being sent! : {}", pipelineDetails.getPipelineId()))
+                        .doOnSuccess(unused -> LOGGER.info("Message sent! : {}", pipelineDetails.getPipelineId()))
                 );
     }
 
-    private TriggerPipelineEvent buildTriggerPipelineEvent(final Collection<Map<String, String>> targetGenomes,
-                                                           final Set<FileDetails> files,
-                                                           final PipelineExecutionDTO pipelineExecutionDTO,
-                                                           final String pipelineId) {
+    private TriggerPipelineEvent buildTriggerPipelineEvent(final PipelineDetails pipelineDetails,
+                                                           final String polygenicScoreIds,
+                                                           final Collection<Map<String, String>> targetGenomes,
+                                                           final Set<FileDetails> files) {
         return new TriggerPipelineEvent(
-                buildPipelineParam(targetGenomes, pipelineExecutionDTO, pipelineId),
+                buildPipelineParam(pipelineDetails, polygenicScoreIds, targetGenomes),
                 new GuestCollectionDirResDTO(
-                        pipelineExecutionDTO.globusDetails().getGuestCollectionId(),
-                        pipelineExecutionDTO.globusDetails().getDirPathOnGuestCollection(),
+                        pipelineDetails.getDatasetDetails().getGlobusDetails().getGuestCollectionId(),
+                        pipelineDetails.getDatasetDetails().getGlobusDetails().getGlobusUsername()
+                                + pipelineDetails.getDatasetDetails().getGlobusDetails().getDirPathOnGuestCollection(),
                         files
                 )
         );
     }
 
-    private PipelineParam buildPipelineParam(final Collection<Map<String, String>> targetGenomes,
-                                             final PipelineExecutionDTO pipelineExecutionDTO,
-                                             final String pipelineId) {
+    private PipelineParam buildPipelineParam(final PipelineDetails pipelineDetails,
+                                             final String polygenicScoreIds,
+                                             final Collection<Map<String, String>> targetGenomes) {
         final NXFParamsFile nxfParamsFile = new NXFParamsFile(
-                pipelineExecutionDTO.polygenicScoreIds(),
+                polygenicScoreIds,
                 FormatType.JSON,
-                GenomeBuild.valueOf(pipelineExecutionDTO.genomeBuild().toUpperCase()).getGenomeBuildValue());
+                pipelineDetails.getDatasetDetails().getGenomeBuild().getGenomeBuildValue());
         return new PipelineParam(
                 targetGenomes,
                 nxfParamsFile,
                 "/workspace/work/",
-                pipelineId
+                pipelineDetails.getPipelineId()
         );
     }
 }

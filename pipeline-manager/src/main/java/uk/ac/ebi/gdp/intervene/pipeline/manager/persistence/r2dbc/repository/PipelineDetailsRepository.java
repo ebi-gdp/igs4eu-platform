@@ -22,16 +22,12 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 
 @Repository
-public interface PipelineDetailsRepository extends R2dbcRepository<PipelineDetails, String>, CustomPipelineDetailsRepository {
-    Mono<PipelineDetails> findTopByUserIdAndStatusOrderByUpdatedOnDesc(String userId, PipelineStatus pipelineStatus);
-
-    @Query(value = "CALL GET_NEXT_INTERVENE_PIPELINE_ID('');")
+public interface PipelineDetailsRepository extends R2dbcRepository<PipelineDetails, String>,
+        CustomPipelineDetailsRepository {
+    @Query("CALL GET_NEXT_INTERVENE_PIPELINE_ID('');")
     Mono<String> getNextPipelineId();
 
-    Mono<PipelineDetails> findByPipelineIdAndUserId(String pipelineId, String userId);
-
-    Mono<PipelineDetails> findTopByUserIdOrderByUpdatedOnDesc(String userId);
+    Mono<Long> countAllByUserId(String userId);
 }

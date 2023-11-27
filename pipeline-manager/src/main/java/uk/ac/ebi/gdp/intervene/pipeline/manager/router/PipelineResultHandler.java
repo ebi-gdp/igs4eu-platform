@@ -22,15 +22,19 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.S3ObjectDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -39,6 +43,7 @@ import static org.springframework.web.reactive.function.server.ServerResponse.ok
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
 
 public class PipelineResultHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PipelineResultHandler.class);
     private final IPipelinePersistence pipelinePersistence;
     private final UserManagerService userManagerService;
     private final AmazonS3 s3Client;
@@ -54,24 +59,37 @@ public class PipelineResultHandler {
         this.s3Bucket = s3Bucket;
     }
 
-    public Mono<ServerResponse> listResultFiles() {
+    public Mono<ServerResponse> listResultFiles(final ServerRequest serverRequest) {
         return userManagerService
                 .getUserAccountDetails()
-                .flatMap(userAccountDTO -> pipelinePersistence.getLatestPipelineResult(userAccountDTO.accountId()))
-                .flatMap(pipelineResult -> {
-                    final ListObjectsRequest listObjects = new ListObjectsRequest();
-                    listObjects.setBucketName(s3Bucket);
-                    listObjects.setPrefix(pipelineResult.getPipelineId());
-                    final ObjectListing objectListing = s3Client.listObjects(listObjects);
-                    final List<String> files = objectListing
-                            .getObjectSummaries()
-                            .stream()
-                            .map(S3ObjectSummary::getKey)
-                            .filter(fileName -> fileName.endsWith("log.csv.gz") || fileName.endsWith("scores.txt.gz") || fileName.endsWith("report.html"))
-                            .collect(toList());
-                    return ok().bodyValue(new S3ObjectDTO(pipelineResult.getPipelineId(), files));
-                })
+                .doOnNext(userAccountDTO -> LOGGER.info("User Id: {}", userAccountDTO.accountId()))
+                .flatMap(userAccountDTO -> getPipelineResult(serverRequest, userAccountDTO.accountId()))
+                .flatMap(pipelineResult -> listFilesOnObjectStorage(pipelineResult.getPipelineId())
+                        .flatMap(files -> ok().bodyValue(new S3ObjectDTO(pipelineResult.getPipelineId(), files))))
                 .switchIfEmpty(status(NOT_FOUND).build());
+    }
+
+    private Mono<PipelineResult> getPipelineResult(final ServerRequest serverRequest,
+                                                   final String accountId) {
+        final Optional<String> pipelineIdOptional = serverRequest.queryParam("pipelineId");
+        if (pipelineIdOptional.isPresent()) {
+            return pipelinePersistence.getPipelineResult(accountId, pipelineIdOptional.get());
+        } else {
+            return pipelinePersistence.getPipelineResultRecent(accountId);
+        }
+    }
+
+    private Mono<Collection<String>> listFilesOnObjectStorage(final String pipelineId) {
+        final ListObjectsRequest listObjects = new ListObjectsRequest();
+        listObjects.setBucketName(s3Bucket);
+        listObjects.setPrefix(pipelineId);
+        final ObjectListing objectListing = s3Client.listObjects(listObjects);
+        return Mono.just(objectListing
+                .getObjectSummaries()
+                .stream()
+                .map(S3ObjectSummary::getKey)
+                .filter(fileName -> fileName.endsWith("log.csv.gz") || fileName.endsWith("scores.txt.gz") || fileName.endsWith("report.html"))
+                .collect(toList()));
     }
 
     public Mono<ServerResponse> streamFileFromS3(final ServerRequest serverRequest) {
@@ -80,7 +98,8 @@ public class PipelineResultHandler {
                 .orElseThrow(RuntimeException::new);
         return userManagerService
                 .getUserAccountDetails()
-                .flatMap(userAccountDTO -> pipelinePersistence.getPipelineDetails(serverRequest.pathVariable("pipelineId"), userAccountDTO.accountId()))
+                .flatMap(userAccountDTO -> pipelinePersistence.getPipeline(serverRequest.pathVariable("pipelineId"),
+                        userAccountDTO.accountId()))
                 .flatMap(latestPipelineResult -> {
                     final GetObjectRequest objectRequest = new GetObjectRequest(s3Bucket, path);
                     final InputStreamResource inputStreamResource = new InputStreamResource(s3Client

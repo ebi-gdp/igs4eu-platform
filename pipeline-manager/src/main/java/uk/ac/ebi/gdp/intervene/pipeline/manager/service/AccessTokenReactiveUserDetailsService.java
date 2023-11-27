@@ -15,18 +15,15 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
 
-import reactor.core.publisher.Flux;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
+import org.springframework.security.core.userdetails.UserDetails;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 
-public interface CustomPipelineDetailsRepository {
-    Mono<PipelineDetails> findPipelineDetailsFullRecent(String userId);
-
-    Mono<PipelineDetails> findPipelineDetailsFull(String pipelineId, String userId);
-
-    Flux<PipelineDetails> findAll(String userId, int limit, int offset);
-
-    Mono<PipelineDetails> find(String pipelineId, String userId);
+public class AccessTokenReactiveUserDetailsService implements ReactiveUserDetailsService {
+    @Override
+    public Mono<UserDetails> findByUsername(final String accessToken) {
+        return null;
+    }
 }

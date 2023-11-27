@@ -23,6 +23,7 @@ import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import reactor.core.publisher.Mono;
 
 import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
@@ -41,10 +42,11 @@ public class EmailSender implements IEmailSender {
     public Mono<Void> sendEmailInHTMLFormat(final EmailData emailData) {
         try {
             final MimeMessage message = mailSender.createMimeMessage();
-            message.setFrom(new InternetAddress(emailFrom));
-            message.setRecipients(MimeMessage.RecipientType.TO, emailData.to());
-            message.setSubject(emailData.subject());
-            message.setContent(emailData.body(), "text/html; charset=utf-8");
+            final MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setFrom(new InternetAddress(emailFrom));
+            helper.setTo(emailData.to());
+            helper.setSubject(emailData.subject());
+            helper.setText(emailData.body(), true);
             mailSender.send(message);
             return Mono.empty();
         } catch (final MessagingException messagingException) {

@@ -70,6 +70,18 @@ public class GlobusDetails implements Persistable<String> {
         this.newGlobusDetails = isNewGlobusDetails;
     }
 
+    private GlobusDetails(final String filesetId,
+                          final String globusUsername,
+                          final String guestCollectionId,
+                          final String dirPathOnGuestCollection,
+                          final boolean isNewGlobusDetails,
+                          final LocalDateTime createdOn,
+                          final LocalDateTime updatedOn) {
+        this(filesetId, globusUsername, guestCollectionId, dirPathOnGuestCollection, isNewGlobusDetails);
+        this.createdOn = createdOn;
+        this.updatedOn = updatedOn;
+    }
+
     public static GlobusDetails newRecord(final String filesetId,
                                           final String globusUsername,
                                           final String guestCollectionId,
@@ -83,16 +95,20 @@ public class GlobusDetails implements Persistable<String> {
         );
     }
 
-    public static GlobusDetails existingRecord(final String filesetId,
-                                               final String globusUsername,
-                                               final String guestCollectionId,
-                                               final Path dirPathOnGuestCollection) {
+    public static GlobusDetails loadRecord(final String filesetId,
+                                           final String globusUsername,
+                                           final String guestCollectionId,
+                                           final Path dirPathOnGuestCollection,
+                                           final LocalDateTime createdOn,
+                                           LocalDateTime updatedOn) {
         return new GlobusDetails(
                 filesetId,
                 globusUsername,
                 guestCollectionId,
                 normalizeDirPath(dirPathOnGuestCollection),
-                false
+                false,
+                createdOn,
+                updatedOn
         );
     }
 

@@ -15,18 +15,8 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
-
-public interface CustomPipelineDetailsRepository {
-    Mono<PipelineDetails> findPipelineDetailsFullRecent(String userId);
-
-    Mono<PipelineDetails> findPipelineDetailsFull(String pipelineId, String userId);
-
-    Flux<PipelineDetails> findAll(String userId, int limit, int offset);
-
-    Mono<PipelineDetails> find(String pipelineId, String userId);
+public record CreateDirDTO(String globusUsername,
+                           String datasetName) {
 }

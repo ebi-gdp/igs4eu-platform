@@ -17,16 +17,13 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 
-public interface CustomPipelineDetailsRepository {
-    Mono<PipelineDetails> findPipelineDetailsFullRecent(String userId);
+public interface CustomPipelineResultRepository {
+    Mono<PipelineResult> findCompletedRecent(String userId);
 
-    Mono<PipelineDetails> findPipelineDetailsFull(String pipelineId, String userId);
+    Mono<PipelineResult> findCompleted(String userId, String pipelineId);
 
-    Flux<PipelineDetails> findAll(String userId, int limit, int offset);
-
-    Mono<PipelineDetails> find(String pipelineId, String userId);
+    Mono<PipelineResult> findCompleted(String pipelineId);
 }

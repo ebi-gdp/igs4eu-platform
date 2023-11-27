@@ -19,9 +19,16 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 
+import java.time.LocalDateTime;
+
 public class PipelineDetailsDTO {
     private String pipelineId;
     private PipelineStatus pipelineStatus;
+    private String traceName;
+    private String traceExit;
+    private LocalDateTime submittedOn;
+    private LocalDateTime startedOn;
+    private LocalDateTime endedOn;
     private DatasetDetailsDTO datasetDetails;
     private GlobusDetailsDTO globusDetails;
 
@@ -42,8 +49,8 @@ public class PipelineDetailsDTO {
         this.pipelineId = pipelineId;
     }
 
-    public PipelineStatus getPipelineStatus() {
-        return pipelineStatus;
+    public String getPipelineStatus() {
+        return getMeaningfulStatus(pipelineStatus);
     }
 
     public void setPipelineStatus(PipelineStatus pipelineStatus) {
@@ -64,5 +71,55 @@ public class PipelineDetailsDTO {
 
     public void setGlobusDetails(GlobusDetailsDTO globusDetails) {
         this.globusDetails = globusDetails;
+    }
+
+    public String getTraceName() {
+        return traceName;
+    }
+
+    public void setTraceName(String traceName) {
+        this.traceName = traceName;
+    }
+
+    public String getTraceExit() {
+        return traceExit;
+    }
+
+    public void setTraceExit(String traceExit) {
+        this.traceExit = traceExit;
+    }
+
+    public LocalDateTime getSubmittedOn() {
+        return submittedOn;
+    }
+
+    public void setSubmittedOn(LocalDateTime submittedOn) {
+        this.submittedOn = submittedOn;
+    }
+
+    public LocalDateTime getStartedOn() {
+        return startedOn;
+    }
+
+    public void setStartedOn(LocalDateTime startedOn) {
+        this.startedOn = startedOn;
+    }
+
+    public LocalDateTime getEndedOn() {
+        return endedOn;
+    }
+
+    public void setEndedOn(LocalDateTime endedOn) {
+        this.endedOn = endedOn;
+    }
+
+    private String getMeaningfulStatus(final PipelineStatus pipelineStatus) {
+        return switch (pipelineStatus) {
+            case NEW -> "Submission error";
+            case PENDING -> "Submitted";
+            case STARTED -> "Running";
+            case COMPLETED -> "Completed";
+            case ERROR -> "Failed";
+        };
     }
 }

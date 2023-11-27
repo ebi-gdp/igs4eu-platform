@@ -18,7 +18,7 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
 public enum PipelineStatus {
-    NEW("New"), PENDING("Pending"), COMPLETED("Completed"), STARTED("Started");
+    NEW("New"), PENDING("Pending"), COMPLETED("Completed"), STARTED("Started"), ERROR("Error");
 
     private final String pipelineStatus;
 

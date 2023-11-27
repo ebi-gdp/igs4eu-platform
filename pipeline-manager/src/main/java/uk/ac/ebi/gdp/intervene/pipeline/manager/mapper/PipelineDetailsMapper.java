@@ -24,7 +24,12 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Pipelin
 
 @Mapper(componentModel = "spring")
 public interface PipelineDetailsMapper {
-    @Mapping(target = "pipelineStatus", source = "status")
+    @Mapping(target = "pipelineStatus", source = "pipelineExecutionStatus.status")
+    @Mapping(target = "traceName", source = "pipelineExecutionStatus.traceName")
+    @Mapping(target = "traceExit", source = "pipelineExecutionStatus.traceExit")
+    @Mapping(target = "submittedOn", source = "pipelineExecutionStatus.submittedOn")
+    @Mapping(target = "startedOn", source = "pipelineExecutionStatus.startedOn")
+    @Mapping(target = "endedOn", source = "pipelineExecutionStatus.endedOn")
     @Mapping(target = "globusDetails.dirPathOnGuestCollection", source = "datasetDetails.globusDetails.dirPathOnGuestCollection")
     @Mapping(target = "globusDetails.username", source = "datasetDetails.globusDetails.globusUsername")
     @Mapping(target = "globusDetails.userAccountUID", source = "datasetDetails.globusDetails.globusUserDetails.userUID")

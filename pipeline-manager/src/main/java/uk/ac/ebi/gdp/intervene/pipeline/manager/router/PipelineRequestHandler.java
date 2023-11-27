@@ -17,18 +17,24 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PGSIdsDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PaginationDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineDetailsDTO;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineExecutionDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.web.reactive.function.server.ServerResponse.badRequest;
@@ -38,6 +44,7 @@ import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
 
 public class PipelineRequestHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PipelineRequestHandler.class);
     private final PipelineManagerService pipelineManagerService;
     private final IPipelinePersistence pipelinePersistence;
     private final UserManagerService userManagerService;
@@ -56,40 +63,70 @@ public class PipelineRequestHandler {
         this.redisTemplate = redisTemplate;
     }
 
-    public Mono<ServerResponse> createPipeline() {
-        return userManagerService.
-                getUserAccountDetails()
-                .flatMap(userAccountDTO -> pipelinePersistence.createPipeline(userAccountDTO.accountId()))
-                .map(pipelineDetails -> new PipelineDetailsDTO(pipelineDetails.getPipelineId(), pipelineDetails.getStatus()))
+    public Mono<ServerResponse> createPipeline(final ServerRequest serverRequest) {
+        return serverRequest
+                .bodyToMono(String.class)
+                .flatMap(datasetId -> userManagerService
+                        .getUserAccountDetails()
+                        .flatMap(userAccountDTO -> pipelinePersistence.createPipeline(userAccountDTO.accountId(), datasetId)))
+                .map(pipelineDetails -> new PipelineDetailsDTO(pipelineDetails.getPipelineId(), pipelineDetails.getPipelineExecutionStatus().getStatus()))
                 .flatMap(pipelineDetailsDTO -> ok().bodyValue(pipelineDetailsDTO));
     }
 
-    public Mono<ServerResponse> getPipelineDetails(final ServerRequest serverRequest) {
-        return userManagerService.
-                getUserAccountDetails()
-                .flatMap(userAccountDTO -> pipelinePersistence.getPipelineDetails(
-                        serverRequest.pathVariable("pipelineId"),
-                        userAccountDTO.accountId()))
+    public Mono<ServerResponse> getPipeline(final ServerRequest serverRequest) {
+        return userManagerService
+                .getUserAccountDetails()
+                .flatMap(userAccountDTO -> pipelinePersistence
+                        .getPipelineFull(serverRequest.pathVariable("pipelineId"),
+                                userAccountDTO.accountId())
+                        .doOnNext(ignoreData -> LOGGER.info("Pipeline details are retrieved for {}", serverRequest.pathVariable("pipelineId"))))
+                .switchIfEmpty(error(resourceNotFound("Pipeline details not found for the given pipeline id!")))
                 .map(pipelineDetailsMapper::toDTO)
                 .flatMap(pipelineDetailsDTO -> ok().bodyValue(pipelineDetailsDTO));
     }
 
-    public Mono<ServerResponse> getPipelineDetailsRecent() {
-        return userManagerService.
-                getUserAccountDetails()
-                .flatMap(userAccountDTO -> pipelinePersistence.getPipelineDetailsRecent(userAccountDTO.accountId()))
+    public Mono<ServerResponse> getPipelines(final ServerRequest serverRequest) {
+        return userManagerService
+                .getUserAccountDetails()
+                .flatMap(userAccountDTO -> pipelinePersistence
+                        .getPipelinesCount(userAccountDTO.accountId())
+                        .flatMap(count -> doGetPipelines(serverRequest, userAccountDTO.accountId())
+                                .map(pipelineDetailsDTOS -> new PaginationDTO<>(pipelineDetailsDTOS, count)))
+                        .flatMap(paginationDTO -> ok().bodyValue(paginationDTO)));
+    }
+
+    private Mono<List<PipelineDetailsDTO>> doGetPipelines(final ServerRequest serverRequest,
+                                                          final String accountId) {
+        final int page = serverRequest.queryParam("page").map(Integer::parseInt).orElse(0);
+        final int size = serverRequest.queryParam("size").map(Integer::parseInt).orElse(10);
+        return pipelinePersistence
+                .getPipelines(accountId, size, page * size)
+                .collectList()
+                .map(this::buildPipelineList);
+    }
+
+    private List<PipelineDetailsDTO> buildPipelineList(final List<PipelineDetails> pipelineDetailsMono) {
+        return pipelineDetailsMono
+                .parallelStream()
+                .map(pipelineDetailsMapper::toDTO)
+                .collect(toList());
+    }
+
+    public Mono<ServerResponse> getPipelineRecent() {
+        return userManagerService
+                .getUserAccountDetails()
+                .flatMap(userAccountDTO -> pipelinePersistence.getPipelineFullRecent(userAccountDTO.accountId()))
                 .map(pipelineDetailsMapper::toDTO)
                 .switchIfEmpty(error(resourceNotFound("No recent submission found!")))
                 .flatMap(pipelineDetailsDTO -> ok().bodyValue(pipelineDetailsDTO));
     }
 
     public Mono<ServerResponse> updateDatasetId(final ServerRequest serverRequest) {
-        return userManagerService.
-                getUserAccountDetails()
+        return userManagerService
+                .getUserAccountDetails()
                 .flatMap(userAccount ->
                         pipelinePersistence
-                                .getPipelineDetails(
-                                        serverRequest.pathVariable("pipelineId"),
+                                .getPipeline(serverRequest.pathVariable("pipelineId"),
                                         userAccount.accountId()))
                 .flatMap(pipelineDetails -> serverRequest
                         .bodyToMono(String.class)
@@ -102,25 +139,25 @@ public class PipelineRequestHandler {
     }
 
     public Mono<ServerResponse> executePipeline(final ServerRequest serverRequest) {
-        return userManagerService.
-                getUserAccountDetails()
+        return userManagerService
+                .getUserAccountDetails()
                 .flatMap(userAccountDTO ->
                         pipelinePersistence
-                                .getPipelineDetails(serverRequest.pathVariable("pipelineId"),
-                                        userAccountDTO.accountId()))
+                                .getPipelineFull(serverRequest.pathVariable("pipelineId"), userAccountDTO.accountId()))
                 .flatMap(pipelineDetails ->
                         serverRequest
-                                .bodyToMono(PipelineExecutionDTO.class)
-                                .flatMap(pipelineExecutionDTO ->
-                                        pipelineManagerService.triggerGeneticScoringPipeline(
-                                                pipelineDetails.getPipelineId(),
-                                                pipelineExecutionDTO))
+                                .bodyToMono(String.class)
+                                .flatMap(polygenicScoreIds -> pipelineManagerService
+                                        .triggerGeneticScoringPipeline(
+                                                pipelineDetails,
+                                                polygenicScoreIds))
                                 .thenReturn(pipelineDetails))
-                .map(pipelineDetails -> {
-                    pipelineDetails.statusPending();
-                    return pipelineDetails;
+                .flatMap(pipelineDetails -> pipelinePersistence.getPipelineExecutionStatus(pipelineDetails.getPipelineId()))
+                .map(pipelineExecutionStatus -> {
+                    pipelineExecutionStatus.pending();
+                    return pipelineExecutionStatus;
                 })
-                .flatMap(pipelinePersistence::save)
+                .flatMap(pipelinePersistence::savePipelineExecutionStatus)
                 .flatMap(pipelineDetails -> status(ACCEPTED).bodyValue("Request received!"));
     }
 
@@ -131,10 +168,11 @@ public class PipelineRequestHandler {
                         .opsForSet()
                         .isMember("pgs_ids_set", pgsIdsDTO.getPgsIds().toArray()))
                 .filter(objectBooleanMap -> objectBooleanMap
-                        .values()
+                        .entrySet()
                         .parallelStream()
-                        .anyMatch(aBoolean -> !aBoolean))
-                .flatMap(ignoreMap -> badRequest().build())
+                        .anyMatch(objectBooleanEntry -> !objectBooleanEntry.getValue()))
+                .flatMap(pgsIdMap -> badRequest()
+                        .bodyValue(pgsIdMap))
                 .switchIfEmpty(ok().build());
     }
 }
