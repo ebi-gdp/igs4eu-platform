@@ -2,6 +2,5 @@
   variables:
     MODULE: 'file-handler'
   rules:
-    - if: 'true'
-      changes:
-        - 'file-handler/**/*'
+     changes:
+       - 'file-handler/**/*'
