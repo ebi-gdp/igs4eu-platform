@@ -1,8 +1,12 @@
 variables:
-  MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
-  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -s ci_settings.xml"
-  SKIP_TESTS: "-DskipTests=true -Djacoco.skip=true"
+  MAVEN_OPTS: '-Dhttps.protocols=TLSv1.2 -Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
+  MAVEN_CLI_OPTS: '--batch-mode --errors --fail-at-end --show-version -s ci_settings.xml'
+  SKIP_TESTS: '-DskipTests=true -Djacoco.skip=true'
   CACHE_KEY: $CI_COMMIT_REF_SLUG
+  INTERVENE_COMMONS_MODULE: 'intervene-commons'
+  FILE_HANDLER_MODULE: 'file-handler'
+  PIPELINE_MANAGER_MODULE: 'pipeline-manager'
+  USER_MANAGER_MODULE: 'user-manager'
 
 cache:
   key: $CACHE_KEY
@@ -23,7 +27,7 @@ stages:
     - 'mvn $MAVEN_CLI_OPTS -pl $MODULE package $SKIP_TESTS --also-make'
   artifacts:
     paths:
-      - "*/target"
+      - '*/target'
     expire_in: 30 min
   only:
     changes:
@@ -60,27 +64,29 @@ stages:
     - kubectl -n intervene-dev get pods
   #   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
   #   - kubectl -f $MODULE/deployments/
-  only: ['main', 'tags']
 
 build-intervene-commons-module:
   variables:
-    MODULE: 'intervene-commons'
+    MODULE: $INTERVENE_COMMONS_MODULE
   extends:
     - .build-module
 
 build-file-handler-module:
   variables:
-    MODULE: 'file-handler'
+    MODULE: $FILE_HANDLER_MODULE
   extends:
     - .build-module
 
 containerize-file-handler-module:
   variables:
-    MODULE: 'file-handler'
+    MODULE: $FILE_HANDLER_MODULE
   extends:
     - .containerize-module
 
-#deploy-file-handler-module:
-# extends:
-#   - .file-handler-module
-#   - .deploy-module
+deploy-file-handler-module:
+  variables:
+    MODULE: $FILE_HANDLER_MODULE
+  extends:
+    - .deploy-module
+  needs:
+    - 'containerize-file-handler-module'
