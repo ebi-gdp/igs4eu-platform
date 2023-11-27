@@ -64,6 +64,9 @@ stages:
     - kubectl -n intervene-dev get pods
   #   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
   #   - kubectl -f $MODULE/deployments/
+  only:
+    - /^\d+\.\d+\.\d+$/
+    - tags
 
 build-intervene-commons-module:
   variables:
