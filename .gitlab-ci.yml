@@ -15,10 +15,6 @@ stages:
   - containerize
   - deploy
 
-#include:
-# - local: intervene-commons/.gitlab-ci.yml
-# - local: file-handler/.gitlab-ci.yml
-
 .build-module:
   stage: build
   image: maven:3.8.7-eclipse-temurin-19
@@ -32,6 +28,7 @@ stages:
   only:
     changes:
       - '$MODULE/**/*'
+      - .gitlab-ci.yml
 
 .test-module:
   stage: test
