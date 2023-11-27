@@ -17,44 +17,51 @@
  */
 package uk.ac.ebi.gdp.intervene.commons.log;
 
-import io.micrometer.context.ContextRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Hooks;
-import reactor.util.context.Context;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
+import org.springframework.web.reactive.function.server.HandlerFilterFunction;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Mono;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.UUID;
 
-public abstract class LogUtil {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LogUtil.class);
-    public static final ThreadLocal<Long> CORRELATION_ID_THREAD_LOCAL = new ThreadLocal<>();
-    public static final String CORRELATION_ID = "CORRELATION_ID";
+public interface LogUtil {
+    Logger LOGGER = LoggerFactory.getLogger(LogUtil.class);
+    String REQUEST_ID_HEADER = "Request-Id";
 
-    public static void registerContext() {
-        ContextRegistry.getInstance()
-                .registerThreadLocalAccessor(CORRELATION_ID,
-                        CORRELATION_ID_THREAD_LOCAL::get,
-                        CORRELATION_ID_THREAD_LOCAL::set,
-                        CORRELATION_ID_THREAD_LOCAL::remove);
-
-        Hooks.enableAutomaticContextPropagation();
+    static HandlerFilterFunction<ServerResponse, ServerResponse> buildUniqueRequestId(final Logger logger) {
+        return (request, next) -> next
+                .handle(request)
+                .contextWrite(contextView -> {
+                    final String uniqueRequestId = UUID.randomUUID().toString();
+                    logger.info("Request-Id generated for this request: {}", uniqueRequestId);
+                    return contextView.put(REQUEST_ID_HEADER, uniqueRequestId);
+                });
     }
 
-    public static void debugLog(final String message) {
-        final String threadName = Thread.currentThread().getName();
-        final String threadNameTail = getThreadNameTail(threadName);
-        LOGGER.info("[{}][{}] {}", threadNameTail, CORRELATION_ID_THREAD_LOCAL.get(), message);
+    static ExchangeFilterFunction propagateRequestId(final Logger logger) {
+        return (request, next) -> Mono.deferContextual(contextView -> {
+            final String valueFromContext = contextView.get("Request-Id");
+            logger.debug("Request-Id retrieved: {}", valueFromContext);
+            // Continue with the request
+            return next.exchange(ClientRequest.from(request)
+                    .headers(headers -> headers.add(REQUEST_ID_HEADER, valueFromContext))
+                    .build());
+        });
     }
 
-    public static long correlationId() {
-        return Math.abs(ThreadLocalRandom.current().nextLong());
-    }
-
-    public static Context initializeContext() {
-        return Context.of(CORRELATION_ID, correlationId());
-    }
-
-    private static String getThreadNameTail(final String threadName) {
-        return threadName.substring(Math.max(0, threadName.length() - 10));
+    static HandlerFilterFunction<ServerResponse, ServerResponse> logRequestIdHeader(final Logger logger) {
+        return (request, next) -> {
+            final HttpHeaders headers = request.headers().asHttpHeaders();
+            if (headers.containsKey(REQUEST_ID_HEADER)) {
+                logger.info("Request-Id header: {}", headers.get(REQUEST_ID_HEADER).get(0));
+            } else {
+                logger.warn("Request-Id header not found!");
+            }
+            return next.handle(request);
+        };
     }
 }

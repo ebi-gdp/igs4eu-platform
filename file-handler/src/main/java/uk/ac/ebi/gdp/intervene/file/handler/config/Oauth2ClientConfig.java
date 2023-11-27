@@ -51,6 +51,16 @@ import static org.springframework.security.oauth2.client.OAuth2AuthorizationCont
 import static reactor.core.publisher.Mono.just;
 import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.jsonExchangeStrategies;
 
+/**
+ * Common/generic OAuth2 client config
+ * extends {@link GenericOAuth2SecurityConfig} to supply arguments Or override logic.
+ *
+ * @see ReactiveClientRegistrationRepository
+ * @see AuthorizationGrantType
+ * @see ReactiveOAuth2AuthorizedClientManager
+ * @see ReactiveOAuth2AuthorizedClientService
+ * @see AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager
+ */
 class Oauth2ClientConfig extends GenericOAuth2SecurityConfig {
     protected ReactiveClientRegistrationRepository getRegistration(final String tokenUri,
                                                                    final String clientId,
@@ -69,6 +79,10 @@ class Oauth2ClientConfig extends GenericOAuth2SecurityConfig {
         return new InMemoryReactiveClientRegistrationRepository(registration);
     }
 
+    /**
+     * @see ReactiveOAuth2AuthorizedClientProvider
+     * @see ReactiveOAuth2AuthorizedClientProviderBuilder
+     */
     protected ReactiveOAuth2AuthorizedClientManager reactiveO2ACMPassword(final ReactiveClientRegistrationRepository clientRegistrationRepository,
                                                                           final ReactiveOAuth2AuthorizedClientService authorizedClientService,
                                                                           final String username,
@@ -85,24 +99,34 @@ class Oauth2ClientConfig extends GenericOAuth2SecurityConfig {
         return authorizedClientManager;
     }
 
+    /**
+     * @see WebClientReactiveClientCredentialsTokenResponseClient
+     */
     protected ReactiveOAuth2AuthorizedClientManager reactiveO2ACMClientCredentials(final ReactiveClientRegistrationRepository clientRegistrationRepository,
                                                                                    final ReactiveOAuth2AuthorizedClientService authorizedClientService) {
-        final AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager authorizedClientManager =
-                reactiveOAuth2AuthorizedClientManager(clientRegistrationRepository, authorizedClientService);
-
         final WebClientReactiveClientCredentialsTokenResponseClient reactiveResponseClient = new WebClientReactiveClientCredentialsTokenResponseClient();
         reactiveResponseClient.setBodyExtractor(GlobusOAuth2BodyExtractors.oauth2AccessTokenResponse());
 
+        final AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager authorizedClientManager =
+                reactiveOAuth2AuthorizedClientManager(clientRegistrationRepository, authorizedClientService);
         authorizedClientManager.setAuthorizedClientProvider(ReactiveOAuth2AuthorizedClientProviderBuilder.builder()
                 .clientCredentials(clientCredentialsGrantBuilder -> clientCredentialsGrantBuilder.accessTokenResponseClient(reactiveResponseClient))
                 .build());
         return authorizedClientManager;
     }
 
+    /**
+     * @see InMemoryReactiveOAuth2AuthorizedClientService
+     */
     protected ReactiveOAuth2AuthorizedClientService reactiveOAuth2AuthorizedClientServiceInMemory(final ReactiveClientRegistrationRepository clientRegistrationRepository) {
         return new InMemoryReactiveOAuth2AuthorizedClientService(clientRegistrationRepository);
     }
 
+    /**
+     * @see HttpClient
+     * @see ServerOAuth2AuthorizedClientExchangeFilterFunction
+     * @see WebClient
+     */
     protected WebClient webClient(final ReactiveOAuth2AuthorizedClientManager authorizedClientManager,
                                   final WebClientProperties webClientProperties,
                                   final String baseURL,
@@ -134,6 +158,9 @@ class Oauth2ClientConfig extends GenericOAuth2SecurityConfig {
                 clientRegistrationRepository, authorizedClientService);
     }
 
+    /**
+     * @see OAuth2AuthorizeRequest
+     */
     private Function<OAuth2AuthorizeRequest, Mono<Map<String, Object>>> contextAttributesMapper(final String username,
                                                                                                 final String password) {
         return authorizeRequest -> {

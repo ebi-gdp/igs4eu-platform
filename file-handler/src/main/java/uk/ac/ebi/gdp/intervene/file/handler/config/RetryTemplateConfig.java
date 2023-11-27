@@ -32,6 +32,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Defines {@link RetryTemplate} config, specifies two strategies Fixed & Exponential.
+ *
+ * @see RetryTemplate
+ * @see SimpleRetryPolicy
+ * @see FixedBackOffPolicy
+ * @see ExponentialBackOffPolicy
+ *
+ */
 @Configuration
 public class RetryTemplateConfig {
 

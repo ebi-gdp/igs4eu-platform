@@ -23,13 +23,35 @@ import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.PermissionTy
 
 import java.nio.file.Path;
 
+/**
+ * Methods to provide access Globus APIs to perform various operations.
+ * Add methods related to Globus operation.
+ */
 public interface IFileOperationService {
+    /**
+     * @param dirPath path of the dir to be created on Globus
+     *
+     * @return path
+     */
     Mono<String> createDirectory(Path dirPath);
 
-    Mono<GlobusFileDetailsWrapperDTO> listFiles(Path path);
+    /**
+     * @param dirPath directory path for the files to search for
+     *
+     * @return GlobusFileDetailsWrapperDTO file details
+     */
+    Mono<GlobusFileDetailsWrapperDTO> listFiles(Path dirPath);
 
+    /**
+     * @param principal user UID
+     * @param permissionType type of permission e.g. rw
+     * @param notifyEmail user email id
+     * @param dirPath permission to apply to
+     *
+     * @return UID
+     */
     Mono<String> grantDirectoryPermission(String principal,
                                           PermissionType permissionType,
                                           String notifyEmail,
-                                          Path path);
+                                          Path dirPath);
 }

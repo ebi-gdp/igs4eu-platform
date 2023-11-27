@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021 EMBL - European Bioinformatics Institute
+ * Copyright 2023 EMBL - European Bioinformatics Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,16 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.file.handler.exception;
+package uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint;
 
-import java.io.Serial;
+import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusUserIdentityDetailsWrapperDTO;
 
-public class FileNotFoundException extends Exception {
-    @Serial
-    private static final long serialVersionUID = -7087674527009176711L;
-
-    public FileNotFoundException(final String message) {
-        super(message);
-    }
+public interface IAuthService {
+    /**
+     * @param username for which details to be retrieved
+     *
+     * @return user details represented by {@link GlobusUserIdentityDetailsWrapperDTO}
+     */
+    Mono<GlobusUserIdentityDetailsWrapperDTO> getUserIdentityDetails(String username);
 }

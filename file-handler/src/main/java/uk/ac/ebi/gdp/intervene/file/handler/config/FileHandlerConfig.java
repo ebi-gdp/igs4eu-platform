@@ -28,6 +28,15 @@ import uk.ac.ebi.gdp.file.handler.core.properties.WebClientProperties;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
 import uk.ac.ebi.gdp.intervene.file.handler.service.ega.EGAFileService;
 
+/**
+ * Bean config for file handler service.
+ *
+ * @see ReactiveExceptionHandler
+ * @see WebClient
+ * @see RetryTemplate
+ * @see WebClientProperties
+ * @see EGAFileService
+ */
 @Import(ReactiveExceptionHandler.class)
 @Configuration
 public class FileHandlerConfig {

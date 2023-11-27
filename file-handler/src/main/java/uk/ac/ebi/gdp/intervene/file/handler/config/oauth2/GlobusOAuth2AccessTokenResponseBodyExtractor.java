@@ -32,7 +32,6 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.web.reactive.function.BodyExtractor;
-import org.springframework.web.reactive.function.BodyExtractors;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
@@ -42,31 +41,48 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.springframework.web.reactive.function.BodyExtractors.toMono;
+import static reactor.core.publisher.Mono.error;
+
+/**
+ * Token response body extractor, parse & extract the Globus access token from the response received
+ * from Globus authentication endpoint
+ *
+ * @see BodyExtractor
+ * @see OAuth2AccessTokenResponse
+ * @see ReactiveHttpInputMessage
+ *
+ */
 class GlobusOAuth2AccessTokenResponseBodyExtractor implements BodyExtractor<Mono<OAuth2AccessTokenResponse>, ReactiveHttpInputMessage> {
     private static final String INVALID_TOKEN_RESPONSE_ERROR_CODE = "invalid_token_response";
 
-    private static final ParameterizedTypeReference<Map<String, Object>> STRING_OBJECT_MAP = new ParameterizedTypeReference<Map<String, Object>>() {
+    private static final ParameterizedTypeReference<Map<String, Object>> STRING_OBJECT_MAP = new ParameterizedTypeReference<>() {
     };
 
     GlobusOAuth2AccessTokenResponseBodyExtractor() {
     }
 
+    /**
+     * @see OAuth2AccessTokenResponse
+     * @see OAuth2AuthorizationException
+     * @see GlobusOAuth2AccessTokenResponseBodyExtractor
+     */
     @Override
-    public Mono<OAuth2AccessTokenResponse> extract(ReactiveHttpInputMessage inputMessage, Context context) {
-        BodyExtractor<Mono<Map<String, Object>>, ReactiveHttpInputMessage> delegate = BodyExtractors
-                .toMono(STRING_OBJECT_MAP);
+    public Mono<OAuth2AccessTokenResponse> extract(final ReactiveHttpInputMessage inputMessage,
+                                                   final Context context) {
+        final BodyExtractor<Mono<Map<String, Object>>, ReactiveHttpInputMessage> delegate = toMono(STRING_OBJECT_MAP);
         return delegate.extract(inputMessage, context)
                 .onErrorMap((ex) -> new OAuth2AuthorizationException(
                         invalidTokenResponse("An error occurred parsing the Access Token response: " + ex.getMessage()),
                         ex))
-                .switchIfEmpty(Mono.error(() -> new OAuth2AuthorizationException(
+                .switchIfEmpty(error(() -> new OAuth2AuthorizationException(
                         invalidTokenResponse("Empty OAuth 2.0 Access Token Response"))))
                 .map(GlobusOAuth2AccessTokenResponseBodyExtractor::parse)
                 .flatMap(GlobusOAuth2AccessTokenResponseBodyExtractor::oauth2AccessTokenResponse)
                 .map(GlobusOAuth2AccessTokenResponseBodyExtractor::oauth2AccessTokenResponse);
     }
 
-    private static TokenResponse parse(Map<String, Object> json) {
+    private static TokenResponse parse(final Map<String, Object> json) {
         try {
             return TokenResponse.parse(extractTransferAPIAccessToken(json));
         } catch (ParseException ex) {
@@ -82,52 +98,51 @@ class GlobusOAuth2AccessTokenResponseBodyExtractor implements BodyExtractor<Mono
         return new JSONObject((Map<String, ?>) otherTokens);
     }
 
-    private static OAuth2Error invalidTokenResponse(String message) {
+    private static OAuth2Error invalidTokenResponse(final String message) {
         return new OAuth2Error(INVALID_TOKEN_RESPONSE_ERROR_CODE, message, null);
     }
 
-    private static Mono<AccessTokenResponse> oauth2AccessTokenResponse(TokenResponse tokenResponse) {
+    private static Mono<AccessTokenResponse> oauth2AccessTokenResponse(final TokenResponse tokenResponse) {
         if (tokenResponse.indicatesSuccess()) {
             return Mono.just(tokenResponse).cast(AccessTokenResponse.class);
         }
-        TokenErrorResponse tokenErrorResponse = (TokenErrorResponse) tokenResponse;
-        ErrorObject errorObject = tokenErrorResponse.getErrorObject();
-        OAuth2Error oauth2Error = getOAuth2Error(errorObject);
-        return Mono.error(new OAuth2AuthorizationException(oauth2Error));
+        final TokenErrorResponse tokenErrorResponse = (TokenErrorResponse) tokenResponse;
+        final ErrorObject errorObject = tokenErrorResponse.getErrorObject();
+        final OAuth2Error oauth2Error = getOAuth2Error(errorObject);
+        return error(new OAuth2AuthorizationException(oauth2Error));
     }
 
-    private static OAuth2Error getOAuth2Error(ErrorObject errorObject) {
+    private static OAuth2Error getOAuth2Error(final ErrorObject errorObject) {
         if (errorObject == null) {
             return new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR);
         }
-        String code = (errorObject.getCode() != null) ? errorObject.getCode() : OAuth2ErrorCodes.SERVER_ERROR;
-        String description = errorObject.getDescription();
-        String uri = (errorObject.getURI() != null) ? errorObject.getURI().toString() : null;
+        final String code = (errorObject.getCode() != null) ? errorObject.getCode() : OAuth2ErrorCodes.SERVER_ERROR;
+        final String description = errorObject.getDescription();
+        final String uri = (errorObject.getURI() != null) ? errorObject.getURI().toString() : null;
         return new OAuth2Error(code, description, uri);
     }
 
-    private static OAuth2AccessTokenResponse oauth2AccessTokenResponse(AccessTokenResponse accessTokenResponse) {
-        AccessToken accessToken = accessTokenResponse.getTokens().getAccessToken();
+    private static OAuth2AccessTokenResponse oauth2AccessTokenResponse(final AccessTokenResponse accessTokenResponse) {
+        final AccessToken accessToken = accessTokenResponse.getTokens().getAccessToken();
         OAuth2AccessToken.TokenType accessTokenType = null;
         if (OAuth2AccessToken.TokenType.BEARER.getValue().equalsIgnoreCase(accessToken.getType().getValue())) {
             accessTokenType = OAuth2AccessToken.TokenType.BEARER;
         }
-        long expiresIn = accessToken.getLifetime();
-        Set<String> scopes = (accessToken.getScope() != null)
+        final long expiresIn = accessToken.getLifetime();
+        final Set<String> scopes = (accessToken.getScope() != null)
                 ? new LinkedHashSet<>(accessToken.getScope().toStringList()) : Collections.emptySet();
         String refreshToken = null;
         if (accessTokenResponse.getTokens().getRefreshToken() != null) {
             refreshToken = accessTokenResponse.getTokens().getRefreshToken().getValue();
         }
-        Map<String, Object> additionalParameters = new LinkedHashMap<>(accessTokenResponse.getCustomParameters());
-        // @formatter:off
-        return OAuth2AccessTokenResponse.withToken(accessToken.getValue())
+        final Map<String, Object> additionalParameters = new LinkedHashMap<>(accessTokenResponse.getCustomParameters());
+        return OAuth2AccessTokenResponse
+                .withToken(accessToken.getValue())
                 .tokenType(accessTokenType)
                 .expiresIn(expiresIn)
                 .scopes(scopes)
                 .refreshToken(refreshToken)
                 .additionalParameters(additionalParameters)
                 .build();
-        // @formatter:on
     }
 }

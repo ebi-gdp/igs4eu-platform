@@ -17,6 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint;
 
+/**
+ * Enum to define Globus acceptable principal types.
+ */
 public enum PrincipalType {
     IDENTITY("identity");
 

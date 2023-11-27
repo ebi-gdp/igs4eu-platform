@@ -17,6 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint;
 
+/**
+ * Enum to define Globus acceptable permission types.
+ */
 public enum PermissionType {
     READ_WRITE("rw");
 

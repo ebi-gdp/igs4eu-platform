@@ -24,9 +24,12 @@ import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.DataType;
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.PermissionType;
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.PrincipalType;
 
-public interface EndpointDTO {
-    record Mkdir(@JsonIgnore DataType dataType,
-                 String path) {
+/**
+ * EndpointDTO abstract class defines related classes, they are grouped together.
+ */
+public abstract class EndpointDTO {
+    public record Mkdir(@JsonIgnore DataType dataType,
+                        String path) {
 
         @JsonGetter("DATA_TYPE")
         public String getDataType() {
@@ -34,12 +37,12 @@ public interface EndpointDTO {
         }
     }
 
-    record Access(@JsonIgnore DataType dataType,
-                  @JsonIgnore PrincipalType principalType,
-                  String principal,
-                  String path,
-                  @JsonIgnore PermissionType permissionType,
-                  @JsonProperty("notify_email") String notifyEmailId) {
+    public record Access(@JsonIgnore DataType dataType,
+                         @JsonIgnore PrincipalType principalType,
+                         String principal,
+                         String path,
+                         @JsonIgnore PermissionType permissionType,
+                         @JsonProperty("notify_email") String notifyEmailId) {
         @JsonGetter("DATA_TYPE")
         public String getDataType() {
             return dataType.getDataType();

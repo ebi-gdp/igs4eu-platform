@@ -25,6 +25,11 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import uk.ac.ebi.gdp.intervene.commons.security.GenericOAuth2SecurityConfig;
 
+/**
+ * OAuth2 security config, extends {@link GenericOAuth2SecurityConfig}
+ *
+ * @see SecurityWebFilterChain
+ */
 @Configuration
 @EnableWebFluxSecurity
 public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {

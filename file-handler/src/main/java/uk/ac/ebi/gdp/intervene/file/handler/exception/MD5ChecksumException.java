@@ -21,6 +21,9 @@ import java.io.Serial;
 
 import static java.lang.String.format;
 
+/**
+ * Exception represents error related to MD5 checksum validation.
+ */
 public class MD5ChecksumException extends Exception {
     @Serial
     private static final long serialVersionUID = -6208032664686322248L;

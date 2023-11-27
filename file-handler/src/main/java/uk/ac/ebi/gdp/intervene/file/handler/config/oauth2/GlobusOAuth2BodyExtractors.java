@@ -22,8 +22,10 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenRespon
 import org.springframework.web.reactive.function.BodyExtractor;
 import reactor.core.publisher.Mono;
 
+/**
+ * Body extractor to define static method to get instance of {@link GlobusOAuth2AccessTokenResponseBodyExtractor} response extractor.
+ */
 public abstract class GlobusOAuth2BodyExtractors {
-
     /**
      * Extractor to decode an {@link OAuth2AccessTokenResponse}
      *
@@ -35,5 +37,4 @@ public abstract class GlobusOAuth2BodyExtractors {
 
     private GlobusOAuth2BodyExtractors() {
     }
-
 }

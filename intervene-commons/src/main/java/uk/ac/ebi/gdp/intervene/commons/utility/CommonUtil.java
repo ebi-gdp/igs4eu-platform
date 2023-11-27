@@ -20,6 +20,11 @@ package uk.ac.ebi.gdp.intervene.commons.utility;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+
+import java.time.format.DateTimeFormatter;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES;
@@ -27,6 +32,7 @@ import static com.fasterxml.jackson.databind.MapperFeature.DEFAULT_VIEW_INCLUSIO
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SNAKE_CASE;
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS;
+import static java.time.format.DateTimeFormatter.ofPattern;
 
 public abstract class CommonUtil {
     private static final ObjectMapper jsonObjectMapper = getObjectMapper();
@@ -46,5 +52,18 @@ public abstract class CommonUtil {
                 .disable(WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)
                 .propertyNamingStrategy(SNAKE_CASE)
                 .build();
+    }
+
+    public static Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer(final String dateFormat) {
+        return builder -> {
+            // formatter
+            final DateTimeFormatter dateTimeFormatter = ofPattern(dateFormat);
+
+            // deserializers
+            //builder.deserializers(new LocalDateTimeDeserializer(dateTimeFormatter));
+
+            // serializers
+            builder.serializers(new LocalDateTimeSerializer(dateTimeFormatter));
+        };
     }
 }

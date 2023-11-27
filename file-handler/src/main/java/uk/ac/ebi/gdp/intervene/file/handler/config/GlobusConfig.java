@@ -33,6 +33,13 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.web.reactive.function.client.WebClient.builder;
 import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.jsonExchangeStrategies;
 
+/**
+ * Globus bean config. Provides necessary services to interact with Globus APIs.
+ *
+ * @see AuthService
+ * @see WebClient
+ * @see FileOperationService
+ */
 @Configuration
 public class GlobusConfig {
 

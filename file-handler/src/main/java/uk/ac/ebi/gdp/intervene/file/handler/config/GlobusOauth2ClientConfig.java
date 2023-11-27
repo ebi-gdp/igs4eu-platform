@@ -32,6 +32,17 @@ import java.util.List;
 
 import static org.springframework.security.oauth2.core.AuthorizationGrantType.CLIENT_CREDENTIALS;
 
+/**
+ * OAuth2 client configuration to access Globus APIs.
+ * Extends {@link Oauth2ClientConfig} to reuse the generic functions & supplies relevant arguments.
+ *
+ * @see Oauth2ClientConfig
+ * @see WebClientProperties
+ * @see ReactiveClientRegistrationRepository
+ * @see ReactiveOAuth2AuthorizedClientService
+ * @see ReactiveOAuth2AuthorizedClientManager
+ * @see WebClient
+ */
 @Primary
 @Configuration
 public class GlobusOauth2ClientConfig extends Oauth2ClientConfig {
