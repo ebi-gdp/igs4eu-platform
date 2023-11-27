@@ -77,7 +77,7 @@ build-file-handler-module:
 
 containerize-file-handler-module:
   extends:
-    - .file-handler-module
+#   - .file-handler-module
     - .containerize-module
 
 #deploy-file-handler-module:
