@@ -13,6 +13,11 @@
     <artifactId>file-handler</artifactId>
     <packaging>jar</packaging>
 
+    <scm>
+        <connection>scm:git:git@github.com:ebi-gdp/igs4eu-platform.git</connection>
+        <tag>HEAD</tag>
+    </scm>
+
     <dependencies>
         <dependency>
             <groupId>uk.ebi.ac.gdp</groupId>
@@ -25,16 +30,22 @@
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <!-- webflux micrometer tracing/ context propagation/ co-relation tracking ids -->
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <version>3.5.5</version>
         </dependency>
     </dependencies>
 
