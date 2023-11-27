@@ -32,6 +32,9 @@ import static uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.DataT
 import static uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.DataType.MKDIR;
 import static uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.PrincipalType.IDENTITY;
 
+/**
+ * Implements {@link IFileOperationService}, provides implementation to access/execute Globus APIs.
+ */
 public class FileOperationService implements IFileOperationService {
     private final WebClient webClient;
     private final Path guestCollectionHomePath;
@@ -53,24 +56,23 @@ public class FileOperationService implements IFileOperationService {
 
     @Override
     public Mono<String> createDirectory(final Path dirPath) {
-        final Path guestCollectionDirectoryPath = guestCollectionHomePath.resolve(dirPath);
         return webClient
                 .post()
                 .uri(mkDirEndpointURI.getPath())
                 .contentType(APPLICATION_JSON)
                 .accept(APPLICATION_JSON)
-                .bodyValue(new Mkdir(MKDIR, guestCollectionDirectoryPath.toString()))
+                .bodyValue(new Mkdir(MKDIR, guestCollectionHomePath.resolve(dirPath).toString()))
                 .retrieve()
                 .bodyToMono(String.class);
     }
 
     @Override
-    public Mono<GlobusFileDetailsWrapperDTO> listFiles(final Path path) {
+    public Mono<GlobusFileDetailsWrapperDTO> listFiles(final Path dirPath) {
         return webClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
                         .path(listFilesURI.getPath())
-                        .queryParam("path", guestCollectionHomePath.resolve(path).toString())
+                        .queryParam("path", guestCollectionHomePath.resolve(dirPath).toString())
                         .build())
                 .accept(APPLICATION_JSON)
                 .retrieve()
@@ -81,7 +83,7 @@ public class FileOperationService implements IFileOperationService {
     public Mono<String> grantDirectoryPermission(final String principal,
                                                  final PermissionType permissionType,
                                                  final String notifyEmail,
-                                                 final Path path) {
+                                                 final Path dirPath) {
         return webClient
                 .post()
                 .uri(dirAccessURI.getPath())
@@ -91,7 +93,7 @@ public class FileOperationService implements IFileOperationService {
                         principal,
                         permissionType,
                         notifyEmail,
-                        path))
+                        dirPath))
                 .retrieve()
                 .bodyToMono(String.class);
     }
@@ -99,12 +101,12 @@ public class FileOperationService implements IFileOperationService {
     private Access buildAccessRequestBody(final String principal,
                                           final PermissionType permissionType,
                                           final String notifyEmail,
-                                          final Path path) {
+                                          final Path dirPath) {
         return new Access(
                 ACCESS,
                 IDENTITY,
                 principal,
-                "/" + path + "/",//TODO: revisit logic
+                "/" + dirPath + "/",//TODO: revisit logic
                 permissionType,
                 notifyEmail
         );

@@ -17,6 +17,8 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.config.router.globus;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,27 +27,27 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.collection.IFileOperationService;
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.AuthService;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
+import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 
+/**
+ * Globus router config
+ */
 @Configuration
 public class GlobusRouterConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobusRouterConfig.class);
 
     @Bean
-    public RouterFunction<ServerResponse> globusRoutes(final GlobusRequestHandler globusRequestHandler) {
-        final String guestCollectionURI = "/globus/guest-collection";
+    public RouterFunction<ServerResponse> globusRoutes(final GlobusRequestHandler globusRequestHandler,
+                                                       final GlobusUserRequestHandler globusUserRequestHandler) {
         return route()
-                .POST(guestCollectionURI, accept(APPLICATION_JSON), globusRequestHandler::createDirectoryOnGuestCollection)
-                .GET(guestCollectionURI, globusRequestHandler::listFilesOnGuestCollectionDirectory)
-                .build();
-    }
-
-    @Bean
-    public RouterFunction<ServerResponse> globusUserRoutes(final GlobusUserRequestHandler globusUserRequestHandler) {
-        final String guestCollectionURI = "/globus/user";
-        return route()
-                .GET(guestCollectionURI, globusUserRequestHandler::getUserIdDetails)
+                .filter(logRequestIdHeader(LOGGER))
+                .path("/globus", gb -> gb
+                        .path("/guest-collection", gcb -> gcb
+                                .POST(globusRequestHandler::createDirectoryOnGuestCollection)
+                                .GET(globusRequestHandler::listFilesOnGuestCollectionDirectory))
+                        .path("/user", gub -> gub
+                                .GET(globusUserRequestHandler::getUserIdDetails)))
                 .build();
     }
 

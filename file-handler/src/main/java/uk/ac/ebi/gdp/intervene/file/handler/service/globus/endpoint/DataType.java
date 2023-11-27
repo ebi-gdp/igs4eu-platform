@@ -17,6 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint;
 
+/**
+ * Enum to define Globus acceptable data types.
+ */
 public enum DataType {
     ACCESS("access"), MKDIR("mkdir");
 

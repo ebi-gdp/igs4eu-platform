@@ -23,21 +23,30 @@ import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusUserIdentityDetails
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-public class AuthService {
+/**
+ * Auth service to get user identity details from Globus.
+ *
+ * @see WebClient
+ */
+public class AuthService implements IAuthService {
     private final WebClient webClient;
 
     public AuthService(final WebClient webClient) {
         this.webClient = webClient;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * retrieves user's Globus identity details
+     */
     public Mono<GlobusUserIdentityDetailsWrapperDTO> getUserIdentityDetails(final String username) {
         return webClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/identities")
                         .queryParam("usernames", username)
-                        .build()
-                )
+                        .build())
                 .accept(APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(GlobusUserIdentityDetailsWrapperDTO.class);

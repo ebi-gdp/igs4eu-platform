@@ -17,28 +17,44 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.config.router.globus;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.AuthService;
+import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusUserIdentityDetailsWrapperDTO;
+import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.IAuthService;
 
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
 
+/**
+ * Globus user request handler. Defines handlers for router function.
+ */
 public class GlobusUserRequestHandler {
-    private final AuthService authService;
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobusUserRequestHandler.class);
+    private final IAuthService authService;
 
-    public GlobusUserRequestHandler(final AuthService authService) {
+    public GlobusUserRequestHandler(final IAuthService authService) {
         this.authService = authService;
     }
 
+    /**
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}.
+     *
+     * @return user details represented by {@link GlobusUserIdentityDetailsWrapperDTO}
+     */
     public Mono<ServerResponse> getUserIdDetails(final ServerRequest serverRequest) {
         return serverRequest
                 .queryParam("username")
-                .map(username -> authService
-                        .getUserIdentityDetails(username)
-                        .flatMap(globusUserIdentityDetailsWrapperDTO -> ok().bodyValue(globusUserIdentityDetailsWrapperDTO)))
+                .map(username -> {
+                    LOGGER.info("Fetching Globus user details for {} from the Globus API", username);
+                    return authService
+                            .getUserIdentityDetails(username)
+                            .doOnNext(ignoreData -> LOGGER.info("Response received for Globus user details from the Globus API"))
+                            .flatMap(globusUserIdentityDetailsWrapperDTO -> ok().bodyValue(globusUserIdentityDetailsWrapperDTO));
+                })
                 .orElse(error(badRequest("Query param 'username' is missing or empty!")));
     }
 }

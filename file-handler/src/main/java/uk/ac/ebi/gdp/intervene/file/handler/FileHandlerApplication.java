@@ -20,9 +20,12 @@ package uk.ac.ebi.gdp.intervene.file.handler;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import static reactor.core.publisher.Hooks.enableAutomaticContextPropagation;
+
 @SpringBootApplication
 public class FileHandlerApplication {
     public static void main(final String... args) {
+        enableAutomaticContextPropagation();
         SpringApplication.run(FileHandlerApplication.class, args);
     }
 }

@@ -37,6 +37,9 @@ import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
 import static uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.PermissionType.READ_WRITE;
 
+/**
+ * Globus request handler. Defines handlers for router function.
+ */
 public class GlobusRequestHandler {
     private final IFileOperationService fileOperationService;
     private final String guestCollectionId;
@@ -47,6 +50,15 @@ public class GlobusRequestHandler {
         this.guestCollectionId = guestCollectionId;
     }
 
+    /**
+     * First tries to search for requested directory & returns the same, if it doesn't exist then creates
+     * directory on Globus under guest collection. After successful creation of a folder grants the permission
+     * for a user.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}.
+     *
+     * @return guest collection directory details represented by {@link GuestCollectionDirResDTO}
+     */
     public Mono<ServerResponse> createDirectoryOnGuestCollection(final ServerRequest serverRequest) {
         return serverRequest
                 .bodyToMono(GuestCollectionDirReqDTO.class)
@@ -82,6 +94,13 @@ public class GlobusRequestHandler {
                 });
     }
 
+    /**
+     * Returns list of files available on the given path.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}.
+     *
+     * @return GlobusFileDetailsWrapperDTO
+     */
     public Mono<ServerResponse> listFilesOnGuestCollectionDirectory(final ServerRequest serverRequest) {
         return serverRequest
                 .queryParam("path")
