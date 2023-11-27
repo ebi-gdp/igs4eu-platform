@@ -15,9 +15,9 @@ stages:
   - containerize
   - deploy
 
-include:
-  - local: intervene-commons/.gitlab-ci.yml
-  - local: file-handler/.gitlab-ci.yml
+#include:
+# - local: intervene-commons/.gitlab-ci.yml
+# - local: file-handler/.gitlab-ci.yml
 
 .build-module:
   stage: build
@@ -29,6 +29,9 @@ include:
     paths:
     - "*/target"
     expire_in: 30 min
+  only:
+    changes:
+      - '$MODULE/**/*'
 
 .test-module:
   stage: test
@@ -65,12 +68,11 @@ include:
 
 build-intervene-commons-module:
   extends:
-    - .intervene-commons-module
+#   - .intervene-commons-module
     - .build-module
 
 build-file-handler-module:
   extends:
-    - .file-handler-module
     - .build-module
 
 containerize-file-handler-module:
