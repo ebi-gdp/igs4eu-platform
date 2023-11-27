@@ -27,7 +27,7 @@ stages:
     - 'mvn $MAVEN_CLI_OPTS -pl $MODULE package $SKIP_TESTS --also-make'
   artifacts:
     paths:
-    - "*/target"
+      - "*/target"
     expire_in: 30 min
   only:
     changes:
@@ -51,8 +51,7 @@ stages:
       --dockerfile "${CI_PROJECT_DIR}/${MODULE}/docker/Dockerfile"
       --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}-dev"
   rules:
-    - exists
-    - $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "main"
     - if: '$CI_COMMIT_TAG =~ /^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\-\d+\.\d+\.\d+$/'
 
 .deploy-module:
@@ -62,22 +61,26 @@ stages:
     - kubectl config get-contexts
     - kubectl config use-context gdp/ga4k:k8s-agent
     - kubectl -n intervene-dev get pods
-#   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
-#   - kubectl -f $MODULE/deployments/
+  #   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
+  #   - kubectl -f $MODULE/deployments/
   only: ['main', 'tags']
 
 build-intervene-commons-module:
+  variables:
+    MODULE: 'intervene-commons'
   extends:
-#   - .intervene-commons-module
     - .build-module
 
 build-file-handler-module:
+  variables:
+    MODULE: 'file-handler'
   extends:
     - .build-module
 
 containerize-file-handler-module:
+  variables:
+    MODULE: 'file-handler'
   extends:
-#   - .file-handler-module
     - .containerize-module
 
 #deploy-file-handler-module:
