@@ -3,8 +3,6 @@ variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -s ci_settings.xml"
   SKIP_TESTS: "-DskipTests=true -Djacoco.skip=true"
   CACHE_KEY: $CI_COMMIT_REF_SLUG
-  DOCKER_HOST: tcp://docker:2375/
-  DOCKER_DRIVER: overlay2
 
 cache:
   key: $CACHE_KEY
@@ -17,10 +15,6 @@ stages:
   - containerize
   - deploy
 
-include:
-  - local: intervene-commons/.gitlab-ci.yml
-  - local: file-handler/.gitlab-ci.yml
-
 .build-module:
   stage: build
   image: maven:3.8.7-eclipse-temurin-19
@@ -29,8 +23,12 @@ include:
     - 'mvn $MAVEN_CLI_OPTS -pl $MODULE package $SKIP_TESTS --also-make'
   artifacts:
     paths:
-    - "*/target"
+      - "*/target"
     expire_in: 30 min
+  only:
+    changes:
+      - '$MODULE/**/*'
+      - .gitlab-ci.yml
 
 .test-module:
   stage: test
@@ -41,38 +39,48 @@ include:
 
 .containerize-module:
   stage: containerize
-  image: docker:latest #change to stable version
-  services:
-    - docker:dind
+  image:
+    name: gcr.io/kaniko-project/executor:v1.14.0-debug
+    entrypoint: [ "" ]
   script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -f $MODULE/docker/Dockerfile -t $CI_REGISTRY/gdp/igs4eu-platform:$MODULE-dev-$CI_COMMIT_TAG .
-    - docker push $CI_REGISTRY/gdp/igs4eu-platform:$MODULE-dev-$CI_COMMIT_TAG
-    - docker rmi $CI_REGISTRY/gdp/igs4eu-platform:$MODULE-dev-$CI_COMMIT_TAG
-  only: ['main', 'tags']
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/${MODULE}/docker/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}-dev"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: '$CI_COMMIT_TAG =~ /^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\-\d+\.\d+\.\d+$/'
 
 .deploy-module:
   stage: deploy
   image: bitnami/kubectl:latest #change to stable version
   script:
     - kubectl config get-contexts
-    - kubectl config use-context default
-    - kubectl get pods
-#   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
-#   - kubectl -f $MODULE/deployments/
-# only: ['main', 'tags']
+    - kubectl config use-context gdp/ga4k:k8s-agent
+    - kubectl -n intervene-dev get pods
+  #   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
+  #   - kubectl -f $MODULE/deployments/
+  only: ['main', 'tags']
 
 build-intervene-commons-module:
+  variables:
+    MODULE: 'intervene-commons'
   extends:
-    - .intervene-commons-module
     - .build-module
 
 build-file-handler-module:
+  variables:
+    MODULE: 'file-handler'
   extends:
-    - .file-handler-module
     - .build-module
 
 containerize-file-handler-module:
+  variables:
+    MODULE: 'file-handler'
   extends:
-    - .file-handler-module
     - .containerize-module
+
+#deploy-file-handler-module:
+# extends:
+#   - .file-handler-module
+#   - .deploy-module
