@@ -17,12 +17,27 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.model;
 
+/**
+ * Methods to provide get user information.
+ */
 public interface IUserInfo {
+    /**
+     * @return subject e.g. account id
+     */
     String getSubject();
 
+    /**
+     * @return user's given name
+     */
     String getGivenName();
 
+    /**
+     * @return user's family name
+     */
     String getFamilyName();
 
+    /**
+     * @return user's email id
+     */
     String getEmailId();
 }

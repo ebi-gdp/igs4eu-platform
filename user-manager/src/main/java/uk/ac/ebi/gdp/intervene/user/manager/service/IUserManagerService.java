@@ -20,6 +20,14 @@ package uk.ac.ebi.gdp.intervene.user.manager.service;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 
+/**
+ * User Manager service.
+ */
 public interface IUserManagerService {
+    /**
+     * @param authUserAccountId for which new account to be created
+     *
+     * @return {@link UserAccount} newly created object
+     */
     Mono<UserAccount> createUserAccount(String authUserAccountId);
 }

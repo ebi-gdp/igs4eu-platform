@@ -31,6 +31,9 @@ public class UserManagerService implements IUserManagerService {
         this.userAccountPersistenceService = userAccountPersistenceService;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<UserAccount> createUserAccount(final String authUserAccountId) {
         return userAccountPersistenceService

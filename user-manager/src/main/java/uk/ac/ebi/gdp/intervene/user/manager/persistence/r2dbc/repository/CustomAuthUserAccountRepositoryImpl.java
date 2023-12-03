@@ -33,6 +33,9 @@ public class CustomAuthUserAccountRepositoryImpl implements CustomAuthUserAccoun
         this.authUserAccountMapper = authUserAccountMapper;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<AuthUserAccount> findAuthUserAccount(final String authUserId) {
         return databaseClient

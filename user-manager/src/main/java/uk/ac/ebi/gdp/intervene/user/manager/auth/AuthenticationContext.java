@@ -23,6 +23,9 @@ import uk.ac.ebi.gdp.intervene.user.manager.service.aai.IAuthenticationService;
 
 import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.getAuthProvider;
 
+/**
+ * Decides Authentication provider.
+ */
 public class AuthenticationContext {
 
     private final ElixirAuthenticationService elixirAuthenticationService;
@@ -35,6 +38,11 @@ public class AuthenticationContext {
         return doGetAuthenticationService();
     }
 
+    /**
+     * Evaluate appropriate auth provider.
+     *
+     * @return authentication service
+     */
     private Mono<IAuthenticationService> doGetAuthenticationService() {
         return getAuthProvider()
                 .map(authProvider -> {

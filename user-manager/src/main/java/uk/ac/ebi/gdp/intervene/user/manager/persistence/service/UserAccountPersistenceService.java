@@ -34,7 +34,7 @@ import uk.ac.ebi.gdp.intervene.user.manager.service.aai.IAuthenticationService;
 import static uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType.ELIXIR;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount.newAuthUserAccount;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount.newUserAccount;
-import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountDetails.newUserAccountDetailsR2DBC;
+import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountDetails.newUserAccountDetails;
 
 @Transactional(readOnly = true)
 public class UserAccountPersistenceService implements IUserAccountPersistenceService {
@@ -73,7 +73,7 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
                 .flatMap(userAccountRepository::save)
                 .flatMap(userAccountR2DBC -> {
                     // Build User Account Details
-                    final UserAccountDetails userAccountDetails = newUserAccountDetailsR2DBC(userAccountR2DBC.getUserId());
+                    final UserAccountDetails userAccountDetails = newUserAccountDetails(userAccountR2DBC.getUserId());
                     return userAccountDetailsRepository
                             .save(userAccountDetails)
                             .thenReturn(userAccountR2DBC);
@@ -83,7 +83,9 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
                     final AuthUserAccount authUserAccount = newAuthUserAccount(
                             authUserAccountId,
                             userAccountR2DBC.getUserId(),
-                            ELIXIR
+                            ELIXIR,
+                            userAccountR2DBC.getUserId(),
+                            userAccountR2DBC.getUserId()
                     );
                     return authUserAccountRepository
                             .save(authUserAccount)

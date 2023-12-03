@@ -35,6 +35,15 @@ import static java.net.URI.create;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.web.reactive.function.client.WebClient.builder;
 
+/**
+ * OAuth2 security config, extends {@link GenericOAuth2SecurityConfig}.
+ *
+ * @see SecurityWebFilterChain
+ * @see ReactiveUserDetailsService
+ * @see ElixirAuthenticationService
+ * @see AuthenticationContext
+ * @see WebClient
+ */
 @Configuration
 @EnableWebFluxSecurity
 public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {

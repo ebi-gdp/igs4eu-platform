@@ -43,6 +43,15 @@ import static uk.ac.ebi.gdp.intervene.user.manager.converter.EnumConverter.AuthP
 import static uk.ac.ebi.gdp.intervene.user.manager.converter.EnumConverter.AuthUserAccountStatusTypeConverter;
 import static uk.ac.ebi.gdp.intervene.user.manager.converter.EnumConverter.UserAccountStatusTypeConverter;
 
+/**
+ * Reactive database config.
+ *
+ * @see AbstractR2dbcConfiguration
+ * @see ConnectionFactory
+ * @see DatabaseClient
+ * @see ReactiveTransactionManager
+ * @see AuthUserAccountMapper
+ */
 @EnableTransactionManagement
 @Configuration
 @EnableR2dbcRepositories(basePackages = {"uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository"})
@@ -87,6 +96,13 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
                         .build());
     }
 
+    /**
+     * @see AuthProviderWritingConverter
+     * @see AuthUserAccountStatusTypeConverter
+     * @see UserAccountStatusTypeConverter
+     *
+     * @return list of custom converters
+     */
     @Override
     protected List<Object> getCustomConverters() {
         return List.of(

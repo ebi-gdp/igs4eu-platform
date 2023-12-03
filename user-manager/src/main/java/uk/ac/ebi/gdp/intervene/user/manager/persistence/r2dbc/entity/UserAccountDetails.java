@@ -37,8 +37,12 @@ public class UserAccountDetails implements Persistable<String> {
     @Transient
     private boolean newUserAccountDetails;
 
+    private String createdBy;
+
     @Column("created_on")
     private LocalDateTime createdOn;
+
+    private String updatedBy;
 
     @Column("updated_on")
     private LocalDateTime updatedOn;
@@ -46,13 +50,17 @@ public class UserAccountDetails implements Persistable<String> {
     protected UserAccountDetails() {
     }
 
-    public UserAccountDetails(final String userId) {
-        this.userId = userId;
-    }
-
+    /**
+     * Constructor to support creation of new User account details.
+     *
+     * @param userId user id
+     * @param newUserAccountDetails whether new or existing
+     */
     private UserAccountDetails(final String userId,
                                final boolean newUserAccountDetails) {
-        this(userId);
+        this.userId = userId;
+        this.createdBy = userId;
+        this.updatedBy = userId;
         this.newUserAccountDetails = newUserAccountDetails;
     }
 
@@ -60,15 +68,30 @@ public class UserAccountDetails implements Persistable<String> {
         return userId;
     }
 
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
     public LocalDateTime getCreatedOn() {
         return createdOn;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
     }
 
     public LocalDateTime getUpdatedOn() {
         return updatedOn;
     }
 
-    public static UserAccountDetails newUserAccountDetailsR2DBC(final String userId) {
+    /**
+     * Static method to create new user account details.
+     *
+     * @param userId user id
+     *
+     * @return new {@link UserAccountDetails}
+     */
+    public static UserAccountDetails newUserAccountDetails(final String userId) {
         return new UserAccountDetails(userId, true);
     }
 

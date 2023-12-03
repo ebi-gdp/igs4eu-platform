@@ -17,6 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity;
 
+/**
+ * Auth user account statuses.
+ */
 public enum AuthUserAccountStatus {
     ENABLED, DISABLED;
 }

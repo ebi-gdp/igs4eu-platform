@@ -21,6 +21,9 @@ import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 
+/**
+ * User Account persistence service.
+ */
 public interface IUserAccountPersistenceService {
     Mono<AuthUserAccount> getUserAccountByAuthUserAccountId(String authUserAccountId);
 

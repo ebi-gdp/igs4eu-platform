@@ -29,6 +29,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.currentUserId;
 
+/**
+ * ELIXIR auth service integration with OIDC APIs.
+ */
 public class ElixirAuthenticationService implements IAuthenticationService {
     private static final Logger LOGGER = getLogger(ElixirAuthenticationService.class);
     private final WebClient webClient;
@@ -40,6 +43,9 @@ public class ElixirAuthenticationService implements IAuthenticationService {
         this.userInfoURI = userinfoURI;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<IUserInfo> userInfo() {
         return currentUserId()

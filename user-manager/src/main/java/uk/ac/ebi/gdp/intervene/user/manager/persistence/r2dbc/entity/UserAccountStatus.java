@@ -17,6 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity;
 
+/**
+ * User account statuses.
+ */
 public enum UserAccountStatus {
     PENDING_APPROVAL, ACTIVE, INACTIVE, SUSPENDED, DELETED;
 }

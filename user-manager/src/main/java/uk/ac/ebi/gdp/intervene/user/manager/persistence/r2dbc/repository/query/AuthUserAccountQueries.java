@@ -17,23 +17,34 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.query;
 
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
+
+/**
+ * {@link AuthUserAccount} related sql queries.
+ */
 public interface AuthUserAccountQueries {
     //@formatter:off
-    String FIND_BY_AUTH_USER_ID = "SELECT " +
+    String FIND_BY_AUTH_USER_ID = "SELECT" +
                                   " u.user_id," +
                                   " u.given_name," +
                                   " u.family_name," +
                                   " u.email_id," +
                                   " u.status," +
+                                  " u.created_by," +
                                   " u.created_on," +
+                                  " u.updated_by," +
                                   " u.updated_on," +
                                   " a.auth_user_id," +
                                   " a.auth_provider," +
-                                  " a.status as auth_user_status " +
-                                  "FROM " +
+                                  " a.status as auth_user_status," +
+                                  " a.created_by as auth_user_created_by," +
+                                  " a.created_on as auth_user_created_on," +
+                                  " a.updated_by as auth_user_updated_by," +
+                                  " a.updated_on as auth_user_updated_on " +
+                                  "FROM" +
                                   " user_account u INNER JOIN auth_user_account a" +
                                   " ON u.user_id = a.user_id " +
-                                  "WHERE " +
+                                  "WHERE" +
                                   " a.auth_user_id = :authUserId";
     //@formatter:on
 }

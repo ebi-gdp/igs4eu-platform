@@ -30,6 +30,13 @@ import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.UserAccountPersi
 import uk.ac.ebi.gdp.intervene.user.manager.service.IUserManagerService;
 import uk.ac.ebi.gdp.intervene.user.manager.service.UserManagerService;
 
+/**
+ * User manager config.
+ *
+ * @see ReactiveExceptionHandler
+ * @see IUserAccountPersistenceService
+ * @see IUserManagerService
+ */
 @Import(ReactiveExceptionHandler.class)
 @Configuration
 public class UserManagerConfig {

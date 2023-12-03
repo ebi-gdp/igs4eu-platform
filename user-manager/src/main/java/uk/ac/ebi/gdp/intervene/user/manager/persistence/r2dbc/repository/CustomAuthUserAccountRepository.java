@@ -20,6 +20,14 @@ package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 
+/**
+ * Custom repository for AuthUserAccount, add methods to provision custom db queries.
+ */
 public interface CustomAuthUserAccountRepository {
+    /**
+     * @param authUserId auth user id
+     *
+     * @return object of type {@link AuthUserAccount}
+     */
     Mono<AuthUserAccount> findAuthUserAccount(String authUserId);
 }

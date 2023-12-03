@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.UserAccountDTO;
 import uk.ac.ebi.gdp.intervene.user.manager.mapper.UserAccountMapper;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.IUserAccountPersistenceService;
 import uk.ac.ebi.gdp.intervene.user.manager.service.IUserManagerService;
@@ -34,6 +35,9 @@ import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
 import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.currentUserId;
 
+/**
+ * User request handler. Defines handlers for router functions.
+ */
 public class UserHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserHandler.class);
     private final IUserManagerService userManagerService;
@@ -48,6 +52,11 @@ public class UserHandler {
         this.userAccountMapper = userAccountMapper;
     }
 
+    /**
+     * Get current user account based on access token.
+     *
+     * @return user account details represented by {@link UserAccountDTO}
+     */
     public Mono<ServerResponse> getCurrentUserAccount() {
         return currentUserId()
                 .flatMap(userAccountId -> userAccountPersistenceService
@@ -59,6 +68,13 @@ public class UserHandler {
                                 userAccountId)))));
     }
 
+    /**
+     * Get user account details for requested account id.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}.
+     *
+     * @return user account details represented by {@link UserAccountDTO}
+     */
     public Mono<ServerResponse> getUserAccountDetails(final ServerRequest serverRequest) {
         return userAccountPersistenceService
                 .getUserAccountById(serverRequest.pathVariable("accountId"))
@@ -66,6 +82,11 @@ public class UserHandler {
                         .bodyValue(userAccountMapper.toDTO(userAccount)));
     }
 
+    /**
+     * Creates new user account.
+     *
+     * @return newly created user account details represented by {@link UserAccountDTO}
+     */
     public Mono<ServerResponse> createUserAccount() {
         return currentUserId()
                 .flatMap(userManagerService::createUserAccount)

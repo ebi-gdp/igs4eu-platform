@@ -31,7 +31,6 @@ public class UserAccountException extends ClientException {
 
     public UserAccountException(final HttpStatus httpStatus, final String message) {
         super(httpStatus, message);
-        System.out.println("Inside UserAccountException");
     }
 
     public static UserAccountException accountAlreadyExists(final String accountId) {

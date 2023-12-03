@@ -34,6 +34,12 @@ import static java.nio.file.Paths.get;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 
+/**
+ * User router config.
+ *
+ * @see RouterFunction
+ * @see UserHandler
+ */
 @Configuration
 public class UserRouterConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserRouterConfig.class);
