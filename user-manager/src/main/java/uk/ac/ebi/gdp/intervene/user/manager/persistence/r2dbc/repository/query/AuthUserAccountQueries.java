@@ -18,9 +18,10 @@
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.query;
 
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 
 /**
- * {@link AuthUserAccount} related sql queries.
+ * {@link UserAccount} {@link AuthUserAccount} related sql queries.
  */
 public interface AuthUserAccountQueries {
     //@formatter:off

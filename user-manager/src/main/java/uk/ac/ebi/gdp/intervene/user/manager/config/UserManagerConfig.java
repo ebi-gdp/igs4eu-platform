@@ -21,21 +21,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
-import uk.ac.ebi.gdp.intervene.user.manager.auth.AuthenticationContext;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.AuthUserAccountRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountDetailsRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.IUserAccountPersistenceService;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.UserAccountPersistenceService;
-import uk.ac.ebi.gdp.intervene.user.manager.service.IUserManagerService;
-import uk.ac.ebi.gdp.intervene.user.manager.service.UserManagerService;
 
 /**
  * User manager config.
  *
  * @see ReactiveExceptionHandler
  * @see IUserAccountPersistenceService
- * @see IUserManagerService
  */
 @Import(ReactiveExceptionHandler.class)
 @Configuration
@@ -44,18 +40,11 @@ public class UserManagerConfig {
     @Bean
     public IUserAccountPersistenceService userAccountPersistenceService(final UserAccountRepository userAccountRepository,
                                                                         final UserAccountDetailsRepository userAccountDetailsRepository,
-                                                                        final AuthUserAccountRepository authUserAccountRepository,
-                                                                        final AuthenticationContext authenticationContext) {
+                                                                        final AuthUserAccountRepository authUserAccountRepository) {
         return new UserAccountPersistenceService(
                 userAccountRepository,
                 userAccountDetailsRepository,
-                authUserAccountRepository,
-                authenticationContext
+                authUserAccountRepository
         );
-    }
-
-    @Bean
-    public IUserManagerService userManagerService(final IUserAccountPersistenceService userAccountPersistenceService) {
-        return new UserManagerService(userAccountPersistenceService);
     }
 }

@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.0.6</version>
+        <version>3.2.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -35,6 +35,7 @@
         <slf4j-version>2.0.7</slf4j-version>
         <amazon-sdk>1.12.470</amazon-sdk>
         <map-struct-version>1.5.4.Final</map-struct-version>
+        <micometer-context-propagation>1.1.0</micometer-context-propagation>
     </properties>
 
     <repositories>
@@ -73,6 +74,11 @@
                 <artifactId>mapstruct</artifactId>
                 <version>${map-struct-version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>context-propagation</artifactId>
+                <version>${micometer-context-propagation}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -98,7 +104,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.10 </version>
+                    <version>0.8.10</version>
                     <executions>
                         <execution>
                             <id>prepare-agent</id>

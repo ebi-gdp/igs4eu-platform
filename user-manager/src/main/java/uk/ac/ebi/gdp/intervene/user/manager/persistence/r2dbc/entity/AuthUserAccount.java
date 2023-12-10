@@ -17,7 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
@@ -51,13 +53,17 @@ public class AuthUserAccount implements Persistable<String> {
     @Transient
     private boolean newAuthUserAccount;
 
+    @Column("created_by")
     private String createdBy;
 
+    @CreatedDate
     @Column("created_on")
     private LocalDateTime createdOn;
 
+    @Column("updated_by")
     private String updatedBy;
 
+    @LastModifiedDate
     @Column("updated_on")
     private LocalDateTime updatedOn;
 
@@ -161,16 +167,14 @@ public class AuthUserAccount implements Persistable<String> {
      * @param authUserId auth user id
      * @param userId user account id
      * @param authProviderType auth provider type {@link AuthProviderType}
-     * @param createdBy user id
-     * @param updatedBy user id
+     * @param createdBy user id who creates an account
      *
      * @return newly created object {@link AuthUserAccount}
      */
     public static AuthUserAccount newAuthUserAccount(final String authUserId,
                                                      final String userId,
                                                      final AuthProviderType authProviderType,
-                                                     final String createdBy,
-                                                     final String updatedBy) {
+                                                     final String createdBy) {
         return new AuthUserAccount(
                 authUserId,
                 userId,
@@ -178,7 +182,7 @@ public class AuthUserAccount implements Persistable<String> {
                 ENABLED,
                 true,
                 createdBy,
-                updatedBy
+                createdBy
         );
     }
 

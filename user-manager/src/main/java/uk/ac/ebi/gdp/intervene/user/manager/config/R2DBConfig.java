@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
+import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
@@ -54,6 +55,7 @@ import static uk.ac.ebi.gdp.intervene.user.manager.converter.EnumConverter.UserA
  */
 @EnableTransactionManagement
 @Configuration
+@EnableR2dbcAuditing
 @EnableR2dbcRepositories(basePackages = {"uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository"})
 public class R2DBConfig extends AbstractR2dbcConfiguration {
 
@@ -97,11 +99,10 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
     }
 
     /**
+     * @return list of custom converters
      * @see AuthProviderWritingConverter
      * @see AuthUserAccountStatusTypeConverter
      * @see UserAccountStatusTypeConverter
-     *
-     * @return list of custom converters
      */
     @Override
     protected List<Object> getCustomConverters() {

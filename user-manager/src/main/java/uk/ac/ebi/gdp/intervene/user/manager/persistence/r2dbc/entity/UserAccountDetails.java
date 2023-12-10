@@ -17,7 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
@@ -37,13 +39,17 @@ public class UserAccountDetails implements Persistable<String> {
     @Transient
     private boolean newUserAccountDetails;
 
+    @Column("created_by")
     private String createdBy;
 
+    @CreatedDate
     @Column("created_on")
     private LocalDateTime createdOn;
 
+    @Column("updated_by")
     private String updatedBy;
 
+    @LastModifiedDate
     @Column("updated_on")
     private LocalDateTime updatedOn;
 
@@ -54,13 +60,17 @@ public class UserAccountDetails implements Persistable<String> {
      * Constructor to support creation of new User account details.
      *
      * @param userId user id
+     * @param createdBy user id who creates an account
+     * @param updatedBy user id who updates an account
      * @param newUserAccountDetails whether new or existing
      */
     private UserAccountDetails(final String userId,
+                               final String createdBy,
+                               final String updatedBy,
                                final boolean newUserAccountDetails) {
         this.userId = userId;
-        this.createdBy = userId;
-        this.updatedBy = userId;
+        this.createdBy = createdBy;
+        this.updatedBy = updatedBy;
         this.newUserAccountDetails = newUserAccountDetails;
     }
 
@@ -88,11 +98,18 @@ public class UserAccountDetails implements Persistable<String> {
      * Static method to create new user account details.
      *
      * @param userId user id
+     * @param createdBy user id who creates an account
      *
      * @return new {@link UserAccountDetails}
      */
-    public static UserAccountDetails newUserAccountDetails(final String userId) {
-        return new UserAccountDetails(userId, true);
+    public static UserAccountDetails newUserAccountDetails(final String userId,
+                                                           final String createdBy) {
+        return new UserAccountDetails(
+                userId,
+                createdBy,
+                createdBy,
+                true
+        );
     }
 
     @Override
