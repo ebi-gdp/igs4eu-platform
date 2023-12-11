@@ -18,7 +18,9 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.stereotype.Repository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusUserDetails;
 
+@Repository
 public interface GlobusUserRepository extends R2dbcRepository<GlobusUserDetails, String> {
 }

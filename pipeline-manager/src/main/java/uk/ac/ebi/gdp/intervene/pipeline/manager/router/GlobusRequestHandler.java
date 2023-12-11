@@ -21,6 +21,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.CreateDirDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.GlobusUserDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusUserDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusUserRepository;
@@ -84,27 +85,29 @@ public class GlobusRequestHandler {
     }
 
     public Mono<ServerResponse> createDirectoryOnGuestCollection(final ServerRequest serverRequest) {
-        final Path directoryName = get(serverRequest.pathVariable("pipelineId"));//TODO: Pipeline id for the time being, this will change in the future
         return serverRequest
-                .bodyToMono(String.class)//TODO: handle exceptions
-                .flatMap(globusUsername -> pipelineManagerService
-                        .createDirectoryOnGuestCollection(
-                                directoryName,
-                                globusUsername)
-                        .flatMap(globusDetailsDTO -> pipelineManagerService
-                                .createOrUpdateGlobusRecord(
-                                        globusUsername,
-                                        globusDetailsDTO.getGuestCollectionId(),
-                                        directoryName)
-                                .flatMap(globusDetails -> {
-                                    globusDetailsDTO.setFilesetId(globusDetails.getFilesetId());
-                                    if (globusDetails.isNew()) {
-                                        return status(CREATED).bodyValue(globusDetailsDTO);
-                                    } else {
-                                        return status(OK).bodyValue(globusDetailsDTO);
-                                    }
-                                })
-                        ));
+                .bodyToMono(CreateDirDTO.class)//TODO: handle exceptions
+                .flatMap(createDirDTO -> {
+                    final Path directoryName = get(createDirDTO.datasetName());
+                    return pipelineManagerService
+                            .createDirectoryOnGuestCollection(
+                                    directoryName,
+                                    createDirDTO.globusUsername())
+                            .flatMap(globusDetailsDTO -> pipelineManagerService
+                                    .createOrUpdateGlobusRecord(
+                                            createDirDTO.globusUsername(),
+                                            globusDetailsDTO.getGuestCollectionId(),
+                                            directoryName)
+                                    .flatMap(globusDetails -> {
+                                        globusDetailsDTO.setFilesetId(globusDetails.getFilesetId());
+                                        if (globusDetails.isNew()) {
+                                            return status(CREATED).bodyValue(globusDetailsDTO);
+                                        } else {
+                                            return status(OK).bodyValue(globusDetailsDTO);
+                                        }
+                                    })
+                            );
+                });
     }
 
     public Mono<ServerResponse> validateFiles(final ServerRequest serverRequest) {

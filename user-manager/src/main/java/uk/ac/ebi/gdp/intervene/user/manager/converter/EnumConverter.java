@@ -23,6 +23,9 @@ import uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccountStatus;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountStatus;
 
+/**
+ * Enum converter for reactive database.
+ */
 public interface EnumConverter {
 
     @WritingConverter

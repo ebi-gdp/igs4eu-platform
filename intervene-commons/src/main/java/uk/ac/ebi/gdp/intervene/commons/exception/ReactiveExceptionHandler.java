@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebExceptionHandler;
 import reactor.core.publisher.Mono;
@@ -32,7 +31,6 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static reactor.core.publisher.Mono.just;
 
-@ControllerAdvice
 public class ReactiveExceptionHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveExceptionHandler.class);
 

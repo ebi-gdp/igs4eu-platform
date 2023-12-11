@@ -21,85 +21,88 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.user.manager.auth.AuthenticationContext;
 import uk.ac.ebi.gdp.intervene.user.manager.model.IUserInfo;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
-import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountDetails;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.AuthUserAccountRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountDetailsRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountRepository;
-import uk.ac.ebi.gdp.intervene.user.manager.service.aai.IAuthenticationService;
 
-import static org.slf4j.LoggerFactory.getLogger;
 import static uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType.ELIXIR;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount.newAuthUserAccount;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount.newUserAccount;
-import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountDetails.newUserAccountDetailsR2DBC;
+import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountDetails.newUserAccountDetails;
 
+@Transactional(readOnly = true)
 public class UserAccountPersistenceService implements IUserAccountPersistenceService {
-    private final Logger LOGGER = getLogger(UserAccountPersistenceService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserAccountPersistenceService.class);
     private final UserAccountRepository userAccountRepository;
     private final UserAccountDetailsRepository userAccountDetailsRepository;
     private final AuthUserAccountRepository authUserAccountRepository;
-    private final AuthenticationContext authenticationContext;
 
     public UserAccountPersistenceService(final UserAccountRepository userAccountRepository,
                                          final UserAccountDetailsRepository userAccountDetailsRepository,
-                                         final AuthUserAccountRepository authUserAccountRepository,
-                                         final AuthenticationContext authenticationContext) {
+                                         final AuthUserAccountRepository authUserAccountRepository) {
         this.userAccountRepository = userAccountRepository;
         this.userAccountDetailsRepository = userAccountDetailsRepository;
         this.authUserAccountRepository = authUserAccountRepository;
-        this.authenticationContext = authenticationContext;
     }
 
-    @Transactional(
-            transactionManager = "reactiveTransactionManager",
+    /**
+     * Build & persist all user account related entities
+     * Rollbacks transaction on exception thrown
+     *
+     * {@inheritDoc}
+     */
+    @Transactional(transactionManager = "reactiveTransactionManager",
             rollbackFor = Exception.class)
     @Override
-    public Mono<UserAccount> createAccount(final String authUserAccountId) {
+    public Mono<UserAccount> createAccount(final String authUserAccountId,
+                                           final IUserInfo userInfo) {
         //Get next user account id
-        LOGGER.info("Creating new User Account");
+        LOGGER.info("Creating a new user account!");
         return userAccountRepository
                 .getNextUserAccount()
-                .doOnNext(nextUserAccountId -> LOGGER.debug("Next User Account Id: {}", nextUserAccountId))
-                .flatMap(nextUserAccountId -> {
-                    // Fetch user details
-                    return authenticationContext
-                            .getAuthenticationService()
-                            .flatMap(IAuthenticationService::userInfo)
-                            .map(userInfo -> buildUserAccount(nextUserAccountId, userInfo));
-                })
+                .doOnNext(nextUserAccountId -> LOGGER.info("Generated new user account Id"))
+                .doOnNext(nextUserAccountId -> LOGGER.debug("Next new user account Id: {}", nextUserAccountId))
+                .map(nextUserAccountId -> buildUserAccount(nextUserAccountId, userInfo))
                 .flatMap(userAccountRepository::save)
-                .flatMap(userAccountR2DBC -> {
+                .doOnNext(userAccount -> LOGGER.info("Persisted new user account"))
+                .flatMap(userAccount -> {
                     // Build User Account Details
-                    final UserAccountDetails userAccountDetails = newUserAccountDetailsR2DBC(userAccountR2DBC.getUserId());
                     return userAccountDetailsRepository
-                            .save(userAccountDetails)
-                            .thenReturn(userAccountR2DBC);
+                            .save(newUserAccountDetails(userAccount.getUserId(),
+                                    userAccount.getUserId()))
+                            .doOnNext(userAccountDetails -> LOGGER.info("Persisted new user account details"))
+                            .thenReturn(userAccount);
                 })
-                .flatMap(userAccountR2DBC -> {
+                .flatMap(userAccount -> {
                     // Build Auth User Account
-                    final AuthUserAccount authUserAccount = newAuthUserAccount(
-                            authUserAccountId,
-                            userAccountR2DBC.getUserId(),
-                            ELIXIR
-                    );
                     return authUserAccountRepository
-                            .save(authUserAccount)
-                            .thenReturn(userAccountR2DBC);
+                            .save(newAuthUserAccount(
+                                    authUserAccountId,
+                                    userAccount.getUserId(),
+                                    ELIXIR,
+                                    userAccount.getUserId()
+                            ))
+                            .doOnNext(authUserAccount -> LOGGER.info("Persisted new auth user account"))
+                            .thenReturn(userAccount);
                 });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<UserAccount> getUserAccountById(final String platformUserAccountId) {
         return userAccountRepository.findUserAccountByUserId(platformUserAccountId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<AuthUserAccount> getUserAccountByAuthUserAccountId(final String authUserAccountId) {
-        LOGGER.debug("Fetching User Account details for {}", authUserAccountId);
         return authUserAccountRepository.findAuthUserAccount(authUserAccountId);
     }
 
@@ -109,7 +112,8 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
                 nextUserAccountId,
                 userInfo.getGivenName(),
                 userInfo.getFamilyName(),
-                userInfo.getEmailId()
+                userInfo.getEmailId(),
+                nextUserAccountId
         );
     }
 }

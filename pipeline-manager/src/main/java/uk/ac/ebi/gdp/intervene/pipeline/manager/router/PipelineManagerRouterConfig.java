@@ -18,6 +18,8 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
 import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,48 +39,41 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
-import java.nio.file.Path;
-
-import static java.nio.file.Paths.get;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
+import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.buildUniqueRequestId;
 
 @Configuration
 public class PipelineManagerRouterConfig {
+    private final Logger LOGGER = LoggerFactory.getLogger(PipelineManagerRouterConfig.class);
 
     @Bean
     public RouterFunction<ServerResponse> pipelineRoutes(final PipelineRequestHandler pipelineRequestHandler,
                                                          final GlobusRequestHandler globusRequestHandler,
                                                          final CSCPipelineHandler cscPipelineHandler,
-                                                         final PipelineResultHandler pipelineResultHandler) {
-        final Path pipelineRoutes = get("/pipeline");
-        return route() //TODO: revisit the logic. Look for nested routes
-                .POST(pipelineRoutes.toString(), serverRequest -> pipelineRequestHandler.createPipeline())
-                .GET(pipelineRoutes.resolve("{pipelineId}").toString(), pipelineRequestHandler::getPipelineDetails)
-                .POST(pipelineRoutes.resolve("{pipelineId}/execute").toString(), pipelineRequestHandler::executePipeline)
-                .POST(pipelineRoutes.resolve("{pipelineId}/globus/dir-guest-collection").toString(), globusRequestHandler::createDirectoryOnGuestCollection)
-                .PATCH(pipelineRoutes.resolve("{pipelineId}/dataset").toString(), pipelineRequestHandler::updateDatasetId)
-                .GET(pipelineRoutes.resolve("recent/top").toString(), serverRequest -> pipelineRequestHandler.getPipelineDetailsRecent())//TODO: rename path
-                .POST(pipelineRoutes.resolve("csc/notify").toString(), cscPipelineHandler::pipelineNotificationCallback)
-                .GET(pipelineRoutes.resolve("{pipelineId}/report").toString(), pipelineResultHandler::streamFileFromS3)
-                .GET(pipelineRoutes.resolve("recent/result").toString(), serverRequest -> pipelineResultHandler.listResultFiles())
-                .POST(pipelineRoutes.resolve("pgs-ids/validate").toString(), pipelineRequestHandler::validatePGSIds)
-                .build();
-    }
-
-    @Bean
-    public RouterFunction<ServerResponse> datasetRoutes(final DatasetRequestHandler datasetRequestHandler) {
-        final Path datasetURI = get("/dataset");
+                                                         final PipelineResultHandler pipelineResultHandler,
+                                                         final DatasetRequestHandler datasetRequestHandler) {
         return route()
-                .POST(datasetURI.toString(), datasetRequestHandler::createOrUpdateDatasetDetails)
-                .GET(datasetURI.toString(), datasetRequestHandler::getDatasetDetails)
-                .build();
-    }
-
-    @Bean
-    public RouterFunction<ServerResponse> globusRoutes(final GlobusRequestHandler globusRequestHandler) {
-        return route()
-                .POST(get("/globus/user").toString(), globusRequestHandler::mapGlobusUserId)
-                .GET(get("/globus/files/validate").toString(), globusRequestHandler::validateFiles)
+                .filter(buildUniqueRequestId(LOGGER))
+                .path("/pipeline", pb -> pb
+                        .POST("/globus/dir-guest-collection", globusRequestHandler::createDirectoryOnGuestCollection)
+                        .GET("/recent/top", serverRequest -> pipelineRequestHandler.getPipelineRecent())//TODO: rename path
+                        .GET("/success/result", pipelineResultHandler::listResultFiles)
+                        .POST("/pgs-ids/validate", pipelineRequestHandler::validatePGSIds)
+                        .path("/{pipelineId}", pbPId -> pbPId
+                                .POST("/execute", pipelineRequestHandler::executePipeline)
+                                .PATCH("/dataset", pipelineRequestHandler::updateDatasetId)
+                                .GET("/report", pipelineResultHandler::streamFileFromS3)
+                                .GET(pipelineRequestHandler::getPipeline))
+                        .POST(pipelineRequestHandler::createPipeline)
+                        .GET(pipelineRequestHandler::getPipelines))
+                .path("/csc/pipeline/{pipelineId}/status", pbCSC -> pbCSC.POST(cscPipelineHandler::updatePipelineStatus))
+                .path("/dataset", db -> db
+                        .GET("/{datasetId}", datasetRequestHandler::getDatasetDetails)
+                        .GET(datasetRequestHandler::getDatasets)
+                        .POST(datasetRequestHandler::createOrUpdateDatasetDetails))
+                .path("/globus", gb -> gb
+                        .POST("/user", globusRequestHandler::mapGlobusUserId)
+                        .GET("/files/validate", globusRequestHandler::validateFiles))
                 .build();
     }
 
@@ -93,14 +88,15 @@ public class PipelineManagerRouterConfig {
                 pipelinePersistence,
                 userManagerService,
                 pipelineDetailsMapper,
-                redisTemplate);
+                redisTemplate
+        );
     }
 
     @Bean
     public PipelineResultHandler pipelineResultHandler(final IPipelinePersistence pipelinePersistence,
                                                        final UserManagerService userManagerService,
                                                        final AmazonS3 s3Client,
-                                                       @Value("${ebi-embassy.s3.bucket-name}") final String s3Bucket) {
+                                                       @Value("${s3.bucket-name}") final String s3Bucket) {
         return new PipelineResultHandler(
                 pipelinePersistence,
                 userManagerService,
@@ -111,10 +107,12 @@ public class PipelineManagerRouterConfig {
 
     @Bean
     public DatasetRequestHandler datasetRequestHandler(final DatasetDetailsRepository datasetDetailsRepository,
-                                                       final DatasetMapper datasetMapper) {
+                                                       final DatasetMapper datasetMapper,
+                                                       final UserManagerService userManagerService) {
         return new DatasetRequestHandler(
                 datasetDetailsRepository,
-                datasetMapper
+                datasetMapper,
+                userManagerService
         );
     }
 
@@ -131,17 +129,19 @@ public class PipelineManagerRouterConfig {
                 globusFileHandlerService,
                 globusUserRepository,
                 globusUserDetailsMapper,
-                fileValidations);
+                fileValidations
+        );
     }
 
     @Bean
     public CSCPipelineHandler cscPipelineHandler(final UserManagerService userManagerService,
                                                  final IPipelinePersistence pipelinePersistence,
-                                                 final IEmailSender emailService) {
+                                                 final IEmailSender emailService,
+                                                 @Value("${intervene.platform.url}") final String platformURL) {
         return new CSCPipelineHandler(
                 userManagerService,
                 pipelinePersistence,
-                emailService
-        );
+                emailService,
+                platformURL);
     }
 }

@@ -1,5 +1,5 @@
 FROM --platform=linux/amd64 eclipse-temurin:19.0.2_7-jre-jammy as builder
-ARG JAR_FILE=target/*.jar
+ARG JAR_FILE=user-manager/target/*.jar
 COPY ${JAR_FILE} application.jar
 RUN java -Djarmode=layertools -jar application.jar extract
 

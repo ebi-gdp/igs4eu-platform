@@ -17,7 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
@@ -37,22 +39,38 @@ public class UserAccountDetails implements Persistable<String> {
     @Transient
     private boolean newUserAccountDetails;
 
+    @Column("created_by")
+    private String createdBy;
+
+    @CreatedDate
     @Column("created_on")
     private LocalDateTime createdOn;
 
+    @Column("updated_by")
+    private String updatedBy;
+
+    @LastModifiedDate
     @Column("updated_on")
     private LocalDateTime updatedOn;
 
     protected UserAccountDetails() {
     }
 
-    public UserAccountDetails(final String userId) {
-        this.userId = userId;
-    }
-
+    /**
+     * Constructor to support creation of new User account details.
+     *
+     * @param userId user id
+     * @param createdBy user id who creates an account
+     * @param updatedBy user id who updates an account
+     * @param newUserAccountDetails whether new or existing
+     */
     private UserAccountDetails(final String userId,
+                               final String createdBy,
+                               final String updatedBy,
                                final boolean newUserAccountDetails) {
-        this(userId);
+        this.userId = userId;
+        this.createdBy = createdBy;
+        this.updatedBy = updatedBy;
         this.newUserAccountDetails = newUserAccountDetails;
     }
 
@@ -60,16 +78,38 @@ public class UserAccountDetails implements Persistable<String> {
         return userId;
     }
 
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
     public LocalDateTime getCreatedOn() {
         return createdOn;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
     }
 
     public LocalDateTime getUpdatedOn() {
         return updatedOn;
     }
 
-    public static UserAccountDetails newUserAccountDetailsR2DBC(final String userId) {
-        return new UserAccountDetails(userId, true);
+    /**
+     * Static method to create new user account details.
+     *
+     * @param userId user id
+     * @param createdBy user id who creates an account
+     *
+     * @return new {@link UserAccountDetails}
+     */
+    public static UserAccountDetails newUserAccountDetails(final String userId,
+                                                           final String createdBy) {
+        return new UserAccountDetails(
+                userId,
+                createdBy,
+                createdBy,
+                true
+        );
     }
 
     @Override

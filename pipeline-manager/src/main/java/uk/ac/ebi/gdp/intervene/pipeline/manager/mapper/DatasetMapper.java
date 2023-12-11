@@ -29,9 +29,14 @@ import static org.mapstruct.InjectionStrategy.CONSTRUCTOR;
 public interface DatasetMapper {
     @Mapping(target = "datasetId", source = "datasetId")
     @Mapping(target = "filesetType", source = "filesetType")
+    @Mapping(target = "createdBy", source = "userId")
+    @Mapping(target = "updatedBy", source = "userId")
+    @Mapping(target = "genomeBuild", expression = "java(GenomeBuild.valueOf(datasetDetailsDTO.getGenomeBuild().toUpperCase()))")
     DatasetDetails toModel(DatasetDetailsDTO datasetDetailsDTO,
                            String datasetId,
-                           FilesetType filesetType);
+                           FilesetType filesetType,
+                           String userId);
 
+    @Mapping(target = "globusDetails.username", source = "datasetDetails.globusDetails.globusUsername")
     DatasetDetailsDTO toDTO(DatasetDetails datasetDetails);
 }

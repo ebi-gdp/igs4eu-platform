@@ -22,6 +22,9 @@ import org.mapstruct.Mapping;
 import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.UserAccountDTO;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 
+/**
+ * User account object mapper.
+ */
 @Mapper(componentModel = "spring")
 public interface UserAccountMapper {
     @Mapping(target = "accountId", source = "entity.userId")

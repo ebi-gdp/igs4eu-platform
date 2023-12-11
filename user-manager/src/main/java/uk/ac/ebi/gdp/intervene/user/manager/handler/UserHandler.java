@@ -17,12 +17,17 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.handler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.UserAccountDTO;
+import uk.ac.ebi.gdp.intervene.user.manager.auth.AuthenticationContext;
 import uk.ac.ebi.gdp.intervene.user.manager.mapper.UserAccountMapper;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.IUserAccountPersistenceService;
-import uk.ac.ebi.gdp.intervene.user.manager.service.IUserManagerService;
+import uk.ac.ebi.gdp.intervene.user.manager.service.aai.IAuthenticationService;
 
 import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.CREATED;
@@ -31,41 +36,81 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
 import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
 import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.currentUserId;
+import static uk.ac.ebi.gdp.intervene.user.manager.exception.UserAccountException.accountAlreadyExists;
 
+/**
+ * User request handler. Defines handlers for router functions.
+ */
 public class UserHandler {
-    private final IUserManagerService userManagerService;
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserHandler.class);
     private final IUserAccountPersistenceService userAccountPersistenceService;
     private final UserAccountMapper userAccountMapper;
+    private final AuthenticationContext authenticationContext;
 
-    public UserHandler(final IUserManagerService userManagerService,
-                       final IUserAccountPersistenceService userAccountPersistenceService,
-                       final UserAccountMapper userAccountMapper) {
-        this.userManagerService = userManagerService;
+    public UserHandler(final IUserAccountPersistenceService userAccountPersistenceService,
+                       final UserAccountMapper userAccountMapper,
+                       final AuthenticationContext authenticationContext) {
         this.userAccountPersistenceService = userAccountPersistenceService;
         this.userAccountMapper = userAccountMapper;
+        this.authenticationContext = authenticationContext;
     }
 
-    public Mono<ServerResponse> getCurrentUserAccount() {
+    /**
+     * Get current user account based on access token.
+     *
+     * @return user account details represented by {@link UserAccountDTO}
+     */
+    public Mono<ServerResponse> getUserAccount() {
         return currentUserId()
+                .doOnNext(userId -> LOGGER.info("Retrieving user account details for logged-in user \"{}\"", userId))
                 .flatMap(userAccountId -> userAccountPersistenceService
                         .getUserAccountByAuthUserAccountId(userAccountId)
-                        .flatMap(authUserAccountR2DBC -> ok()
-                                .bodyValue(userAccountMapper.toDTO(authUserAccountR2DBC.getUserAccount())))
-                        .switchIfEmpty(error(resourceNotFound(format("User account having auth id %s not found",
+                        .doOnNext(authUserAccount -> LOGGER.info("User Id: {}", authUserAccount.getUserAccount().getUserId()))
+                        .flatMap(authUserAccount -> ok()
+                                .bodyValue(userAccountMapper.toDTO(authUserAccount.getUserAccount())))
+                        .doOnNext(serverResponse -> LOGGER.info("User account details have been successfully retrieved!"))
+                        .switchIfEmpty(error(resourceNotFound(format("User account having auth id \"%s\" not found",
                                 userAccountId)))));
     }
 
-    public Mono<ServerResponse> getUserAccountDetails(final ServerRequest serverRequest) {
+    /**
+     * Get user account details for requested account id.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}.
+     *
+     * @return user account details represented by {@link UserAccountDTO}
+     */
+    public Mono<ServerResponse> getUserAccount(final ServerRequest serverRequest) {
+        final String accountId = serverRequest.pathVariable("accountId");
+        LOGGER.info("Retrieving user account details for {}", accountId);
         return userAccountPersistenceService
-                .getUserAccountById(serverRequest.pathVariable("accountId"))
+                .getUserAccountById(accountId)
                 .flatMap(userAccount -> ok()
-                        .bodyValue(userAccountMapper.toDTO(userAccount)));
+                        .bodyValue(userAccountMapper.toDTO(userAccount)))
+                .doOnNext(serverResponse -> LOGGER.info("User account details have been successfully retrieved!"))
+                .switchIfEmpty(error(resourceNotFound(format("User account having auth id \"%s\" not found",
+                        accountId))));
     }
 
+    /**
+     * Creates new user account.
+     *
+     * @return newly created user account details represented by {@link UserAccountDTO}
+     */
     public Mono<ServerResponse> createUserAccount() {
         return currentUserId()
-                .flatMap(userManagerService::createUserAccount)
-                .flatMap(userAccountR2DBC -> status(CREATED)
-                        .bodyValue(userAccountMapper.toDTO((userAccountR2DBC))));
+                .doOnNext(userId -> LOGGER.info("User account is being created for \"{}\"", userId))
+                .flatMap(authUserAccountId -> userAccountPersistenceService
+                        .getUserAccountByAuthUserAccountId(authUserAccountId)
+                        .flatMap(authUserAccount -> error(accountAlreadyExists(authUserAccountId)))
+                        .switchIfEmpty(authenticationContext
+                                .getAuthenticationService()
+                                .doOnNext(auhService -> LOGGER.info("Fetching user info from OIDC"))
+                                .flatMap(IAuthenticationService::userInfo)
+                                .flatMap(userInfo -> userAccountPersistenceService.createAccount(authUserAccountId, userInfo)))
+                        .cast(UserAccount.class)
+                        .flatMap(userAccount -> status(CREATED)
+                                .bodyValue(userAccountMapper.toDTO((userAccount))))
+                        .doOnNext(serverResponse -> LOGGER.info("User account has been created!")));
     }
 }

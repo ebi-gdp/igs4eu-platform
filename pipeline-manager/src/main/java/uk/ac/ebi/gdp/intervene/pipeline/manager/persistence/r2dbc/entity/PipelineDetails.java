@@ -17,7 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
@@ -41,12 +43,17 @@ public class PipelineDetails implements Persistable<String> {
     @Column("dataset_id")
     private String datasetId;
 
-    @Column
-    private PipelineStatus status;
+    @Column("created_by")
+    private String createdBy;
 
+    @CreatedDate
     @Column
     private LocalDateTime createdOn;
 
+    @Column("updated_by")
+    private String updatedBy;
+
+    @LastModifiedDate
     @Column
     private LocalDateTime updatedOn;
 
@@ -56,29 +63,90 @@ public class PipelineDetails implements Persistable<String> {
     @Transient
     private DatasetDetails datasetDetails;
 
+    @Transient
+    private PipelineExecutionStatus pipelineExecutionStatus;
+
     protected PipelineDetails() {
     }
 
-    public PipelineDetails(final String pipelineId,
-                           final String userId,
-                           final PipelineStatus status) {
+    private PipelineDetails(final String pipelineId,
+                            final String userId,
+                            final String datasetId) {
         this.pipelineId = pipelineId;
         this.pipelineUID = UUID.randomUUID().toString();
         this.userId = userId;
-        this.datasetId = "INTD00000000000";
-        this.status = status;
+        this.datasetId = datasetId;
         this.newPipelineDetails = true;
+        this.createdBy = userId;
+        this.updatedBy = userId;
+        this.pipelineExecutionStatus = new PipelineExecutionStatus(pipelineId, userId);
     }
+
     public PipelineDetails(final String pipelineId,
                            final String pipelineUID,
                            final String userId,
-                           final PipelineStatus status,
-                           final DatasetDetails datasetDetails) {
+                           final String datasetId,
+                           final String createdBy,
+                           final LocalDateTime createdOn,
+                           final String updatedBy,
+                           final LocalDateTime updatedOn) {
         this.pipelineId = pipelineId;
         this.pipelineUID = pipelineUID;
         this.userId = userId;
-        this.status = status;
+        this.datasetId = datasetId;
+        this.createdBy = createdBy;
+        this.createdOn = createdOn;
+        this.updatedBy = updatedBy;
+        this.updatedOn = updatedOn;
+    }
+
+    private PipelineDetails(final String pipelineId,
+                            final String pipelineUID,
+                            final String userId,
+                            final String datasetId,
+                            final String createdBy,
+                            final LocalDateTime createdOn,
+                            final String updatedBy,
+                            final LocalDateTime updatedOn,
+                            final PipelineExecutionStatus pipelineExecutionStatus) {
+        this(pipelineId, pipelineUID, userId, datasetId, createdBy, createdOn,
+                updatedBy, updatedOn);
+        this.pipelineExecutionStatus = pipelineExecutionStatus;
+    }
+
+    private PipelineDetails(final String pipelineId,
+                            final String pipelineUID,
+                            final String userId,
+                            final String datasetId,
+                            final String createdBy,
+                            final LocalDateTime createdOn,
+                            final String updatedBy,
+                            final LocalDateTime updatedOn,
+                            final PipelineExecutionStatus pipelineExecutionStatus,
+                            final DatasetDetails datasetDetails) {
+        this(pipelineId, pipelineUID, userId, datasetId, createdBy, createdOn,
+                updatedBy, updatedOn, pipelineExecutionStatus);
         this.datasetDetails = datasetDetails;
+    }
+
+    public static PipelineDetails create(final String pipelineId,
+                                         final String userId,
+                                         final String datasetId) {
+        return new PipelineDetails(pipelineId, userId, datasetId);
+    }
+
+    public static PipelineDetails pipelineDetailsWithStatusAndDataset(final String pipelineId,
+                                                                      final String pipelineUID,
+                                                                      final String userId,
+                                                                      final String datasetId,
+                                                                      final String createdBy,
+                                                                      final LocalDateTime createdOn,
+                                                                      final String updatedBy,
+                                                                      final LocalDateTime updatedOn,
+                                                                      final PipelineExecutionStatus pipelineExecutionStatus,
+                                                                      final DatasetDetails datasetDetails) {
+        return new PipelineDetails(pipelineId, pipelineUID, userId, datasetId, createdBy,
+                createdOn, updatedBy, updatedOn, pipelineExecutionStatus, datasetDetails);
     }
 
     public String getPipelineId() {
@@ -113,14 +181,6 @@ public class PipelineDetails implements Persistable<String> {
         this.datasetId = datasetId;
     }
 
-    public PipelineStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(PipelineStatus status) {
-        this.status = status;
-    } //TODO: Check whether needed or not
-
     public LocalDateTime getCreatedOn() {
         return createdOn;
     }
@@ -137,20 +197,24 @@ public class PipelineDetails implements Persistable<String> {
         this.updatedOn = updatedOn;
     }
 
-    public void statusPending() {
-        this.status = PipelineStatus.PENDING;
-    }
-
-    public void statusCompleted() {
-        this.status = PipelineStatus.COMPLETED;
-    }
-
     public void updateDatasetId(final String datasetId) {
         this.datasetId = datasetId;
     }
 
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
+    }
+
     public DatasetDetails getDatasetDetails() {
         return datasetDetails;
+    }
+
+    public PipelineExecutionStatus getPipelineExecutionStatus() {
+        return pipelineExecutionStatus;
     }
 
     @Override

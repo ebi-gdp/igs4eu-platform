@@ -24,17 +24,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
+import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.dialect.PostgresDialect;
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 import org.springframework.r2dbc.connection.R2dbcTransactionManager;
-import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineDetailsMapper;
 
 import static io.r2dbc.postgresql.client.SSLMode.fromValue;
 import static io.r2dbc.postgresql.codec.EnumCodec.builder;
@@ -44,6 +43,7 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.P
 
 @EnableTransactionManagement
 @Configuration
+@EnableR2dbcAuditing
 @EnableR2dbcRepositories(basePackages = {"uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository"})
 public class R2DBConfig extends AbstractR2dbcConfiguration {
 
@@ -100,17 +100,5 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
                 new GenomeBuildConverter(),
                 new FilesetTypeConverter()
         );
-    }
-
-    //@Bean
-    public DatabaseClient databaseClient(final ConnectionFactory connectionFactory) {
-        return DatabaseClient.builder()
-                .connectionFactory(connectionFactory)
-                .build();
-    }
-
-    @Bean
-    public PipelineDetailsMapper pipelineDetailsMapper() {
-        return new PipelineDetailsMapper();
     }
 }

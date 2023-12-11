@@ -20,6 +20,13 @@ package uk.ac.ebi.gdp.intervene.user.manager.service.aai;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.model.IUserInfo;
 
+/**
+ * Authentication service defines methods related to OIDC.
+ */
 public interface IAuthenticationService {
+    /**
+     * @return implementation of type {@link IUserInfo}. Contains user information
+     * provided by OIDC user-info endpoint
+     */
     Mono<IUserInfo> userInfo();
 }

@@ -17,6 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.model;
 
+/**
+ * User info implementation.
+ */
 public class UserInfo implements IUserInfo {
     private final String subject;
     private final String givenName;

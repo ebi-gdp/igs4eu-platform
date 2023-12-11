@@ -21,6 +21,8 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 
+import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.query.AuthUserAccountQueries.FIND_BY_AUTH_USER_ID;
+
 public class CustomAuthUserAccountRepositoryImpl implements CustomAuthUserAccountRepository {
     private final DatabaseClient databaseClient;
     private final AuthUserAccountMapper authUserAccountMapper;
@@ -31,27 +33,13 @@ public class CustomAuthUserAccountRepositoryImpl implements CustomAuthUserAccoun
         this.authUserAccountMapper = authUserAccountMapper;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<AuthUserAccount> findAuthUserAccount(final String authUserId) {
-        //@formatter:off
-        final String query = "SELECT " +
-                             " a.user_id," +
-                             " a.given_name," +
-                             " a.family_name," +
-                             " a.email_id," +
-                             " a.status," +
-                             " a.created_on," +
-                             " a.updated_on," +
-                             " b.auth_user_id," +
-                             " b.auth_provider," +
-                             " b.status as auth_user_status " +
-                             "FROM " +
-                             " user_account a INNER JOIN auth_user_account b ON a.user_id = b.user_id " +
-                             "WHERE b.auth_user_id = :authUserId";
-        //@formatter:on
-
         return databaseClient
-                .sql(query)
+                .sql(FIND_BY_AUTH_USER_ID)
                 .bind("authUserId", authUserId)
                 .map(authUserAccountMapper::apply)
                 .one();

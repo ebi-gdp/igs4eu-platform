@@ -24,7 +24,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.commons.exception.ServerException;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 
 import java.io.ByteArrayInputStream;
@@ -67,7 +66,6 @@ public class AllasMessageService implements MessageService {
 
         final byte[] messageByteArray = getJsonObjectMapper()
                 .writeValueAsBytes(message);
-
         return new PutObjectRequest(
                 bucketName,
                 "job-queue/%s.json".formatted(key),

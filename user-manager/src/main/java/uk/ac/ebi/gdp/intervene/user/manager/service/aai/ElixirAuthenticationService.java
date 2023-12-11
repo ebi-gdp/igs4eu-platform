@@ -18,7 +18,6 @@
 package uk.ac.ebi.gdp.intervene.user.manager.service.aai;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.dto.UserInfoDTO;
@@ -30,6 +29,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.currentUserId;
 
+/**
+ * ELIXIR auth service integration with OIDC APIs.
+ */
 public class ElixirAuthenticationService implements IAuthenticationService {
     private static final Logger LOGGER = getLogger(ElixirAuthenticationService.class);
     private final WebClient webClient;
@@ -41,6 +43,9 @@ public class ElixirAuthenticationService implements IAuthenticationService {
         this.userInfoURI = userinfoURI;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<IUserInfo> userInfo() {
         return currentUserId()

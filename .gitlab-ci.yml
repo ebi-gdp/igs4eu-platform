@@ -93,3 +93,23 @@ deploy-file-handler-module:
     - .deploy-module
   needs:
     - 'containerize-file-handler-module'
+
+build-user-manager-module:
+  variables:
+    MODULE: $USER_MANAGER_MODULE
+  extends:
+    - .build-module
+
+containerize-user-manager-module:
+  variables:
+    MODULE: $USER_MANAGER_MODULE
+  extends:
+    - .containerize-module
+
+deploy-user-manager-module:
+  variables:
+    MODULE: $USER_MANAGER_MODULE
+  extends:
+    - .deploy-module
+  needs:
+    - 'containerize-user-manager-module'

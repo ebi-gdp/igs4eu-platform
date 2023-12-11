@@ -35,6 +35,8 @@ import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAcc
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.UserAccountPersistenceService;
 
+import java.time.LocalDateTime;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -65,12 +67,20 @@ public class UserAccountPersistenceServiceTest {
                 authUserId,
                 AuthProviderType.ELIXIR,
                 AuthUserAccountStatus.ENABLED,
+                "",
+                LocalDateTime.now(),
+                "",
+                LocalDateTime.now(),
                 new UserAccount(
                         "INTU00000000001",
                         "Ashutosh",
                         "Shimpi",
                         "ashutosh@ebi.ac.uk",
-                        UserAccountStatus.ACTIVE
+                        UserAccountStatus.ACTIVE,
+                        "INTU00000000001",
+                        LocalDateTime.now(),
+                        "INTU00000000001",
+                        LocalDateTime.now()
                 )
         );
 

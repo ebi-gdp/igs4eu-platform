@@ -7,10 +7,11 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DatasetDetailsDTO {
+    private String datasetId;
     private String datasetName;
     private GenomeBuild genomeBuild;
-    private String datasetId;
     private String filesetId;
+    private GlobusDetailsDTO globusDetails;
 
     public DatasetDetailsDTO() {
     }
@@ -23,8 +24,8 @@ public class DatasetDetailsDTO {
         this.datasetName = datasetName;
     }
 
-    public GenomeBuild getGenomeBuild() {
-        return genomeBuild;
+    public String getGenomeBuild() {
+        return genomeBuild.getGenomeBuildValue();
     }
 
     public void setGenomeBuild(GenomeBuild genomeBuild) {
@@ -45,5 +46,13 @@ public class DatasetDetailsDTO {
 
     public void setFilesetId(String filesetId) {
         this.filesetId = filesetId;
+    }
+
+    public GlobusDetailsDTO getGlobusDetails() {
+        return globusDetails;
+    }
+
+    public void setGlobusDetails(GlobusDetailsDTO globusDetails) {
+        this.globusDetails = globusDetails;
     }
 }

@@ -17,7 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
@@ -50,35 +52,80 @@ public class UserAccount implements Persistable<String> {
     @Transient
     private boolean newUserAccount;
 
+    @Column("created_by")
+    private String createdBy;
+
+    @CreatedDate
     @Column("created_on")
     private LocalDateTime createdOn;
 
+    @Column("updated_by")
+    private String updatedBy;
+
+    @LastModifiedDate
     @Column("updated_on")
     private LocalDateTime updatedOn;
 
     protected UserAccount() {
     }
 
-    public UserAccount(final String userId,
-                       final String firstName,
-                       final String lastName,
-                       final String emailId,
-                       final UserAccountStatus userAccountStatus) {
-        this.userId = userId;
-        this.givenName = firstName;
-        this.familyName = lastName;
-        this.emailId = emailId;
-        this.status = userAccountStatus;
-    }
-
+    /**
+     * Constructor to support creation of new user account
+     * also to support initialize default members for retrieval of
+     * exiting account.
+     *
+     * @param userId user id
+     * @param firstName firstname
+     * @param lastName lastname
+     * @param emailId email id
+     * @param userAccountStatus account status {@link UserAccountStatus}
+     * @param createdBy user id
+     * @param updatedBy user id
+     * @param newUserAccount whether account is new or existing
+     */
     private UserAccount(final String userId,
                         final String firstName,
                         final String lastName,
                         final String emailId,
                         final UserAccountStatus userAccountStatus,
+                        final String createdBy,
+                        final String updatedBy,
                         final boolean newUserAccount) {
-        this(userId, firstName, lastName, emailId, userAccountStatus);
+        this.userId = userId;
+        this.givenName = firstName;
+        this.familyName = lastName;
+        this.emailId = emailId;
+        this.status = userAccountStatus;
+        this.createdBy = createdBy;
+        this.updatedBy = updatedBy;
         this.newUserAccount = newUserAccount;
+    }
+
+    /**
+     * Public constructor to build existing user account.
+     *
+     * @param userId user id
+     * @param firstName firstname
+     * @param lastName lastname
+     * @param emailId email id
+     * @param userAccountStatus account status {@link UserAccountStatus}
+     * @param createdBy user id
+     * @param createdOn object creation timestamp
+     * @param updatedBy user id
+     * @param updatedOn object update timestamp
+     */
+    public UserAccount(final String userId,
+                       final String firstName,
+                       final String lastName,
+                       final String emailId,
+                       final UserAccountStatus userAccountStatus,
+                       final String createdBy,
+                       final LocalDateTime createdOn,
+                       final String updatedBy,
+                       final LocalDateTime updatedOn) {
+        this(userId, firstName, lastName, emailId, userAccountStatus, createdBy, updatedBy, false);
+        this.createdOn = createdOn;
+        this.updatedOn = updatedOn;
     }
 
     public String getUserId() {
@@ -101,24 +148,46 @@ public class UserAccount implements Persistable<String> {
         return status;
     }
 
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
     public LocalDateTime getCreatedOn() {
         return createdOn;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
     }
 
     public LocalDateTime getUpdatedOn() {
         return updatedOn;
     }
 
+    /**
+     * Static method to create new user account.
+     *
+     * @param userId user id
+     * @param firstName firstname
+     * @param lastName lastname
+     * @param emailId email id
+     * @param createdBy user id who creates an account
+     *
+     * @return new user account {@link UserAccount}
+     */
     public static UserAccount newUserAccount(final String userId,
                                              final String firstName,
                                              final String lastName,
-                                             final String emailId) {
+                                             final String emailId,
+                                             final String createdBy) {
         return new UserAccount(
                 userId,
                 firstName,
                 lastName,
                 emailId,
                 ACTIVE,
+                createdBy,
+                createdBy,
                 true
         );
     }

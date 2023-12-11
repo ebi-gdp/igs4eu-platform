@@ -17,41 +17,51 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.config.router;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import uk.ac.ebi.gdp.intervene.user.manager.auth.AuthenticationContext;
 import uk.ac.ebi.gdp.intervene.user.manager.handler.UserHandler;
 import uk.ac.ebi.gdp.intervene.user.manager.mapper.UserAccountMapper;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.IUserAccountPersistenceService;
-import uk.ac.ebi.gdp.intervene.user.manager.service.IUserManagerService;
 
 import java.nio.file.Path;
 
 import static java.nio.file.Paths.get;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
+import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 
+/**
+ * User router config.
+ *
+ * @see RouterFunction
+ * @see UserHandler
+ */
 @Configuration
 public class UserRouterConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserRouterConfig.class);
 
     @Bean
     public RouterFunction<ServerResponse> userRoutes(final UserHandler userHandler) {
         final Path userAccount = get("/user/account");
         return route()
-                .GET(userAccount.toString(), serverRequest -> userHandler.getCurrentUserAccount())
-                .GET(userAccount.resolve("{accountId}").toString(), userHandler::getUserAccountDetails)
+                .filter(logRequestIdHeader(LOGGER))
+                .GET(userAccount.toString(), serverRequest -> userHandler.getUserAccount())
+                .GET(userAccount.resolve("{accountId}").toString(), userHandler::getUserAccount)
                 .POST(userAccount.toString(), serverRequest -> userHandler.createUserAccount())
                 .build();
     }
 
     @Bean
-    public UserHandler userHandler(final IUserManagerService userManagerService,
-                                   final IUserAccountPersistenceService userAccountPersistenceService,
-                                   final UserAccountMapper userAccountMapper) {
+    public UserHandler userHandler(final IUserAccountPersistenceService userAccountPersistenceService,
+                                   final UserAccountMapper userAccountMapper,
+                                   final AuthenticationContext authenticationContext) {
         return new UserHandler(
-                userManagerService,
                 userAccountPersistenceService,
-                userAccountMapper
-        );
+                userAccountMapper,
+                authenticationContext);
     }
 }

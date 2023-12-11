@@ -24,8 +24,12 @@ import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAcc
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountStatus;
 
+import java.time.LocalDateTime;
 import java.util.function.BiFunction;
 
+/**
+ * Auth user account mapper to build object from database record.
+ */
 public class AuthUserAccountMapper implements BiFunction<Row, Object, AuthUserAccount> {
 
     @Override
@@ -35,12 +39,20 @@ public class AuthUserAccountMapper implements BiFunction<Row, Object, AuthUserAc
                 row.get("given_name", String.class),
                 row.get("family_name", String.class),
                 row.get("email_id", String.class),
-                UserAccountStatus.valueOf(row.get("status", String.class))
+                UserAccountStatus.valueOf(row.get("status", String.class)),
+                row.get("created_by", String.class),
+                row.get("created_on", LocalDateTime.class),
+                row.get("updated_by", String.class),
+                row.get("updated_on", LocalDateTime.class)
         );
         return new AuthUserAccount(
                 row.get("auth_user_id", String.class),
                 AuthProviderType.valueOf(row.get("auth_provider", String.class)),
                 AuthUserAccountStatus.valueOf(row.get("auth_user_status", String.class)),
+                row.get("auth_user_created_by", String.class),
+                row.get("auth_user_created_on", LocalDateTime.class),
+                row.get("auth_user_updated_by", String.class),
+                row.get("auth_user_updated_on", LocalDateTime.class),
                 userAccount
         );
     }

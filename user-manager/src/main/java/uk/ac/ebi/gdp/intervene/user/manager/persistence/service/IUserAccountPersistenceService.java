@@ -18,13 +18,33 @@
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.service;
 
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.user.manager.model.IUserInfo;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 
+/**
+ * User Account persistence service.
+ */
 public interface IUserAccountPersistenceService {
+    /**
+     * @param authUserAccountId OIDC user id
+     *
+     * @return {@link AuthUserAccount}
+     */
     Mono<AuthUserAccount> getUserAccountByAuthUserAccountId(String authUserAccountId);
 
-    Mono<UserAccount> createAccount(String authUserAccountId);
+    /**
+     * @param authUserAccountId OIDC user id
+     * @param userInfo impl object built from accessing OIDC /userinfo endpoint
+     *
+     * @return {@link UserAccount}
+     */
+    Mono<UserAccount> createAccount(String authUserAccountId, IUserInfo userInfo);
 
+    /**
+     * @param accountId platform user id
+     *
+     * @return {@link UserAccount}
+     */
     Mono<UserAccount> getUserAccountById(String accountId);
 }
