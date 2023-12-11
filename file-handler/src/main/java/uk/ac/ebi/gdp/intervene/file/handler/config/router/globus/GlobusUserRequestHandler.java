@@ -46,15 +46,17 @@ public class GlobusUserRequestHandler {
      * @return user details represented by {@link GlobusUserIdentityDetailsWrapperDTO}
      */
     public Mono<ServerResponse> getUserIdDetails(final ServerRequest serverRequest) {
+        LOGGER.info("Retrieving users details from Globus");
         return serverRequest
                 .queryParam("username")
                 .map(username -> {
-                    LOGGER.info("Fetching Globus user details for {} from the Globus API", username);
+                    LOGGER.info("Fetching Globus user details from the Globus API for {} ", username);
                     return authService
                             .getUserIdentityDetails(username)
                             .doOnNext(ignoreData -> LOGGER.info("Response received for Globus user details from the Globus API"))
-                            .flatMap(globusUserIdentityDetailsWrapperDTO -> ok().bodyValue(globusUserIdentityDetailsWrapperDTO));
+                            .flatMap(globusUserIdentityDetailsWrapperDTO -> ok().bodyValue(globusUserIdentityDetailsWrapperDTO))
+                            .doOnNext(serverResponse -> LOGGER.info("Successfully retrieved user details"));
                 })
-                .orElse(error(badRequest("Query param 'username' is missing or empty!")));
+                .orElse(error(badRequest("Query param 'username' is missing or empty")));
     }
 }

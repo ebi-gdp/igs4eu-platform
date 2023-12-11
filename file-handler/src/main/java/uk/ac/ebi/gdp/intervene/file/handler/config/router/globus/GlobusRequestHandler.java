@@ -17,6 +17,8 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.config.router.globus;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -41,6 +43,7 @@ import static uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.Permi
  * Globus request handler. Defines handlers for router function.
  */
 public class GlobusRequestHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobusRequestHandler.class);
     private final IFileOperationService fileOperationService;
     private final String guestCollectionId;
 
@@ -60,6 +63,7 @@ public class GlobusRequestHandler {
      * @return guest collection directory details represented by {@link GuestCollectionDirResDTO}
      */
     public Mono<ServerResponse> createDirectoryOnGuestCollection(final ServerRequest serverRequest) {
+        LOGGER.info("Creating directory on Guest collection");
         return serverRequest
                 .bodyToMono(GuestCollectionDirReqDTO.class)
                 .flatMap(guestCollectionDirReqDTO -> {
@@ -70,28 +74,41 @@ public class GlobusRequestHandler {
                                     .bodyValue(new GuestCollectionDirResDTO(
                                             guestCollectionId,
                                             fullDirPath.toString())))
+                            .doOnNext(serverResponse -> LOGGER.info("Dir \"{}\" already exists! Returning the details for the same", fullDirPath))
                             .onErrorResume(listFullPathThrowable -> fileOperationService
                                     .listFiles(fullDirPath.getParent())
-                                    .flatMap(globusFileDetailsWrapperDTO -> fileOperationService.createDirectory(fullDirPath))
-                                    .onErrorResume(listPArentPathThrowable -> {
-                                        if (listPArentPathThrowable instanceof ClientException ce && NOT_FOUND.equals(ce.getHttpStatus())) {
-                                            return fileOperationService.createDirectory(fullDirPath.getParent())
-                                                    .flatMap(ignoreStr -> fileOperationService
-                                                            .createDirectory(fullDirPath))
-                                                    .flatMap(ignoreResponse -> grantDirectoryPermission(
-                                                            guestCollectionDirReqDTO.getGlobusUserUID(),
-                                                            guestCollectionDirReqDTO.getNotifyEmail(),
-                                                            fullDirPath.getParent()));
+                                    .doOnNext(globusFileDetailsWrapperDTO -> LOGGER.info("User's home directory \"{}\" exists!", fullDirPath.getParent()))
+                                    .flatMap(globusFileDetailsWrapperDTO -> fileOperationService
+                                            .createDirectory(fullDirPath)
+                                            .doOnNext(dirName -> LOGGER.info("Directory has been created under user's home directory: {}", dirName)))
+                                    .onErrorResume(listParentPathThrowable -> {
+                                        if (listParentPathThrowable instanceof ClientException ce && NOT_FOUND.equals(ce.getHttpStatus())) {
+                                            return createDirAndGrantPermission(guestCollectionDirReqDTO, fullDirPath);
                                         } else {
-                                            return error(listPArentPathThrowable);
+                                            return error(listParentPathThrowable);
                                         }
                                     })
                                     .flatMap(ignoreData -> status(CREATED)
                                             .bodyValue(new GuestCollectionDirResDTO(
                                                     guestCollectionId,
                                                     fullDirPath.toString())))
+                                    .doOnNext(serverResponse -> LOGGER.info("Required directory has been created on the Guest collection for the user!"))
                             );
                 });
+    }
+
+    private Mono<String> createDirAndGrantPermission(final GuestCollectionDirReqDTO guestCollectionDirReqDTO,
+                                                     final Path fullDirPath) {
+        return fileOperationService
+                .createDirectory(fullDirPath.getParent())
+                .doOnNext(dir -> LOGGER.info("User's home directory has been created: {}", fullDirPath.getParent()))
+                .flatMap(ignoreStr -> fileOperationService
+                        .createDirectory(fullDirPath)
+                        .doOnNext(dir -> LOGGER.info("Directory has been created under user's home directory: {}", fullDirPath)))
+                .flatMap(ignoreResponse -> grantDirectoryPermission(
+                        guestCollectionDirReqDTO.getGlobusUserUID(),
+                        guestCollectionDirReqDTO.getNotifyEmail(),
+                        fullDirPath.getParent()));
     }
 
     /**
@@ -102,11 +119,15 @@ public class GlobusRequestHandler {
      * @return GlobusFileDetailsWrapperDTO
      */
     public Mono<ServerResponse> listFilesOnGuestCollectionDirectory(final ServerRequest serverRequest) {
+        LOGGER.info("Listing files on Guest collection");
         return serverRequest
                 .queryParam("path")
                 .map(path -> fileOperationService
                         .listFiles(get(path))
-                        .flatMap(globusFileDetailsWrapperDTO -> ok().bodyValue(globusFileDetailsWrapperDTO)))
+                        .doOnNext(ignoreResponse -> LOGGER.info("Retrieved files at {}", path))
+                        .flatMap(globusFileDetailsWrapperDTO -> ok()
+                                .bodyValue(globusFileDetailsWrapperDTO))
+                        .doOnNext(serverResponse -> LOGGER.info("Successfully listed files at {}", path)))
                 .orElse(error(badRequest("Query param 'path' is missing or empty!")));
     }
 
