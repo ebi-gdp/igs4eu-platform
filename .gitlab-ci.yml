@@ -69,6 +69,9 @@ build-intervene-commons-module:
     MODULE: $INTERVENE_COMMONS_MODULE
   extends:
     - .build-module
+  rules:
+    - changes:
+        - '$INTERVENE_COMMONS_MODULE/**/*'
 
 build-file-handler-module:
   variables:
@@ -77,8 +80,7 @@ build-file-handler-module:
     - .build-module
   rules:
     - changes:
-        - $MODULE/*
-        - .gitlab-ci.yml
+        - '$FILE_HANDLER_MODULE/**/*'
 
 containerize-file-handler-module:
   variables:
@@ -101,8 +103,7 @@ build-user-manager-module:
     - .build-module
   rules:
     - changes:
-        - $MODULE/*
-        - .gitlab-ci.yml
+        - '$USER_MANAGER_MODULE/**/*'
 
 containerize-user-manager-module:
   variables:
