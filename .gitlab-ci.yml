@@ -29,10 +29,6 @@ stages:
     paths:
       - '*/target'
     expire_in: 30 min
-  only:
-    changes:
-      - '$MODULE/**/*'
-      - .gitlab-ci.yml
 
 .test-module:
   stage: test
@@ -79,6 +75,10 @@ build-file-handler-module:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .build-module
+  rules:
+    - changes:
+        - $MODULE/*
+        - .gitlab-ci.yml
 
 containerize-file-handler-module:
   variables:
@@ -99,6 +99,10 @@ build-user-manager-module:
     MODULE: $USER_MANAGER_MODULE
   extends:
     - .build-module
+  rules:
+    - changes:
+        - $MODULE/*
+        - .gitlab-ci.yml
 
 containerize-user-manager-module:
   variables:
