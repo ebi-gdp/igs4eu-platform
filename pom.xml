@@ -38,6 +38,11 @@
         <micometer-context-propagation>1.1.0</micometer-context-propagation>
     </properties>
 
+    <scm>
+        <connection>scm:git:git@github.com:ebi-gdp/igs4eu-platform.git</connection>
+        <tag>HEAD</tag>
+    </scm>
+
     <repositories>
         <repository>
             <id>gitlab-maven</id>
@@ -154,6 +159,10 @@
                             </path>
                         </annotationProcessorPaths>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
                 </plugin>
             </plugins>
         </pluginManagement>
