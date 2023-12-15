@@ -72,6 +72,7 @@ build-intervene-commons-module:
   rules:
     - changes:
         - '$INTERVENE_COMMONS_MODULE/**/*'
+        - pom.xml
 
 build-file-handler-module:
   variables:
@@ -81,6 +82,7 @@ build-file-handler-module:
   rules:
     - changes:
         - '$FILE_HANDLER_MODULE/**/*'
+        - pom.xml
 
 containerize-file-handler-module:
   variables:
@@ -104,6 +106,7 @@ build-pipeline-manager-module:
   rules:
     - changes:
         - '$PIPELINE_MANAGER_MODULE/**/*'
+        - pom.xml
 
 containerize-pipeline-manager-module:
   variables:
@@ -127,6 +130,7 @@ build-user-manager-module:
   rules:
     - changes:
         - '$USER_MANAGER_MODULE/**/*'
+        - pom.xml
 
 containerize-user-manager-module:
   variables:
