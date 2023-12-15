@@ -40,7 +40,11 @@ public interface PipelineDetailsModelMapper {
             final GlobusUserDetails globusUserDetails = new GlobusUserDetails(
                     row.get("globus_username", String.class),
                     row.get("globus_user_uid", String.class),
-                    row.get("user_id", String.class)
+                    row.get("user_id", String.class),
+                    row.get("gu_created_by", String.class),
+                    row.get("gu_created_on", LocalDateTime.class),
+                    row.get("gu_updated_by", String.class),
+                    row.get("gu_updated_on", LocalDateTime.class)
             );
 
             final GlobusDetails globusDetails = GlobusDetails.loadRecord(
@@ -48,8 +52,10 @@ public interface PipelineDetailsModelMapper {
                     row.get("globus_username", String.class),
                     row.get("guest_collection_id", String.class),
                     Paths.get(Objects.requireNonNull(row.get("dir_path_on_guest_collection", String.class))),
-                    row.get("created_on", LocalDateTime.class),
-                    row.get("updated_on", LocalDateTime.class));
+                    row.get("globus_created_by", String.class),
+                    row.get("globus_created_on", LocalDateTime.class),
+                    row.get("globus_updated_by", String.class),
+                    row.get("globus_updated_on", LocalDateTime.class));
             globusDetails.setGlobusUserDetails(globusUserDetails);
 
             final DatasetDetails datasetDetails = new DatasetDetails(
@@ -57,62 +63,62 @@ public interface PipelineDetailsModelMapper {
                     row.get("dataset_name", String.class),
                     GenomeBuild.valueOf(row.get("genome_build", String.class)),
                     FilesetType.valueOf(row.get("fileset_type", String.class)),
-                    globusDetails
+                    globusDetails,
+                    row.get("dataset_created_by", String.class),
+                    row.get("dataset_created_on", LocalDateTime.class),
+                    row.get("dataset_updated_by", String.class),
+                    row.get("dataset_updated_on", LocalDateTime.class)
             );
-
-            final PipelineExecutionStatus pipelineExecutionStatus = new PipelineExecutionStatus(
-                    row.get("pipeline_id", String.class),
-                    PipelineStatus.valueOf(row.get("status", String.class)),
-                    row.get("trace_name", String.class),
-                    row.get("trace_exit") != null ? row.get("trace_exit", Byte.class) : (byte) 0,
-                    row.get("submitted_on", LocalDateTime.class),
-                    row.get("started_on", LocalDateTime.class),
-                    row.get("ended_on", LocalDateTime.class),
-                    row.get("created_by", String.class),
-                    row.get("created_on", LocalDateTime.class),
-                    row.get("updated_by", String.class),
-                    row.get("updated_on", LocalDateTime.class)
-            );
-            return pipelineDetailsWithStatusAndDataset(
-                    row.get("pipeline_id", String.class),
-                    row.get("pipeline_uid", String.class),
-                    row.get("user_id", String.class),
-                    row.get("dataset_id", String.class),
-                    row.get("created_by", String.class),
-                    row.get("created_on", LocalDateTime.class),
-                    row.get("updated_by", String.class),
-                    row.get("updated_on", LocalDateTime.class),
-                    pipelineExecutionStatus,
-                    datasetDetails
-            );
+            final PipelineExecutionStatus pipelineExecutionStatus = getPipelineExecutionStatus(row);
+            return getPipelineDetails(row, pipelineExecutionStatus, datasetDetails);
         };
     }
 
     static BiFunction<Row, Object, PipelineDetails> mapDetails() {
         return (row, object) -> {
-            final PipelineExecutionStatus pipelineExecutionStatus = new PipelineExecutionStatus(
-                    row.get("pipeline_id", String.class),
-                    PipelineStatus.valueOf(row.get("status", String.class)),
-                    row.get("submitted_on", LocalDateTime.class),
-                    row.get("started_on", LocalDateTime.class),
-                    row.get("ended_on", LocalDateTime.class));
-
+            final PipelineExecutionStatus pipelineExecutionStatus = getPipelineExecutionStatus(row);
             final DatasetDetails datasetDetails = new DatasetDetails(
                     row.get("dataset_id", String.class),
                     row.get("dataset_name", String.class),
-                    GenomeBuild.valueOf(row.get("genome_build", String.class))
+                    GenomeBuild.valueOf(row.get("genome_build", String.class)),
+                    FilesetType.valueOf(row.get("fileset_type", String.class)),
+                    row.get("dataset_created_by", String.class),
+                    row.get("dataset_created_on", LocalDateTime.class),
+                    row.get("dataset_updated_by", String.class),
+                    row.get("dataset_updated_on", LocalDateTime.class)
             );
-            return pipelineDetailsWithStatusAndDataset(
-                    row.get("pipeline_id", String.class),
-                    row.get("pipeline_uid", String.class),
-                    row.get("user_id", String.class),
-                    row.get("dataset_id", String.class),
-                    row.get("created_by", String.class),
-                    row.get("created_on", LocalDateTime.class),
-                    row.get("updated_by", String.class),
-                    row.get("updated_on", LocalDateTime.class),
-                    pipelineExecutionStatus,
-                    datasetDetails);
+            return getPipelineDetails(row, pipelineExecutionStatus, datasetDetails);
         };
+    }
+
+    static PipelineDetails getPipelineDetails(final Row row,
+                                              final PipelineExecutionStatus pipelineExecutionStatus,
+                                              final DatasetDetails datasetDetails) {
+        return pipelineDetailsWithStatusAndDataset(
+                row.get("pipeline_id", String.class),
+                row.get("pipeline_uid", String.class),
+                row.get("user_id", String.class),
+                row.get("dataset_id", String.class),
+                row.get("created_by", String.class),
+                row.get("created_on", LocalDateTime.class),
+                row.get("updated_by", String.class),
+                row.get("updated_on", LocalDateTime.class),
+                pipelineExecutionStatus,
+                datasetDetails);
+    }
+
+    static PipelineExecutionStatus getPipelineExecutionStatus(final Row row) {
+        return new PipelineExecutionStatus(
+                row.get("pipeline_id", String.class),
+                PipelineStatus.valueOf(row.get("status", String.class)),
+                row.get("trace_name", String.class),
+                row.get("trace_exit") != null ? row.get("trace_exit", Byte.class) : (byte) 0,
+                row.get("submitted_on", LocalDateTime.class),
+                row.get("started_on", LocalDateTime.class),
+                row.get("ended_on", LocalDateTime.class),
+                row.get("pes_created_by", String.class),
+                row.get("pes_created_on", LocalDateTime.class),
+                row.get("pes_updated_by", String.class),
+                row.get("pes_updated_on", LocalDateTime.class));
     }
 }

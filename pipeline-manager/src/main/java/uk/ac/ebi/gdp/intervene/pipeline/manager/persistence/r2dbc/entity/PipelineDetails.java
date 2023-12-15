@@ -17,8 +17,10 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
@@ -31,30 +33,25 @@ import static org.springframework.util.StringUtils.hasText;
 
 public class PipelineDetails implements Persistable<String> {
     @Id
-    @Column("pipeline_id")
     private String pipelineId;
 
     @Column("pipeline_uid")
     private String pipelineUID;
 
-    @Column("user_id")
     private String userId;
 
-    @Column("dataset_id")
     private String datasetId;
 
-    @Column("created_by")
+    @CreatedBy
     private String createdBy;
 
     @CreatedDate
-    @Column
     private LocalDateTime createdOn;
 
-    @Column("updated_by")
+    @LastModifiedBy
     private String updatedBy;
 
     @LastModifiedDate
-    @Column
     private LocalDateTime updatedOn;
 
     @Transient
@@ -77,9 +74,7 @@ public class PipelineDetails implements Persistable<String> {
         this.userId = userId;
         this.datasetId = datasetId;
         this.newPipelineDetails = true;
-        this.createdBy = userId;
-        this.updatedBy = userId;
-        this.pipelineExecutionStatus = new PipelineExecutionStatus(pipelineId, userId);
+        this.pipelineExecutionStatus = new PipelineExecutionStatus(pipelineId);
     }
 
     public PipelineDetails(final String pipelineId,
@@ -129,9 +124,9 @@ public class PipelineDetails implements Persistable<String> {
         this.datasetDetails = datasetDetails;
     }
 
-    public static PipelineDetails create(final String pipelineId,
-                                         final String userId,
-                                         final String datasetId) {
+    public static PipelineDetails newInstance(final String pipelineId,
+                                              final String userId,
+                                              final String datasetId) {
         return new PipelineDetails(pipelineId, userId, datasetId);
     }
 

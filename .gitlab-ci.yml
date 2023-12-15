@@ -96,6 +96,29 @@ deploy-file-handler-module:
   needs:
     - 'containerize-file-handler-module'
 
+build-pipeline-manager-module:
+  variables:
+    MODULE: $PIPELINE_MANAGER_MODULE
+  extends:
+    - .build-module
+  rules:
+    - changes:
+        - '$PIPELINE_MANAGER_MODULE/**/*'
+
+containerize-pipeline-manager-module:
+  variables:
+    MODULE: $PIPELINE_MANAGER_MODULE
+  extends:
+    - .containerize-module
+
+deploy-pipeline-manager-module:
+  variables:
+    MODULE: $PIPELINE_MANAGER_MODULE
+  extends:
+    - .deploy-module
+  needs:
+    - 'containerize-pipeline-manager-module'
+
 build-user-manager-module:
   variables:
     MODULE: $USER_MANAGER_MODULE

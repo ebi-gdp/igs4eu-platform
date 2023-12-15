@@ -23,6 +23,7 @@ import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.ReactiveAuditorAware;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
@@ -34,6 +35,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
 import static io.r2dbc.postgresql.client.SSLMode.fromValue;
 import static io.r2dbc.postgresql.codec.EnumCodec.builder;
@@ -100,5 +102,10 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
                 new GenomeBuildConverter(),
                 new FilesetTypeConverter()
         );
+    }
+
+    @Bean
+    public ReactiveAuditorAware<String> auditorAware(final UserManagerService userManagerService) {
+        return new ReactiveAuditorAwareImpl(userManagerService);
     }
 }

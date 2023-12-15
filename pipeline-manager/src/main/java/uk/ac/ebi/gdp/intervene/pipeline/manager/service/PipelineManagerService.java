@@ -45,7 +45,7 @@ import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsW
 import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO.FileDetails;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.FormatType;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails.newRecord;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails.newInstance;
 
 public class PipelineManagerService {
     private final Logger LOGGER = LoggerFactory.getLogger(PipelineManagerService.class);
@@ -87,7 +87,7 @@ public class PipelineManagerService {
                 .switchIfEmpty(defer(() -> globusDetailsRepository
                         .getNextFilesetId()
                         .map(nextFilesetId ->
-                                newRecord(
+                                newInstance(
                                         nextFilesetId,
                                         globusUsername,
                                         guestCollectionId,

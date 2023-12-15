@@ -38,7 +38,9 @@ public interface DatasetDetailsModelMapper {
                     getString(row, "globus_username"),
                     getString(row, "guest_collection_id"),
                     Path.of(getString(row, "dir_path_on_guest_collection")),
+                    getString(row, "created_by"),
                     getDataTime(row, "created_on"),
+                    getString(row, "updated_by"),
                     getDataTime(row, "updated_on")
             );
             return new DatasetDetails(
@@ -47,8 +49,10 @@ public interface DatasetDetailsModelMapper {
                     GenomeBuild.valueOf(row.get("genome_build", String.class)),
                     FilesetType.valueOf(row.get("fileset_type", String.class)),
                     globusDetails,
-                    row.get("created_on", LocalDateTime.class),
-                    row.get("updated_on", LocalDateTime.class)
+                    getString(row, "gc_created_by"),
+                    row.get("gc_created_on", LocalDateTime.class),
+                    getString(row, "gc_updated_by"),
+                    row.get("gc_updated_on", LocalDateTime.class)
             );
         };
     }

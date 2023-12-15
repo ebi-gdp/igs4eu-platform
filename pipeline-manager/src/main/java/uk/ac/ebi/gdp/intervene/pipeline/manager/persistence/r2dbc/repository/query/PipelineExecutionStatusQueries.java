@@ -37,11 +37,11 @@ public interface PipelineExecutionStatusQueries {
                                  " s.submitted_on," +
                                  " s.started_on," +
                                  " s.ended_on," +
-                                 " s.created_by," +
-                                 " s.created_on, " +
-                                 " s.updated_by, " +
-                                 " s.updated_on " +
-                                 "FROM " +
+                                 " s.created_by as pes_created_by," +
+                                 " s.created_on as pes_created_on," +
+                                 " s.updated_by as pes_updated_by," +
+                                 " s.updated_on as updated_on " +
+                                 "FROM" +
                                  " pipeline_execution_status s " +
                                  "INNER JOIN" +
                                  " pipeline_details p " +
