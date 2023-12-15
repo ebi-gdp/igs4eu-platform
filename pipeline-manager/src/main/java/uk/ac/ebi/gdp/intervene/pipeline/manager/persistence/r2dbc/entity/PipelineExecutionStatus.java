@@ -17,12 +17,13 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
-import org.springframework.data.relational.core.mapping.Column;
 
 import java.time.LocalDateTime;
 
@@ -36,54 +37,42 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.
 
 public class PipelineExecutionStatus implements Persistable<String> {
     @Id
-    @Column("pipeline_id")
     private String pipelineId;
 
-    @Column
     private PipelineStatus status;
 
-    @Column("trace_name")
     private String traceName;
 
-    @Column("trace_exit")
     private byte traceExit;
 
     @Transient
     private PipelineDetails pipelineDetails;
 
-    @Column("submitted_on")
     private LocalDateTime submittedOn;
 
-    @Column("started_on")
     private LocalDateTime startedOn;
 
-    @Column("ended_on")
     private LocalDateTime endedOn;
 
-    @Column
+    @CreatedBy
     private String createdBy;
 
     @CreatedDate
-    @Column
     private LocalDateTime createdOn;
 
-    @Column
+    @LastModifiedBy
     private String updatedBy;
 
     @LastModifiedDate
-    @Column
     private LocalDateTime updatedOn;
 
     @Transient
     private boolean newPipelineExecutionStatus;
 
-    public PipelineExecutionStatus(final String pipelineId,
-                                   final String userAccountId) {
+    public PipelineExecutionStatus(final String pipelineId) {
         this.pipelineId = pipelineId;
         this.status = NEW;
         this.newPipelineExecutionStatus = true;
-        this.createdBy = userAccountId;
-        this.updatedBy = userAccountId;
     }
 
     public PipelineExecutionStatus(final String pipelineId,
@@ -125,18 +114,6 @@ public class PipelineExecutionStatus implements Persistable<String> {
         this(pipelineId, pipelineStatus, traceName, traceExit, submittedOn,
                 startedOn, endedOn, createdBy, createdOn, updatedBy, updatedOn);
         this.pipelineDetails = pipelineDetails;
-    }
-
-    public PipelineExecutionStatus(final String pipelineId,
-                                   final PipelineStatus pipelineStatus,
-                                   final LocalDateTime submittedOn,
-                                   final LocalDateTime startedOn,
-                                   final LocalDateTime endedOn) {
-        this.pipelineId = pipelineId;
-        this.status = pipelineStatus;
-        this.submittedOn = submittedOn;
-        this.startedOn = startedOn;
-        this.endedOn = endedOn;
     }
 
     public PipelineStatus getStatus() {

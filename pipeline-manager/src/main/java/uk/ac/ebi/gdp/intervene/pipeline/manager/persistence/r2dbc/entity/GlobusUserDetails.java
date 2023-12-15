@@ -17,11 +17,17 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+
+import java.time.LocalDateTime;
 
 import static org.springframework.util.StringUtils.hasText;
 
@@ -34,8 +40,19 @@ public class GlobusUserDetails implements Persistable<String> {
     @Column("globus_user_uid")
     private String userUID;
 
-    @Column("intervene_user_id")
     private String interveneUserId;
+
+    @CreatedBy
+    private String createdBy;
+
+    @CreatedDate
+    private LocalDateTime createdOn;
+
+    @LastModifiedBy
+    private String updatedBy;
+
+    @LastModifiedDate
+    private LocalDateTime updatedOn;
 
     @Transient
     private boolean newGlobusUserDetails;
@@ -43,12 +60,26 @@ public class GlobusUserDetails implements Persistable<String> {
     protected GlobusUserDetails() {
     }
 
-    public GlobusUserDetails(final String username,
-                             final String userUID,
-                             final String interveneUserId) {
+    private GlobusUserDetails(final String username,
+                              final String userUID,
+                              final String interveneUserId) {
         this.username = username;
         this.userUID = userUID;
         this.interveneUserId = interveneUserId;
+    }
+
+    public GlobusUserDetails(final String username,
+                             final String userUID,
+                             final String interveneUserId,
+                             final String createdBy,
+                             final LocalDateTime createdOn,
+                             final String updatedBy,
+                             final LocalDateTime updatedOn) {
+        this(username, userUID, interveneUserId);
+        this.createdBy = createdBy;
+        this.createdOn = createdOn;
+        this.updatedBy = updatedBy;
+        this.updatedOn = updatedOn;
         this.newGlobusUserDetails = true;
     }
 
@@ -74,6 +105,28 @@ public class GlobusUserDetails implements Persistable<String> {
 
     public void setInterveneUserId(String interveneUserId) {
         this.interveneUserId = interveneUserId;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public LocalDateTime getCreatedOn() {
+        return createdOn;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public LocalDateTime getUpdatedOn() {
+        return updatedOn;
+    }
+
+    public static GlobusUserDetails newInstance(final String username,
+                                                final String userUID,
+                                                final String interveneUserId) {
+        return new GlobusUserDetails(username, userUID, interveneUserId);
     }
 
     @Override

@@ -17,7 +17,11 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
@@ -31,24 +35,30 @@ import static org.springframework.util.StringUtils.hasText;
 @Table("globus_guest_collection_files_details")
 public class GlobusDetails implements Persistable<String> {
     @Id
-    @Column("fileset_id")
     private String filesetId;
 
-    @Column("globus_username")
     private String globusUsername;
 
-    @Column("guest_collection_id")
     private String guestCollectionId;
 
-    @Column("dir_path_on_guest_collection")
     private String dirPathOnGuestCollection;
 
     @Transient
     private boolean newGlobusDetails;
 
+    @CreatedBy
+    @Column
+    private String createdBy;
+
+    @CreatedDate
     @Column
     private LocalDateTime createdOn;
 
+    @LastModifiedBy
+    @Column
+    private String updatedBy;
+
+    @LastModifiedDate
     @Column
     private LocalDateTime updatedOn;
 
@@ -75,17 +85,21 @@ public class GlobusDetails implements Persistable<String> {
                           final String guestCollectionId,
                           final String dirPathOnGuestCollection,
                           final boolean isNewGlobusDetails,
+                          final String createdBy,
                           final LocalDateTime createdOn,
+                          final String updatedBy,
                           final LocalDateTime updatedOn) {
         this(filesetId, globusUsername, guestCollectionId, dirPathOnGuestCollection, isNewGlobusDetails);
+        this.createdBy = createdBy;
         this.createdOn = createdOn;
+        this.updatedBy = updatedBy;
         this.updatedOn = updatedOn;
     }
 
-    public static GlobusDetails newRecord(final String filesetId,
-                                          final String globusUsername,
-                                          final String guestCollectionId,
-                                          final Path dirPathOnGuestCollection) {
+    public static GlobusDetails newInstance(final String filesetId,
+                                            final String globusUsername,
+                                            final String guestCollectionId,
+                                            final Path dirPathOnGuestCollection) {
         return new GlobusDetails(
                 filesetId,
                 globusUsername,
@@ -99,15 +113,19 @@ public class GlobusDetails implements Persistable<String> {
                                            final String globusUsername,
                                            final String guestCollectionId,
                                            final Path dirPathOnGuestCollection,
+                                           final String createdBy,
                                            final LocalDateTime createdOn,
-                                           LocalDateTime updatedOn) {
+                                           final String updatedBy,
+                                           final LocalDateTime updatedOn) {
         return new GlobusDetails(
                 filesetId,
                 globusUsername,
                 guestCollectionId,
                 normalizeDirPath(dirPathOnGuestCollection),
                 false,
+                createdBy,
                 createdOn,
+                updatedBy,
                 updatedOn
         );
     }
@@ -132,8 +150,16 @@ public class GlobusDetails implements Persistable<String> {
         return dirPathOnGuestCollection;
     }
 
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
     public LocalDateTime getCreatedOn() {
         return createdOn;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
     }
 
     public LocalDateTime getUpdatedOn() {

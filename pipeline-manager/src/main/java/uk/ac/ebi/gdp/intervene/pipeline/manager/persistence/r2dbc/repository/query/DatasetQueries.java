@@ -24,14 +24,18 @@ public interface DatasetQueries {
                                                " d.dataset_name," +
                                                " d.genome_build," +
                                                " d.fileset_type," +
+                                               " d.created_by," +
                                                " d.created_on," +
+                                               " d.updated_by," +
                                                " d.updated_on," +
                                                " f.fileset_id," +
                                                " f.globus_username," +
                                                " f.guest_collection_id," +
                                                " f.dir_path_on_guest_collection," +
-                                               " f.created_on," +
-                                               " f.updated_on " +
+                                               " f.created_by as gc_created_by," +
+                                               " f.created_on as gc_created_on," +
+                                               " f.updated_by as gc_updated_by," +
+                                               " f.updated_on as gc_updated_on " +
                                                "FROM" +
                                                " dataset_details d " +
                                                "INNER JOIN" +

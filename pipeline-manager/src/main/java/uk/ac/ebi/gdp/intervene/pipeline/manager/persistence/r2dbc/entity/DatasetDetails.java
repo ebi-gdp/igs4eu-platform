@@ -17,12 +17,13 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
-import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.Default;
@@ -34,33 +35,26 @@ import static org.springframework.util.StringUtils.hasText;
 @Table("dataset_details")
 public class DatasetDetails implements Persistable<String> {
     @Id
-    @Column("dataset_id")
     private String datasetId;
 
-    @Column("dataset_name")
     private String datasetName;
 
-    @Column("genome_build")
     private GenomeBuild genomeBuild;
 
-    @Column("fileset_id")
     private String filesetId;
 
-    @Column("fileset_type")
     private FilesetType filesetType;
 
-    @Column("created_by")
+    @CreatedBy
     private String createdBy;
 
     @CreatedDate
-    @Column
     private LocalDateTime createdOn;
 
-    @Column("updated_by")
+    @LastModifiedBy
     private String updatedBy;
 
     @LastModifiedDate
-    @Column
     private LocalDateTime updatedOn;
 
     @Transient
@@ -72,6 +66,20 @@ public class DatasetDetails implements Persistable<String> {
     protected DatasetDetails() {
     }
 
+    private DatasetDetails(final String datasetId,
+                           final String datasetName,
+                           final GenomeBuild genomeBuild,
+                           final FilesetType filesetType,
+                           final String createdBy,
+                           final String updatedBy) {
+        this.datasetId = datasetId;
+        this.datasetName = datasetName;
+        this.genomeBuild = genomeBuild;
+        this.filesetType = filesetType;
+        this.createdBy = createdBy;
+        this.updatedBy = updatedBy;
+    }
+
     @Default
     public DatasetDetails(final String datasetId,
                           final String datasetName,
@@ -80,13 +88,9 @@ public class DatasetDetails implements Persistable<String> {
                           final FilesetType filesetType,
                           final String createdBy,
                           final String updatedBy) {
-        this.datasetId = datasetId;
-        this.datasetName = datasetName;
-        this.genomeBuild = genomeBuild;
+        this(datasetId, datasetName, genomeBuild, filesetType,
+                createdBy, updatedBy);
         this.filesetId = filesetId;
-        this.filesetType = filesetType;
-        this.createdBy = createdBy;
-        this.updatedBy = updatedBy;
         newDatasetDetails = true;
     }
 
@@ -94,24 +98,28 @@ public class DatasetDetails implements Persistable<String> {
                           final String datasetName,
                           final GenomeBuild genomeBuild,
                           final FilesetType filesetType,
-                          final GlobusDetails globusDetails,
+                          final String createdBy,
                           final LocalDateTime createdOn,
+                          final String updatedBy,
                           final LocalDateTime updatedOn) {
-        this.datasetId = datasetId;
-        this.datasetName = datasetName;
-        this.genomeBuild = genomeBuild;
-        this.filesetType = filesetType;
-        this.globusDetails = globusDetails;
+        this(datasetId, datasetName, genomeBuild, filesetType,
+                createdBy, updatedBy);
         this.createdOn = createdOn;
         this.updatedOn = updatedOn;
     }
 
     public DatasetDetails(final String datasetId,
                           final String datasetName,
-                          final GenomeBuild genomeBuild) {
-        this.datasetId = datasetId;
-        this.datasetName = datasetName;
-        this.genomeBuild = genomeBuild;
+                          final GenomeBuild genomeBuild,
+                          final FilesetType filesetType,
+                          final GlobusDetails globusDetails,
+                          final String createdBy,
+                          final LocalDateTime createdOn,
+                          final String updatedBy,
+                          final LocalDateTime updatedOn) {
+        this(datasetId, datasetName, genomeBuild, filesetType, createdBy,
+                createdOn, updatedBy, updatedOn);
+        this.globusDetails = globusDetails;
     }
 
     public String getDatasetId() {

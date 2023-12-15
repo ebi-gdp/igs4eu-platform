@@ -31,12 +31,23 @@ public interface PipelineQueries {
                              " p.updated_by," +
                              " p.updated_on," +
                              " s.status," +
+                             " s.trace_name," +
+                             " s.trace_exit," +
                              " s.submitted_on," +
                              " s.started_on," +
                              " s.ended_on," +
+                             " s.created_by as pes_created_by," +
+                             " s.created_on as pes_created_on," +
+                             " s.updated_by as pes_updated_by," +
+                             " s.updated_on as pes_updated_on," +
                              " d.dataset_id," +
                              " d.dataset_name," +
-                             " d.genome_build " +
+                             " d.genome_build, " +
+                             " d.fileset_type," +
+                             " d.created_by as dataset_created_by," +
+                             " d.created_on as dataset_created_on," +
+                             " d.updated_by as dataset_updated_by," +
+                             " d.updated_on as dataset_updated_on " +
                              "FROM " +
                              " pipeline_details p " +
                              "INNER JOIN" +
@@ -53,25 +64,41 @@ public interface PipelineQueries {
                                           " p.pipeline_uid," +
                                           " p.user_id," +
                                           " p.dataset_id," +
+                                          " p.created_by," +
+                                          " p.created_on," +
+                                          " p.updated_by," +
+                                          " p.updated_on," +
                                           " s.status," +
                                           " s.trace_name," +
                                           " s.trace_exit," +
                                           " s.submitted_on," +
                                           " s.started_on," +
                                           " s.ended_on," +
-                                          " s.created_by," +
-                                          " s.created_on," +
-                                          " s.updated_by," +
-                                          " s.updated_on," +
+                                          " s.created_by as pes_created_by," +
+                                          " s.created_on as pes_created_on," +
+                                          " s.updated_by as pes_updated_by," +
+                                          " s.updated_on as pes_updated_on," +
                                           " d.dataset_name," +
                                           " d.genome_build," +
                                           " d.fileset_id," +
                                           " d.fileset_type," +
+                                          " d.created_by as dataset_created_by," +
+                                          " d.created_on as dataset_created_on," +
+                                          " d.updated_by as dataset_updated_by," +
+                                          " d.updated_on as dataset_updated_on," +
                                           " g.globus_username," +
                                           " g.guest_collection_id," +
                                           " g.dir_path_on_guest_collection," +
-                                          " u.globus_user_uid " +
-                                          "FROM " +
+                                          " g.created_by as globus_created_by," +
+                                          " g.created_on as globus_created_on," +
+                                          " g.updated_by as globus_updated_by," +
+                                          " g.updated_on as globus_updated_on," +
+                                          " u.globus_user_uid," +
+                                          " u.created_by as gu_created_by," +
+                                          " u.created_on as gu_created_on," +
+                                          " u.updated_by as gu_updated_by," +
+                                          " u.updated_on as gu_updated_on " +
+                                          "FROM" +
                                           " pipeline_details p " +
                                           "INNER JOIN" +
                                           " pipeline_execution_status s " +

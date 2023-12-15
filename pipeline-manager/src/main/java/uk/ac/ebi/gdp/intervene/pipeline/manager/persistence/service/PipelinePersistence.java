@@ -34,7 +34,7 @@ import static reactor.core.publisher.Mono.empty;
 import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails.create;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails.newInstance;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus.PENDING;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus.getPipelineStatusByDescription;
 
@@ -58,7 +58,7 @@ public class PipelinePersistence implements IPipelinePersistence {
                                                 final String datasetId) {
         //Get next pipeline id
         return getNextPipelineId()
-                .map(nextPipelineId -> create(nextPipelineId, userId, datasetId))
+                .map(nextPipelineId -> newInstance(nextPipelineId, userId, datasetId))
                 .flatMap(this::savePipeline);
     }
 

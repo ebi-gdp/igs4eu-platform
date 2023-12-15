@@ -23,7 +23,6 @@ import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.CreateDirDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.GlobusUserDetailsMapper;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusUserDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusUserRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
@@ -40,6 +39,7 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
 import static reactor.core.publisher.Mono.defer;
 import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusUserDetails.newInstance;
 
 public class GlobusRequestHandler {
     private final PipelineManagerService pipelineManagerService;
@@ -74,7 +74,7 @@ public class GlobusRequestHandler {
                                 .getUserAccountDetails()
                                 .flatMap(userAccountDTO -> globusFileHandlerService
                                         .getGlobusUserDetails(username)
-                                        .map(globusUserIDWDto -> new GlobusUserDetails(
+                                        .map(globusUserIDWDto -> newInstance(
                                                 username,
                                                 globusUserIDWDto.getIdentities().get(0).getUid(),
                                                 userAccountDTO.accountId())))
