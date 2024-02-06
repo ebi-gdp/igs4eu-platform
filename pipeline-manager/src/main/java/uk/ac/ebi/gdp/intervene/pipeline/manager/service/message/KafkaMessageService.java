@@ -23,6 +23,10 @@ import org.springframework.kafka.core.KafkaTemplate;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 
+/**
+ * Integrates Kafka messaging queue, send messages to topics.
+ * Triggers pipeline execution, implements {@link MessageService}.
+ */
 public class KafkaMessageService implements MessageService {
     private final Logger LOGGER = LoggerFactory.getLogger(KafkaMessageService.class);
     private final KafkaTemplate<String, TriggerPipelineEvent> triggerPipelineEventKT;
@@ -34,6 +38,11 @@ public class KafkaMessageService implements MessageService {
         this.startTopicName = startTopicName;
     }
 
+    /**
+     * Sends message to Kafka.
+     *
+     * {@inheritDoc}
+     */
     public Mono<Void> sendMessage(final String key, final TriggerPipelineEvent message) {
         triggerPipelineEventKT.send(startTopicName, key, message);
         LOGGER.info("Message has been sent, Key: {}, topic: {}", key, startTopicName);

@@ -21,9 +21,8 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
 
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.PipelineExecutionStatusDetailsModelMapper.map;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.PipelineExecutionStatusDetailsEntityMapper.map;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineExecutionStatusQueries.FIND_BY_PIPELINE_ID;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineExecutionStatusQueries.FIND_BY_PIPELINE_ID_FIND_BY_USER_ID;
 
 public class CustomPipelineExecutionStatusRepositoryImpl implements CustomPipelineExecutionStatusRepository {
     private final DatabaseClient databaseClient;
@@ -32,22 +31,14 @@ public class CustomPipelineExecutionStatusRepositoryImpl implements CustomPipeli
         this.databaseClient = databaseClient;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<PipelineExecutionStatus> findPipelineExecutionStatus(final String pipelineId) {
         return databaseClient
                 .sql(FIND_BY_PIPELINE_ID)
                 .bind("pipelineId", pipelineId)
-                .map(map()::apply)
-                .one();
-    }
-
-    @Override
-    public Mono<PipelineExecutionStatus> findPipelineExecutionStatus(final String pipelineId,
-                                                                     final String userId) {
-        return databaseClient
-                .sql(FIND_BY_PIPELINE_ID_FIND_BY_USER_ID)
-                .bind("pipelineId", pipelineId)
-                .bind("userId", userId)
                 .map(map()::apply)
                 .one();
     }

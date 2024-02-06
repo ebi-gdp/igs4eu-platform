@@ -34,6 +34,9 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.router.CSCPipelineHandler;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.EmailSender;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
+/**
+ * Inherits default {@link DefaultKafkaConfig} & declare beans
+ */
 @EnableKafka
 @Configuration
 public class KafkaConfig extends DefaultKafkaConfig {

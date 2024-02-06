@@ -28,6 +28,7 @@ import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 
 import static org.springframework.security.config.Customizer.withDefaults;
@@ -36,8 +37,20 @@ import static reactor.core.publisher.Mono.just;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.clientException;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
 
+/**
+ * Generic OAuth2 security config, provides necessary security config to support
+ * modules. Extend this class to declare beans.
+ */
 public class GenericOAuth2SecurityConfig {
 
+    /**
+     * Security filter chain config.
+     *
+     * @param http {@link ServerHttpSecurity}
+     * @param jwkSetURI JWK Set URI
+     *
+     * @return {@link SecurityWebFilterChain}
+     */
     protected SecurityWebFilterChain securityFilterChain(final ServerHttpSecurity http,
                                                          final String jwkSetURI) {
         http
@@ -49,9 +62,17 @@ public class GenericOAuth2SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Basic auth http security config.
+     *
+     * @param http {@link ServerHttpSecurity}
+     * @param patternPath Pattern path to match
+     *
+     * @return {@link SecurityWebFilterChain}
+     */
     protected SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http,
                                                                   final String patternPath) {
-        http.csrf().disable();
+        http.csrf((ServerHttpSecurity.CsrfSpec::disable));
         http
                 .securityMatcher(new PathPatternParserServerWebExchangeMatcher(patternPath))
                 .authorizeExchange((exchanges) -> exchanges
@@ -61,6 +82,13 @@ public class GenericOAuth2SecurityConfig {
         return http.build();
     }
 
+    /**
+     * JWT decoder.
+     *
+     * @param jwkSetURI JWK Set URI
+     *
+     * @return {@link ReactiveJwtDecoder}
+     */
     protected ReactiveJwtDecoder reactiveJwtDecoder(final String jwkSetURI) {
         return NimbusReactiveJwtDecoder
                 .withJwkSetUri(jwkSetURI)
@@ -69,6 +97,11 @@ public class GenericOAuth2SecurityConfig {
                 .build();
     }
 
+    /**
+     * Error handler.
+     *
+     * @return {@link ClientResponse}
+     */
     protected ExchangeFilterFunction errorHandler() {
         return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
             if (clientResponse.statusCode().is4xxClientError()) {
@@ -83,6 +116,14 @@ public class GenericOAuth2SecurityConfig {
         });
     }
 
+    /**
+     * Provides credentials for basic auth.
+     *
+     * @param username basic auth username
+     * @param password basic auth password
+     *
+     * @return {@link ReactiveUserDetailsService}
+     */
     protected ReactiveUserDetailsService userDetailsService(final String username,
                                                             final String password) {
         final UserDetails user = User

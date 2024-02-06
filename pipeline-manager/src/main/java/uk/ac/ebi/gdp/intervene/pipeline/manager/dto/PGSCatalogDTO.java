@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2023 EMBL - European Bioinformatics Institute
+ * Copyright 2024 EMBL - European Bioinformatics Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
-import org.springframework.stereotype.Repository;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
+import java.util.Collection;
 
-@Repository
-public interface PipelineExecutionStatusRepository extends R2dbcRepository<PipelineExecutionStatus, String>,
-        CustomPipelineExecutionStatusRepository {
+public record PGSCatalogDTO(Collection<String> ids,
+                            PGSCatalogIdType idType) {
+    public enum PGSCatalogIdType {
+        PGS_ID, TRAIT_ID
+    }
 }

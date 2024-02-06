@@ -22,5 +22,6 @@ import org.springframework.stereotype.Repository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 
 @Repository
-public interface PipelineResultRepository extends R2dbcRepository<PipelineResult, String>, CustomPipelineResultRepository {
+public interface PipelineResultRepository extends R2dbcRepository<PipelineResult, String>,
+        CustomPipelineResultRepository {
 }

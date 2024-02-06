@@ -18,10 +18,18 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.config;
 
 import org.springframework.data.domain.ReactiveAuditorAware;
+import org.springframework.security.core.userdetails.User;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.UserAccountDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
+import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.isPrincipalOfTypeUser;
+import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.user;
+
+/**
+ * Implementation of {@link ReactiveAuditorAware},
+ * populates current auditor
+ */
 public class ReactiveAuditorAwareImpl implements ReactiveAuditorAware<String> {
     private final UserManagerService userManagerService;
 
@@ -31,8 +39,16 @@ public class ReactiveAuditorAwareImpl implements ReactiveAuditorAware<String> {
 
     @Override
     public Mono<String> getCurrentAuditor() {
-        return userManagerService
-                .getUserAccountDetails()
-                .map(UserAccountDTO::accountId);
+        return isPrincipalOfTypeUser()
+                .flatMap(aBoolean -> {
+                    if (aBoolean) {
+                        return user()
+                                .map(User::getUsername);
+                    } else {
+                        return userManagerService
+                                .getUserAccountDetails()
+                                .map(UserAccountDTO::accountId);
+                    }
+                });
     }
 }

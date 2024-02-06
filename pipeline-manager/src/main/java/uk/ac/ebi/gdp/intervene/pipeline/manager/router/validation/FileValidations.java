@@ -27,6 +27,8 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 import static java.util.Collections.unmodifiableList;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO.GlobusFileDetails;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
@@ -41,6 +43,12 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileVal
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.PVAR_ZST;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.VCF_PATH_GZ;
 
+/**
+ * Defines file validations to be performed on the files
+ * to be used for Pipeline execution.
+ *
+ * @param <DTO> generic type, subclass of {@link IGlobusFileDetailsWrapper}
+ */
 public class FileValidations<DTO extends IGlobusFileDetailsWrapper> {
     private List<Predicate<DTO>> validations;
 
@@ -55,6 +63,11 @@ public class FileValidations<DTO extends IGlobusFileDetailsWrapper> {
         this.validations = unmodifiableList(this.validations);
     }
 
+    /**
+     * Returns list of validations.
+     *
+     * @return predicate implementation of {@link Predicate}
+     */
     public List<Predicate<DTO>> validations() {
         return validations;
     }
@@ -100,7 +113,8 @@ public class FileValidations<DTO extends IGlobusFileDetailsWrapper> {
                 .parallelStream()
                 .forEach(globusFileDetails -> FileExtension
                         .getFileExtension(globusFileDetails.getFileName())
-                        .ifPresentOrElse(fileExtension -> updateFileCount(fileExtensionMap, fileExtension), () -> updateFileCount(fileExtensionMap, INVALID)));
+                        .ifPresentOrElse(fileExtension -> updateFileCount(fileExtensionMap, fileExtension),
+                                () -> updateFileCount(fileExtensionMap, INVALID)));
         return fileExtensionMap;
     }
 
@@ -160,6 +174,9 @@ public class FileValidations<DTO extends IGlobusFileDetailsWrapper> {
         return validateZeroCount(extensionMap, VCF_PATH_GZ);
     }
 
+    /**
+     * Enum constants of File extensions to support.
+     */
     public enum FileExtension {
         BIM("bim"),
         BIM_GZ("bim.gz"),
@@ -185,10 +202,10 @@ public class FileValidations<DTO extends IGlobusFileDetailsWrapper> {
         public static Optional<FileExtension> getFileExtension(final String fileExtensionToBeChecked) {
             for (final FileExtension fileExtensionType : FileExtension.values()) {
                 if (fileExtensionToBeChecked.toLowerCase().endsWith(fileExtensionType.getFileExtension())) {
-                    return Optional.of(fileExtensionType);
+                    return of(fileExtensionType);
                 }
             }
-            return Optional.empty();
+            return empty();
         }
     }
 }

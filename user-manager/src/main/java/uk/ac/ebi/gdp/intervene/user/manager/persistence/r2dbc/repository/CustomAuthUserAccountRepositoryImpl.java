@@ -21,16 +21,19 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 
+import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.mapper.AuthUserAccountEntityMapper.fullMap;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.query.AuthUserAccountQueries.FIND_BY_AUTH_USER_ID;
 
+/**
+ * Custom implementation for accessing data from {@link AuthUserAccountRepository}
+ * Currently there is no support for relationship in R2DBC, this repo implementation
+ * serves the purpose.
+ */
 public class CustomAuthUserAccountRepositoryImpl implements CustomAuthUserAccountRepository {
     private final DatabaseClient databaseClient;
-    private final AuthUserAccountMapper authUserAccountMapper;
 
-    public CustomAuthUserAccountRepositoryImpl(final DatabaseClient databaseClient,
-                                               final AuthUserAccountMapper authUserAccountMapper) {
+    public CustomAuthUserAccountRepositoryImpl(final DatabaseClient databaseClient) {
         this.databaseClient = databaseClient;
-        this.authUserAccountMapper = authUserAccountMapper;
     }
 
     /**
@@ -41,7 +44,7 @@ public class CustomAuthUserAccountRepositoryImpl implements CustomAuthUserAccoun
         return databaseClient
                 .sql(FIND_BY_AUTH_USER_ID)
                 .bind("authUserId", authUserId)
-                .map(authUserAccountMapper::apply)
+                .map(fullMap()::apply)
                 .one();
     }
 }

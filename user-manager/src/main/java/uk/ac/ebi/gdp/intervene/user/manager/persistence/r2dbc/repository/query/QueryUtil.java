@@ -15,18 +15,24 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper;
+package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.query;
 
 import io.r2dbc.spi.Row;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 
-import java.util.function.BiFunction;
+import java.time.LocalDateTime;
 
-public interface PipelineResultModelMapper {
-    static BiFunction<Row, Object, PipelineResult> map() {
-        return (row, object) -> new PipelineResult(
-                row.get("pipeline_id", String.class),
-                row.get("file_download_path", String.class)
-        );
+import static java.time.LocalDateTime.parse;
+
+public interface QueryUtil {
+    static String getString(final String fieldName,
+                            final Row row) {
+        return row.get(fieldName) != null ?
+                row.get(fieldName, String.class) : "";
+    }
+
+    static LocalDateTime getLocalDateTime(final String fieldName,
+                                          final Row row) {
+        return row.get(fieldName) != null ?
+                row.get(fieldName, LocalDateTime.class) : parse("0000-01-01T00:00:00");
     }
 }

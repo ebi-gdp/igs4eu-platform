@@ -17,9 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query;
 
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.joinQuery;
-
-
 public interface PipelineExecutionStatusQueries {
     //@formatter:off
     String FIND_BY_PIPELINE_ID = "SELECT " +
@@ -48,10 +45,5 @@ public interface PipelineExecutionStatusQueries {
                                  " ON s.pipeline_id = p.pipeline_id " +
                                  "WHERE" +
                                  " p.pipeline_id = :pipelineId";
-
-    String FIND_BY_USER_ID = "AND " +
-                             "p.user_id = :userId";
-
-    String FIND_BY_PIPELINE_ID_FIND_BY_USER_ID = joinQuery(FIND_BY_PIPELINE_ID, FIND_BY_USER_ID);
     //@formatter:on
 }

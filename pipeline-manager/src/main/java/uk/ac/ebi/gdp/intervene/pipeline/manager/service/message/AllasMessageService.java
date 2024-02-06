@@ -34,6 +34,10 @@ import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
 import static uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil.getJsonObjectMapper;
 
+/**
+ * Allas is a S3 object storage implementation at CSC.
+ * Implements {@link MessageService}
+ */
 public class AllasMessageService implements MessageService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AllasMessageService.class);
     private final AmazonS3 s3ClientAllas;
@@ -45,7 +49,13 @@ public class AllasMessageService implements MessageService {
         this.bucketName = bucketName;
     }
 
-    public Mono<Void> sendMessage(final String key, final TriggerPipelineEvent message) {
+    /**
+     * Upload file to Allas.
+     *
+     * {@inheritDoc}
+     */
+    public Mono<Void> sendMessage(final String key,
+                                  final TriggerPipelineEvent message) {
         if (!s3ClientAllas.doesBucketExistV2(bucketName)) {
             s3ClientAllas.createBucket(bucketName);
         }

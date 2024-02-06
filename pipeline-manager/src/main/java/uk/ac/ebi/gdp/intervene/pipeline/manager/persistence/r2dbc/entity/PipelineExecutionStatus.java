@@ -67,25 +67,25 @@ public class PipelineExecutionStatus implements Persistable<String> {
     private LocalDateTime updatedOn;
 
     @Transient
-    private boolean newPipelineExecutionStatus;
+    private boolean isNew;
 
-    public PipelineExecutionStatus(final String pipelineId) {
+    private PipelineExecutionStatus(final String pipelineId) {
         this.pipelineId = pipelineId;
         this.status = NEW;
-        this.newPipelineExecutionStatus = true;
+        this.isNew = true;
     }
 
-    public PipelineExecutionStatus(final String pipelineId,
-                                   final PipelineStatus pipelineStatus,
-                                   final String traceName,
-                                   final byte traceExit,
-                                   final LocalDateTime submittedOn,
-                                   final LocalDateTime startedOn,
-                                   final LocalDateTime endedOn,
-                                   final String createdBy,
-                                   final LocalDateTime createdOn,
-                                   final String updatedBy,
-                                   final LocalDateTime updatedOn) {
+    private PipelineExecutionStatus(final String pipelineId,
+                                    final PipelineStatus pipelineStatus,
+                                    final String traceName,
+                                    final byte traceExit,
+                                    final LocalDateTime submittedOn,
+                                    final LocalDateTime startedOn,
+                                    final LocalDateTime endedOn,
+                                    final String createdBy,
+                                    final LocalDateTime createdOn,
+                                    final String updatedBy,
+                                    final LocalDateTime updatedOn) {
         this.pipelineId = pipelineId;
         this.status = pipelineStatus;
         this.traceName = traceName;
@@ -99,18 +99,18 @@ public class PipelineExecutionStatus implements Persistable<String> {
         this.updatedOn = updatedOn;
     }
 
-    public PipelineExecutionStatus(final String pipelineId,
-                                   final PipelineStatus pipelineStatus,
-                                   final String traceName,
-                                   final byte traceExit,
-                                   final LocalDateTime submittedOn,
-                                   final LocalDateTime startedOn,
-                                   final LocalDateTime endedOn,
-                                   final String createdBy,
-                                   final LocalDateTime createdOn,
-                                   final String updatedBy,
-                                   final LocalDateTime updatedOn,
-                                   final PipelineDetails pipelineDetails) {
+    private PipelineExecutionStatus(final String pipelineId,
+                                    final PipelineStatus pipelineStatus,
+                                    final String traceName,
+                                    final byte traceExit,
+                                    final LocalDateTime submittedOn,
+                                    final LocalDateTime startedOn,
+                                    final LocalDateTime endedOn,
+                                    final String createdBy,
+                                    final LocalDateTime createdOn,
+                                    final String updatedBy,
+                                    final LocalDateTime updatedOn,
+                                    final PipelineDetails pipelineDetails) {
         this(pipelineId, pipelineStatus, traceName, traceExit, submittedOn,
                 startedOn, endedOn, createdBy, createdOn, updatedBy, updatedOn);
         this.pipelineDetails = pipelineDetails;
@@ -167,7 +167,43 @@ public class PipelineExecutionStatus implements Persistable<String> {
 
     @Override
     public boolean isNew() {
-        return newPipelineExecutionStatus || !hasText(pipelineId);
+        return isNew || !hasText(pipelineId);
+    }
+
+    public static PipelineExecutionStatus create(final String pipelineId) {
+        return new PipelineExecutionStatus(pipelineId);
+    }
+
+    public static PipelineExecutionStatus load(final String pipelineId,
+                                               final PipelineStatus pipelineStatus,
+                                               final String traceName,
+                                               final byte traceExit,
+                                               final LocalDateTime submittedOn,
+                                               final LocalDateTime startedOn,
+                                               final LocalDateTime endedOn,
+                                               final String createdBy,
+                                               final LocalDateTime createdOn,
+                                               final String updatedBy,
+                                               final LocalDateTime updatedOn) {
+        return new PipelineExecutionStatus(pipelineId, pipelineStatus, traceName, traceExit,
+                submittedOn, startedOn, endedOn, createdBy, createdOn, updatedBy, updatedOn);
+    }
+
+    public static PipelineExecutionStatus load(final String pipelineId,
+                                               final PipelineStatus pipelineStatus,
+                                               final String traceName,
+                                               final byte traceExit,
+                                               final LocalDateTime submittedOn,
+                                               final LocalDateTime startedOn,
+                                               final LocalDateTime endedOn,
+                                               final String createdBy,
+                                               final LocalDateTime createdOn,
+                                               final String updatedBy,
+                                               final LocalDateTime updatedOn,
+                                               final PipelineDetails pipelineDetails) {
+        return new PipelineExecutionStatus(pipelineId, pipelineStatus, traceName, traceExit,
+                submittedOn, startedOn, endedOn, createdBy, createdOn, updatedBy, updatedOn,
+                pipelineDetails);
     }
 
     public void pending() {

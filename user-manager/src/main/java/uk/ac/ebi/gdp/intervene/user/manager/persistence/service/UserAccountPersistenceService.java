@@ -24,16 +24,14 @@ import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.user.manager.model.IUserInfo;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountDetails;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.AuthUserAccountRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountDetailsRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountRepository;
 
 import static uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType.ELIXIR;
-import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount.newAuthUserAccount;
-import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount.newUserAccount;
-import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountDetails.newUserAccountDetails;
+import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount.create;
 
-@Transactional(readOnly = true)
 public class UserAccountPersistenceService implements IUserAccountPersistenceService {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserAccountPersistenceService.class);
     private final UserAccountRepository userAccountRepository;
@@ -50,12 +48,11 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
 
     /**
      * Build & persist all user account related entities
-     * Rollbacks transaction on exception thrown
+     * Rollbacks transaction on runtime exception thrown.
      *
      * {@inheritDoc}
      */
-    @Transactional(transactionManager = "reactiveTransactionManager",
-            rollbackFor = Exception.class)
+    @Transactional
     @Override
     public Mono<UserAccount> createAccount(final String authUserAccountId,
                                            final IUserInfo userInfo) {
@@ -71,7 +68,7 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
                 .flatMap(userAccount -> {
                     // Build User Account Details
                     return userAccountDetailsRepository
-                            .save(newUserAccountDetails(userAccount.getUserId(),
+                            .save(UserAccountDetails.create(userAccount.getUserId(),
                                     userAccount.getUserId()))
                             .doOnNext(userAccountDetails -> LOGGER.info("Persisted new user account details"))
                             .thenReturn(userAccount);
@@ -79,7 +76,7 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
                 .flatMap(userAccount -> {
                     // Build Auth User Account
                     return authUserAccountRepository
-                            .save(newAuthUserAccount(
+                            .save(create(
                                     authUserAccountId,
                                     userAccount.getUserId(),
                                     ELIXIR,
@@ -108,7 +105,7 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
 
     private UserAccount buildUserAccount(final String nextUserAccountId,
                                          final IUserInfo userInfo) {
-        return newUserAccount(
+        return UserAccount.create(
                 nextUserAccountId,
                 userInfo.getGivenName(),
                 userInfo.getFamilyName(),

@@ -55,13 +55,13 @@ public class PipelineDetails implements Persistable<String> {
     private LocalDateTime updatedOn;
 
     @Transient
-    private boolean newPipelineDetails;
-
-    @Transient
     private DatasetDetails datasetDetails;
 
     @Transient
     private PipelineExecutionStatus pipelineExecutionStatus;
+
+    @Transient
+    private boolean isNew;
 
     protected PipelineDetails() {
     }
@@ -73,18 +73,18 @@ public class PipelineDetails implements Persistable<String> {
         this.pipelineUID = UUID.randomUUID().toString();
         this.userId = userId;
         this.datasetId = datasetId;
-        this.newPipelineDetails = true;
-        this.pipelineExecutionStatus = new PipelineExecutionStatus(pipelineId);
+        this.isNew = true;
+        this.pipelineExecutionStatus = PipelineExecutionStatus.create(pipelineId);
     }
 
-    public PipelineDetails(final String pipelineId,
-                           final String pipelineUID,
-                           final String userId,
-                           final String datasetId,
-                           final String createdBy,
-                           final LocalDateTime createdOn,
-                           final String updatedBy,
-                           final LocalDateTime updatedOn) {
+    private PipelineDetails(final String pipelineId,
+                            final String pipelineUID,
+                            final String userId,
+                            final String datasetId,
+                            final String createdBy,
+                            final LocalDateTime createdOn,
+                            final String updatedBy,
+                            final LocalDateTime updatedOn) {
         this.pipelineId = pipelineId;
         this.pipelineUID = pipelineUID;
         this.userId = userId;
@@ -122,26 +122,6 @@ public class PipelineDetails implements Persistable<String> {
         this(pipelineId, pipelineUID, userId, datasetId, createdBy, createdOn,
                 updatedBy, updatedOn, pipelineExecutionStatus);
         this.datasetDetails = datasetDetails;
-    }
-
-    public static PipelineDetails newInstance(final String pipelineId,
-                                              final String userId,
-                                              final String datasetId) {
-        return new PipelineDetails(pipelineId, userId, datasetId);
-    }
-
-    public static PipelineDetails pipelineDetailsWithStatusAndDataset(final String pipelineId,
-                                                                      final String pipelineUID,
-                                                                      final String userId,
-                                                                      final String datasetId,
-                                                                      final String createdBy,
-                                                                      final LocalDateTime createdOn,
-                                                                      final String updatedBy,
-                                                                      final LocalDateTime updatedOn,
-                                                                      final PipelineExecutionStatus pipelineExecutionStatus,
-                                                                      final DatasetDetails datasetDetails) {
-        return new PipelineDetails(pipelineId, pipelineUID, userId, datasetId, createdBy,
-                createdOn, updatedBy, updatedOn, pipelineExecutionStatus, datasetDetails);
     }
 
     public String getPipelineId() {
@@ -219,6 +199,38 @@ public class PipelineDetails implements Persistable<String> {
 
     @Override
     public boolean isNew() {
-        return newPipelineDetails || !hasText(pipelineId);
+        return isNew || !hasText(pipelineId);
+    }
+
+    public static PipelineDetails create(final String pipelineId,
+                                         final String userId,
+                                         final String datasetId) {
+        return new PipelineDetails(pipelineId, userId, datasetId);
+    }
+
+    public static PipelineDetails load(final String pipelineId,
+                                       final String pipelineUID,
+                                       final String userId,
+                                       final String datasetId,
+                                       final String createdBy,
+                                       final LocalDateTime createdOn,
+                                       final String updatedBy,
+                                       final LocalDateTime updatedOn) {
+        return new PipelineDetails(pipelineId, pipelineUID, userId, datasetId, createdBy,
+                createdOn, updatedBy, updatedOn);
+    }
+
+    public static PipelineDetails load(final String pipelineId,
+                                       final String pipelineUID,
+                                       final String userId,
+                                       final String datasetId,
+                                       final String createdBy,
+                                       final LocalDateTime createdOn,
+                                       final String updatedBy,
+                                       final LocalDateTime updatedOn,
+                                       final PipelineExecutionStatus pipelineExecutionStatus,
+                                       final DatasetDetails datasetDetails) {
+        return new PipelineDetails(pipelineId, pipelineUID, userId, datasetId, createdBy,
+                createdOn, updatedBy, updatedOn, pipelineExecutionStatus, datasetDetails);
     }
 }

@@ -31,10 +31,10 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.DatasetMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.GlobusUserDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetDetailsRepository;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusUserRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
@@ -59,14 +59,17 @@ public class PipelineManagerRouterConfig {
                         .GET("/recent/top", serverRequest -> pipelineRequestHandler.getPipelineRecent())//TODO: rename path
                         .GET("/success/result", pipelineResultHandler::listResultFiles)
                         .POST("/pgs-ids/validate", pipelineRequestHandler::validatePGSIds)
+                        .GET("/pgs-ids-catalog-traits", pipelineRequestHandler::getPGSIdsByTraits)
                         .path("/{pipelineId}", pbPId -> pbPId
-                                .POST("/execute", pipelineRequestHandler::executePipeline)
+                                .POST("/execute/pgs-ids", pipelineRequestHandler::executePipelineForPgsIds)
+                                .POST("/execute/trait-ids", pipelineRequestHandler::executePipelineForTraitIds)
                                 .PATCH("/dataset", pipelineRequestHandler::updateDatasetId)
                                 .GET("/report", pipelineResultHandler::streamFileFromS3)
                                 .GET(pipelineRequestHandler::getPipeline))
                         .POST(pipelineRequestHandler::createPipeline)
                         .GET(pipelineRequestHandler::getPipelines))
-                .path("/csc/pipeline/{pipelineId}/status", pbCSC -> pbCSC.POST(cscPipelineHandler::updatePipelineStatus))
+                //Make sure this path is secured under basic auth, allows pipeline executor to trigger API
+                .path("/integration/pipeline/{pipelineId}/status", pbCSC -> pbCSC.PATCH(cscPipelineHandler::updatePipelineStatus))
                 .path("/dataset", db -> db
                         .GET("/{datasetId}", datasetRequestHandler::getDatasetDetails)
                         .GET(datasetRequestHandler::getDatasets)
@@ -82,14 +85,15 @@ public class PipelineManagerRouterConfig {
                                                          final IPipelinePersistence pipelinePersistence,
                                                          final UserManagerService userManagerService,
                                                          final PipelineDetailsMapper pipelineDetailsMapper,
-                                                         final StringRedisTemplate redisTemplate) {
+                                                         final StringRedisTemplate redisTemplate,
+                                                         final PGSCatalogService pgsCatalogService) {
         return new PipelineRequestHandler(
                 pipelineManagerService,
                 pipelinePersistence,
                 userManagerService,
                 pipelineDetailsMapper,
-                redisTemplate
-        );
+                redisTemplate,
+                pgsCatalogService);
     }
 
     @Bean
@@ -101,8 +105,7 @@ public class PipelineManagerRouterConfig {
                 pipelinePersistence,
                 userManagerService,
                 s3Client,
-                s3Bucket
-        );
+                s3Bucket);
     }
 
     @Bean
@@ -112,25 +115,19 @@ public class PipelineManagerRouterConfig {
         return new DatasetRequestHandler(
                 datasetDetailsRepository,
                 datasetMapper,
-                userManagerService
-        );
+                userManagerService);
     }
 
     @Bean
-    public GlobusRequestHandler globusUserRequestHandler(final PipelineManagerService pipelineManagerService,
+    public GlobusRequestHandler globusUserRequestHandler(final GlobusManagerService globusManagerService,
                                                          final UserManagerService userManagerService,
-                                                         final GlobusFileHandlerService globusFileHandlerService,
-                                                         final GlobusUserRepository globusUserRepository,
                                                          final GlobusUserDetailsMapper globusUserDetailsMapper,
                                                          final FileValidations<IGlobusFileDetailsWrapper> fileValidations) {
         return new GlobusRequestHandler(
-                pipelineManagerService,
                 userManagerService,
-                globusFileHandlerService,
-                globusUserRepository,
+                globusManagerService,
                 globusUserDetailsMapper,
-                fileValidations
-        );
+                fileValidations);
     }
 
     @Bean

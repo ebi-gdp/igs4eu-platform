@@ -26,32 +26,143 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Pipelin
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 
+/**
+ * Database operations layer.
+ */
 public interface IPipelinePersistence {
+    /**
+     * Creates pipeline.
+     *
+     * @param userId platform user id
+     * @param datasetId dataset id
+     *
+     * @return pipeline details represented by {@link PipelineDetails}
+     */
     Mono<PipelineDetails> createPipeline(String userId, String datasetId);
 
+    /**
+     * Update pipeline status.
+     *
+     * @param pipelineId pipeline id
+     * @param pipelineStatus pipeline status
+     *
+     * @return pipeline execution status represented by {@link PipelineExecutionStatus}
+     */
     Mono<PipelineExecutionStatus> updatePipelineStatus(String pipelineId, PipelineStatus pipelineStatus);
 
+    /**
+     * Update pipeline status.
+     *
+     * @param pipelineId pipeline id
+     * @param pipelineStatusDTO {@link PipelineStatusDTO}
+     *
+     * @return pipeline execution status represented by {@link PipelineExecutionStatus}
+     */
     Mono<PipelineExecutionStatus> updatePipelineStatus(String pipelineId, PipelineStatusDTO pipelineStatusDTO);
 
-    Mono<PipelineResult> persistPipelineResult(PipelineResultEvent pipelineResultEvent);
+    /**
+     * Persist pipeline result.
+     *
+     * @param pipelineResultEvent {@link PipelineResultEvent}
+     *
+     * @return pipeline result represented by {@link PipelineResult}
+     */
+    Mono<PipelineResult> createPipelineResult(PipelineResultEvent pipelineResultEvent);
 
+    /**
+     * Retrieves recent pipeline result.
+     *
+     * @param userId Intervene platform user id
+     *
+     * @return pipeline result represented by {@link PipelineResult}
+     */
     Mono<PipelineResult> getPipelineResultRecent(String userId);
 
-    Mono<PipelineResult> getPipelineResult(String userId, String pipelineId);
+    /**
+     * Retrieves pipeline result for pipeline id.
+     *
+     * @param pipelineId pipeline id
+     * @param userId Intervene platform user id
+     *
+     * @return pipeline result represented by {@link PipelineResult}
+     */
+    Mono<PipelineResult> getPipelineResult(String pipelineId, String userId);
 
+    /**
+     * Retrieves pipeline details for pipeline id.
+     *
+     * @param pipelineId pipeline id
+     * @param userId Intervene platform user id
+     *
+     * @return pipeline details represented by {@link PipelineDetails}
+     */
     Mono<PipelineDetails> getPipeline(String pipelineId, String userId);
 
+    /**
+     * Retrieves complete pipeline details for pipeline id,
+     * includes all dependent entities.
+     *
+     * @param pipelineId pipeline id
+     * @param userId Intervene platform user id
+     *
+     * @return pipeline details represented by {@link PipelineDetails}
+     */
     Mono<PipelineDetails> getPipelineFull(String pipelineId, String userId);
 
+    /**
+     * Retrieves pipeline details without dependent related entities.
+     *
+     * @param userId Intervene platform user id
+     * @param offset db record offset
+     * @param limit no of records to limit
+     *
+     * @return pipeline details represented by {@link PipelineDetails}
+     */
     Flux<PipelineDetails> getPipelines(String userId, int offset, int limit);
 
+    /**
+     * Counts no. of pipelines.
+     *
+     * @param userId Intervene platform user id
+     *
+     * @return no. of records represented by {@link Long}
+     */
     Mono<Long> getPipelinesCount(String userId);
 
+    /**
+     * Retrieves complete recent pipeline details,
+     * includes all dependent entities.
+     *
+     * @param userId Intervene platform user id
+     *
+     * @return pipeline details represented by {@link PipelineDetails}
+     */
     Mono<PipelineDetails> getPipelineFullRecent(String userId);
 
+    /**
+     * Persist pipeline details.
+     *
+     * @param pipelineDetails {link PipelineDetails}
+     *
+     * @return pipeline details represented by {@link PipelineDetails}
+     */
     Mono<PipelineDetails> save(PipelineDetails pipelineDetails);
 
+    /**
+     * Retrieves pipeline execution status.
+     *
+     * @param pipelineId pipeline id
+     *
+     * @return pipeline execution status represented by {@link PipelineExecutionStatus}
+     */
     Mono<PipelineExecutionStatus> getPipelineExecutionStatus(String pipelineId);
 
+    /**
+     * Persist pipeline execution status.
+     *
+     * @param pipelineExecutionStatus {@link PipelineExecutionStatus}
+     *
+     * @return pipeline execution status represented by {@link PipelineExecutionStatus}
+     */
     Mono<PipelineExecutionStatus> savePipelineExecutionStatus(PipelineExecutionStatus pipelineExecutionStatus);
 }

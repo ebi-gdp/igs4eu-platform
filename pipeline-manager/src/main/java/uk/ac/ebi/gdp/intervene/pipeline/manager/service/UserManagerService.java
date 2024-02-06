@@ -17,38 +17,59 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
 
-import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.UserAccountDTO;
 
+import java.net.URI;
+
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+
+/**
+ * User manger service, defines methods to interact with User Manager module.
+ */
 public class UserManagerService {
     private final WebClient userManagerWebClient;
     private final String basicAuth;
+    private final URI userAccountURI;
 
     public UserManagerService(final WebClient userManagerWebClient,
-                              final String basicAuth) {
+                              final String basicAuth,
+                              final URI userAccountURI) {
         this.userManagerWebClient = userManagerWebClient;
         this.basicAuth = basicAuth;
+        this.userAccountURI = userAccountURI;
     }
 
+    /**
+     * Returns user account details based on access token.
+     *
+     * @return User account details represented by {@link UserAccountDTO}
+     */
     public Mono<UserAccountDTO> getUserAccountDetails() {
         return userManagerWebClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/user/account")
+                        .path(userAccountURI.getPath())
                         .build())
                 .retrieve()
                 .bodyToMono(UserAccountDTO.class);
     }
 
+    /**
+     * Returns user account details for specified accountId, secured by basic auth.
+     *
+     * @param accountId user account id
+     *
+     * @return User account details represented by {@link UserAccountDTO}
+     */
     public Mono<UserAccountDTO> getUserAccountDetails(final String accountId) {
         return userManagerWebClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/user/account/{accountId}")
+                        .path(userAccountURI.getPath() + "/{accountId}")
                         .build(accountId))
-                .header(HttpHeaders.AUTHORIZATION, basicAuth)
+                .header(AUTHORIZATION, basicAuth)
                 .retrieve()
                 .bodyToMono(UserAccountDTO.class);
     }

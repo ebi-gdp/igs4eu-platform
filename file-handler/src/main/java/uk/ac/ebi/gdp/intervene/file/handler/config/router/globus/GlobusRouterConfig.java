@@ -31,7 +31,7 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 
 /**
- * Globus router config
+ * Globus router config.
  */
 @Configuration
 public class GlobusRouterConfig {

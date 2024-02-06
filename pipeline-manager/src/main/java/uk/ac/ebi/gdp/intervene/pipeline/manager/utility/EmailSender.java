@@ -25,9 +25,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.exception.ServerException;
 
+import static reactor.core.publisher.Mono.empty;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
 
+/**
+ * Email service implementation.
+ */
 public class EmailSender implements IEmailSender {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailSender.class);
     private final JavaMailSender mailSender;
@@ -39,7 +44,13 @@ public class EmailSender implements IEmailSender {
         this.emailFrom = emailFrom;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws {@link ServerException}
+     */
     public Mono<Void> sendEmailInHTMLFormat(final EmailData emailData) {
+        LOGGER.debug("Email data: {}", emailData.toString());
         try {
             final MimeMessage message = mailSender.createMimeMessage();
             final MimeMessageHelper helper = new MimeMessageHelper(message, true);
@@ -48,7 +59,7 @@ public class EmailSender implements IEmailSender {
             helper.setSubject(emailData.subject());
             helper.setText(emailData.body(), true);
             mailSender.send(message);
-            return Mono.empty();
+            return empty();
         } catch (final MessagingException messagingException) {
             LOGGER.error("Error while sending message: " + messagingException.getMessage(), messagingException);
             throw serverException(messagingException.getMessage());

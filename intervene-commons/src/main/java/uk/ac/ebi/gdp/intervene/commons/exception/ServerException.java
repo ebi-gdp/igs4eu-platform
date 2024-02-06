@@ -25,6 +25,9 @@ import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.valueOf;
 
+/**
+ * Server errors, e.g. http 500 series.
+ */
 public class ServerException extends GenericException {
     @Serial
     private static final long serialVersionUID = 4025232865170422339L;

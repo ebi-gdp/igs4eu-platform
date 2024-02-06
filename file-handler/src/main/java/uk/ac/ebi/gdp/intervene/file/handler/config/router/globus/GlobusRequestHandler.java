@@ -40,7 +40,7 @@ import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badReque
 import static uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.PermissionType.READ_WRITE;
 
 /**
- * Globus request handler. Defines handlers for router function.
+ * Globus request handler, defines handlers for router function.
  */
 public class GlobusRequestHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobusRequestHandler.class);

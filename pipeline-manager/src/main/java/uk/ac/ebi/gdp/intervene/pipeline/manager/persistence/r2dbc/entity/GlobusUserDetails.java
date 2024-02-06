@@ -55,32 +55,34 @@ public class GlobusUserDetails implements Persistable<String> {
     private LocalDateTime updatedOn;
 
     @Transient
-    private boolean newGlobusUserDetails;
+    private boolean isNew;
 
     protected GlobusUserDetails() {
     }
 
     private GlobusUserDetails(final String username,
                               final String userUID,
-                              final String interveneUserId) {
+                              final String interveneUserId,
+                              final boolean isNew) {
         this.username = username;
         this.userUID = userUID;
         this.interveneUserId = interveneUserId;
+        this.isNew = isNew;
     }
 
-    public GlobusUserDetails(final String username,
-                             final String userUID,
-                             final String interveneUserId,
-                             final String createdBy,
-                             final LocalDateTime createdOn,
-                             final String updatedBy,
-                             final LocalDateTime updatedOn) {
-        this(username, userUID, interveneUserId);
+    private GlobusUserDetails(final String username,
+                              final String userUID,
+                              final String interveneUserId,
+                              final String createdBy,
+                              final LocalDateTime createdOn,
+                              final String updatedBy,
+                              final LocalDateTime updatedOn,
+                              final boolean isNew) {
+        this(username, userUID, interveneUserId, isNew);
         this.createdBy = createdBy;
         this.createdOn = createdOn;
         this.updatedBy = updatedBy;
         this.updatedOn = updatedOn;
-        this.newGlobusUserDetails = true;
     }
 
     public String getUsername() {
@@ -123,12 +125,6 @@ public class GlobusUserDetails implements Persistable<String> {
         return updatedOn;
     }
 
-    public static GlobusUserDetails newInstance(final String username,
-                                                final String userUID,
-                                                final String interveneUserId) {
-        return new GlobusUserDetails(username, userUID, interveneUserId);
-    }
-
     @Override
     public String getId() {
         return username;
@@ -136,6 +132,24 @@ public class GlobusUserDetails implements Persistable<String> {
 
     @Override
     public boolean isNew() {
-        return newGlobusUserDetails || !hasText(username);
+        return isNew || !hasText(username);
+    }
+
+    public static GlobusUserDetails create(final String username,
+                                           final String userUID,
+                                           final String interveneUserId) {
+        return new GlobusUserDetails(username, userUID,
+                interveneUserId, true);
+    }
+
+    public static GlobusUserDetails load(final String username,
+                                         final String userUID,
+                                         final String interveneUserId,
+                                         final String createdBy,
+                                         final LocalDateTime createdOn,
+                                         final String updatedBy,
+                                         final LocalDateTime updatedOn) {
+        return new GlobusUserDetails(username, userUID, interveneUserId,
+                createdBy, createdOn, updatedBy, updatedOn, false);
     }
 }

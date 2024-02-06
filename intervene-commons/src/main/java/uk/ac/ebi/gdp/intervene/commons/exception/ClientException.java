@@ -27,6 +27,9 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.valueOf;
 
+/**
+ * Client exceptions e.g. http status 400 series.
+ */
 public class ClientException extends GenericException {
     @Serial
     private static final long serialVersionUID = -4850629090293414750L;

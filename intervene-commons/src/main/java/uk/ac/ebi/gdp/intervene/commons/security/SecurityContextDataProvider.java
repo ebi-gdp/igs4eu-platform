@@ -19,6 +19,7 @@ package uk.ac.ebi.gdp.intervene.commons.security;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.oauth2.core.AbstractOAuth2Token;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimAccessor;
@@ -27,6 +28,10 @@ import reactor.core.publisher.Mono;
 import static org.springframework.security.core.context.ReactiveSecurityContextHolder.getContext;
 import static uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType.getAuthProviderByDescription;
 
+/**
+ * Security context holder, provides utility functions to extract security data
+ * e.g. auth provider, user id, token etc.
+ */
 public class SecurityContextDataProvider {
     public static Mono<AuthProviderType> getAuthProvider() {
         return getAuthentication()
@@ -34,7 +39,19 @@ public class SecurityContextDataProvider {
     }
 
     public static Mono<String> currentUserId() {
-        return jwt().map(JwtClaimAccessor::getSubject);
+        return isPrincipalOfTypeUser()
+                .flatMap(aBoolean -> {
+                    if (aBoolean) {
+                        return user().map(User::getUsername);
+                    } else {
+                        return jwt().map(JwtClaimAccessor::getSubject);
+                    }
+                });
+    }
+
+    public static Mono<Boolean> isPrincipalOfTypeUser() {
+        return getAuthentication()
+                .map(authentication -> authentication.getPrincipal() instanceof User);
     }
 
     public static Mono<String> getAccessToken() {
@@ -45,6 +62,12 @@ public class SecurityContextDataProvider {
         return getContext()
                 .map(context -> context.getAuthentication().getPrincipal())
                 .cast(Jwt.class);
+    }
+
+    public static Mono<User> user() {
+        return getContext()
+                .map(context -> context.getAuthentication().getPrincipal())
+                .cast(User.class);
     }
 
     public static Mono<Authentication> getAuthentication() {

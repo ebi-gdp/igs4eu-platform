@@ -17,16 +17,21 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
+import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.GlobusUserDetailsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.CreateDirDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.GlobusDetailsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.GlobusUserDetailsMapper;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusUserRepository;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusUserDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
 import java.nio.file.Path;
@@ -39,82 +44,128 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
 import static reactor.core.publisher.Mono.defer;
 import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusUserDetails.newInstance;
 
+/**
+ * Request handler for Globus related operations.
+ */
 public class GlobusRequestHandler {
-    private final PipelineManagerService pipelineManagerService;
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobusRequestHandler.class);
+    private final GlobusManagerService globusManagerService;
     private final UserManagerService userManagerService;
-    private final GlobusFileHandlerService globusFileHandlerService;
-    private final GlobusUserRepository globusUserRepository;
     private final GlobusUserDetailsMapper globusUserDetailsMapper;
     private final FileValidations<IGlobusFileDetailsWrapper> fileValidations;
 
-    public GlobusRequestHandler(final PipelineManagerService pipelineManagerService,
-                                final UserManagerService userManagerService,
-                                final GlobusFileHandlerService globusFileHandlerService,
-                                final GlobusUserRepository globusUserRepository,
+    public GlobusRequestHandler(final UserManagerService userManagerService,
+                                final GlobusManagerService globusManagerService,
                                 final GlobusUserDetailsMapper globusUserDetailsMapper,
                                 final FileValidations<IGlobusFileDetailsWrapper> fileValidations) {
-        this.pipelineManagerService = pipelineManagerService;
+        this.globusManagerService = globusManagerService;
         this.userManagerService = userManagerService;
-        this.globusFileHandlerService = globusFileHandlerService;
-        this.globusUserRepository = globusUserRepository;
         this.globusUserDetailsMapper = globusUserDetailsMapper;
         this.fileValidations = fileValidations;
     }
 
-    public Mono<ServerResponse> mapGlobusUserId(final ServerRequest serverRequest) {//TODO: handle exceptions
+    /**
+     * Maps Globus user id if doesn't exists or else returns existing.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}
+     *
+     * @return Globus user details represented by {@link GlobusUserDetailsDTO}
+     */
+    @Transactional
+    public Mono<ServerResponse> mapGlobusUserId(final ServerRequest serverRequest) {
         return serverRequest
                 .bodyToMono(String.class)
-                .flatMap(username -> globusUserRepository
-                        .findById(username)
-                        .flatMap(globusUserDetails -> status(OK)
-                                .bodyValue(globusUserDetailsMapper.toDTO(globusUserDetails)))
-                        .switchIfEmpty(defer(() -> userManagerService
-                                .getUserAccountDetails()
-                                .flatMap(userAccountDTO -> globusFileHandlerService
-                                        .getGlobusUserDetails(username)
-                                        .map(globusUserIDWDto -> newInstance(
-                                                username,
-                                                globusUserIDWDto.getIdentities().get(0).getUid(),
-                                                userAccountDTO.accountId())))
-                                .flatMap(globusUserRepository::save)
-                                .map(globusUserDetailsMapper::toDTO)
-                                .flatMap(globusUserDetailsDTO -> status(CREATED)
-                                        .bodyValue(globusUserDetailsDTO)))));
+                .flatMap(username -> globusManagerService
+                        .getUserDetails(username)
+                        .flatMap(globusUserDetails -> mappingFound(globusUserDetails, username))
+                        .switchIfEmpty(defer(() -> createMapping(username))));
     }
 
+    private Mono<ServerResponse> mappingFound(final GlobusUserDetails globusUserDetails,
+                                              final String username) {
+        return status(OK)
+                .bodyValue(globusUserDetailsMapper.toDTO(globusUserDetails))
+                .doOnNext(serverResponse -> LOGGER.info("Globus mapping found for {}", username));
+    }
+
+    private Mono<ServerResponse> createMapping(final String username) {
+        LOGGER.info("Globus mapping not found for {}, mapping is being created!", username);
+        return userManagerService
+                .getUserAccountDetails()
+                .flatMap(userAccountDTO -> globusManagerService
+                        .getUserDetails(username, userAccountDTO.accountId()))
+                .flatMap(globusManagerService::save)
+                .map(globusUserDetailsMapper::toDTO)
+                .flatMap(globusUserDetailsDTO -> status(CREATED)
+                        .bodyValue(globusUserDetailsDTO))
+                .doOnNext(serverResponse -> LOGGER.info("Globus mapping has been successfully created"));
+    }
+
+    /**
+     * Creates directory on guest collection.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}
+     *
+     * @return Globus details represented by {@link GlobusDetailsDTO}, expected https status 200(Ok)/201(Created)
+     * @see HttpStatus
+     */
     public Mono<ServerResponse> createDirectoryOnGuestCollection(final ServerRequest serverRequest) {
         return serverRequest
-                .bodyToMono(CreateDirDTO.class)//TODO: handle exceptions
+                .bodyToMono(CreateDirDTO.class)
                 .flatMap(createDirDTO -> {
+                    LOGGER.info("Creating directory on Globus guest collection");
                     final Path directoryName = get(createDirDTO.datasetName());
-                    return pipelineManagerService
-                            .createDirectoryOnGuestCollection(
-                                    directoryName,
-                                    createDirDTO.globusUsername())
-                            .flatMap(globusDetailsDTO -> pipelineManagerService
-                                    .createOrUpdateGlobusRecord(
-                                            createDirDTO.globusUsername(),
-                                            globusDetailsDTO.getGuestCollectionId(),
-                                            directoryName)
-                                    .flatMap(globusDetails -> {
-                                        globusDetailsDTO.setFilesetId(globusDetails.getFilesetId());
-                                        if (globusDetails.isNew()) {
-                                            return status(CREATED).bodyValue(globusDetailsDTO);
-                                        } else {
-                                            return status(OK).bodyValue(globusDetailsDTO);
-                                        }
-                                    })
-                            );
+                    return createDirectory(directoryName, createDirDTO.globusUsername())
+                            .flatMap(globusDetailsDTO -> createOrUpdateGlobusRecord(
+                                    globusDetailsDTO, createDirDTO.globusUsername(), directoryName));
                 });
     }
 
+    private Mono<GlobusDetailsDTO> createDirectory(final Path directoryName,
+                                                   final String globusUsername) {
+        return globusManagerService
+                .createDirectoryOnGuestCollection(
+                        directoryName,
+                        globusUsername)
+                .doOnNext(globusDetailsDTO -> LOGGER.info("Directory has been created"));
+    }
+
+    private Mono<ServerResponse> createOrUpdateGlobusRecord(final GlobusDetailsDTO globusDetailsDTO,
+                                                            final String globusUsername,
+                                                            final Path directoryName) {
+        return globusManagerService
+                .createOrUpdateGlobusRecord(
+                        globusUsername,
+                        globusDetailsDTO.getGuestCollectionId(),
+                        directoryName)
+                .flatMap(globusDetails -> {
+                    globusDetailsDTO.setFilesetId(globusDetails.getFilesetId());
+                    if (globusDetails.isNew()) {
+                        LOGGER.info("Globus details have been created");
+                        return status(CREATED).bodyValue(globusDetailsDTO);
+                    } else {
+                        LOGGER.info("Globus details have been updated");
+                        return status(OK).bodyValue(globusDetailsDTO);
+                    }
+                });
+    }
+
+    /**
+     * Validate files uploaded on Globus.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}
+     *
+     * @return empty body with appropriate http status code, 200(Ok) for 400(Bad request)
+     * @see HttpStatus
+     */
     public Mono<ServerResponse> validateFiles(final ServerRequest serverRequest) {
+        LOGGER.info("Validating globus files");
         return serverRequest
                 .queryParam("path")
-                .map(filePath -> globusFileHandlerService
+                .map(filePath -> globusManagerService
                         .listFilesOnGuestCollection(get(filePath))
+                        .doOnNext(globusFileDetailsWrapperDTO -> LOGGER.info("Globus files have been listed"))
                         .filter(globusFileDetailsWrapperDTO -> fileValidations
                                 .validations()
                                 .stream()
