@@ -29,6 +29,10 @@ import java.nio.file.Path;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+/**
+ * Globus file handler service, define methods to interact with
+ * File Handler service to access Globus APIs
+ */
 public class GlobusFileHandlerService {
     private final WebClient fileHandlerWebClient;
     private final URI globusUserURI;
@@ -45,6 +49,13 @@ public class GlobusFileHandlerService {
         this.globusCreatDirURI = globusCreatDirURI;
     }
 
+    /**
+     * Retrieves Globus user details.
+     *
+     * @param username globus username e.g. email id
+     *
+     * @return Globus user details represented by {@link GlobusUserIdentityDetailsWrapperDTO}
+     */
     public Mono<GlobusUserIdentityDetailsWrapperDTO> getGlobusUserDetails(final String username) {
         return fileHandlerWebClient
                 .get()
@@ -56,6 +67,13 @@ public class GlobusFileHandlerService {
                 .bodyToMono(GlobusUserIdentityDetailsWrapperDTO.class);
     }
 
+    /**
+     * Lists files uploaded to specified Dir on Guest collection.
+     *
+     * @param dirPath files to list on the dir path
+     *
+     * @return List of files represented by {@link GlobusFileDetailsWrapperDTO}
+     */
     public Mono<GlobusFileDetailsWrapperDTO> listFilesOnGuestCollection(final Path dirPath) {
         return fileHandlerWebClient
                 .get()
@@ -67,6 +85,13 @@ public class GlobusFileHandlerService {
                 .bodyToMono(GlobusFileDetailsWrapperDTO.class);
     }
 
+    /**
+     * Creates directory on Guest collection.
+     *
+     * @param guestCollectionDirReqDTO request data
+     *
+     * @return Dir details represented by {@link GlobusDetailsDTO}
+     */
     public Mono<GlobusDetailsDTO> createDirectoryOnGuestCollection(final GuestCollectionDirReqDTO guestCollectionDirReqDTO) {
         return fileHandlerWebClient
                 .post()

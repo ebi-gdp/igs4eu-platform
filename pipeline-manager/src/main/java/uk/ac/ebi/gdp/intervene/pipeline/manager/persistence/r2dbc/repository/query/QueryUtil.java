@@ -22,19 +22,22 @@ import io.r2dbc.spi.Row;
 import java.time.LocalDateTime;
 
 import static java.lang.String.join;
+import static java.time.LocalDateTime.parse;
 
 public interface QueryUtil {
     static String joinQuery(final String... queries) {
         return join(" ", queries);
     }
 
-    static String getString(final Row row,
-                            final String fieldName) {
-        return row.get(fieldName, String.class);
+    static String getString(final String fieldName,
+                            final Row row) {
+        return row.get(fieldName) != null ?
+                row.get(fieldName, String.class) : "";
     }
 
-    static LocalDateTime getDataTime(final Row row,
-                                     final String fieldName) {
-        return row.get(fieldName, LocalDateTime.class);
+    static LocalDateTime getLocalDateTime(final String fieldName,
+                                          final Row row) {
+        return row.get(fieldName) != null ?
+                row.get(fieldName, LocalDateTime.class) : parse("0000-01-01T00:00:00");
     }
 }

@@ -47,6 +47,8 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePer
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.PipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.AllasMessageService;
@@ -57,6 +59,9 @@ import java.net.URI;
 
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.propagateRequestId;
 
+/**
+ * Bean config for pipeline manager service.
+ */
 @Import(ReactiveExceptionHandler.class)
 @Configuration
 public class PipelineManagerConfig {
@@ -88,21 +93,21 @@ public class PipelineManagerConfig {
 
     @Bean
     public PipelineManagerService pipelineManagerService(final MessageService messageService,
-                                                         final GlobusFileHandlerService globusFileHandlerService,
-                                                         final GlobusDetailsRepository globusDetailsRepository,
-                                                         final GlobusUserRepository globusUserRepository) {
+                                                         final GlobusManagerService globusManagerService) {
         return new PipelineManagerService(
                 messageService,
-                globusFileHandlerService,
-                globusDetailsRepository,
-                globusUserRepository
-        );
+                globusManagerService);
     }
 
     @Bean
     public UserManagerService userManagerService(@Qualifier("userManagerWebClient") final WebClient userManagerWebClient,
-                                                 @Value("${user-manager.basic.auth}") final String basicAuth) {
-        return new UserManagerService(userManagerWebClient, basicAuth);
+                                                 @Value("${user-manager.basic.auth}") final String basicAuth,
+                                                 @Value("${intervene.user-manager.user-account.uri}") final URI userAccountURI) {
+        return new UserManagerService(
+                userManagerWebClient,
+                basicAuth,
+                userAccountURI
+        );
     }
 
     @Bean
@@ -116,6 +121,16 @@ public class PipelineManagerConfig {
                 globusDirListFilesURI,
                 globusCreatDirURI
         );
+    }
+
+    @Bean
+    public GlobusManagerService globusManagerService(final GlobusFileHandlerService globusFileHandlerService,
+                                                     final GlobusDetailsRepository globusDetailsRepository,
+                                                     final GlobusUserRepository globusUserRepository) {
+        return new GlobusManagerService(
+                globusFileHandlerService,
+                globusDetailsRepository,
+                globusUserRepository);
     }
 
     @Bean("fileHandlerWebClient")
@@ -185,5 +200,22 @@ public class PipelineManagerConfig {
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer(@Value("${jackson.date-format}") final String dateFormat) {
         return CommonUtil.jackson2ObjectMapperBuilderCustomizer(dateFormat);
+    }
+
+    @Bean("pgsCatalogWebClient")
+    public WebClient webClientPublicURL(@Value("${pgs-catalog.rest.base-url}") final String baseURL) {
+        return WebClient
+                .builder()
+                .baseUrl(baseURL)
+                .build();
+    }
+
+    @Bean
+    public PGSCatalogService pgsCatalogService(@Qualifier("pgsCatalogWebClient") final WebClient webClient,
+                                               @Value("${pgs-catalog.rest.search-url}") final URI pgsTraitSearchURI) {
+        return new PGSCatalogService(
+                webClient,
+                pgsTraitSearchURI
+        );
     }
 }

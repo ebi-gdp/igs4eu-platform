@@ -20,15 +20,12 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirReqDTO;
+import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.GlobusDetailsDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusDetailsRepository;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusUserRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.MessageService;
 
 import java.nio.file.Path;
@@ -40,94 +37,115 @@ import java.util.Set;
 import static java.nio.file.Paths.get;
 import static java.util.List.of;
 import static java.util.stream.Collectors.toMap;
-import static reactor.core.publisher.Mono.defer;
 import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO.GlobusFileDetails;
 import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO.FileDetails;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.FormatType;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails.newInstance;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile.createWithPgsIds;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile.createWithTraitIds;
 
+/**
+ * Pipeline manager service, core service to perform Pipeline operations.
+ */
 public class PipelineManagerService {
     private final Logger LOGGER = LoggerFactory.getLogger(PipelineManagerService.class);
     private final MessageService messageService;
-    private final GlobusFileHandlerService globusFileHandlerService;
-    private final GlobusDetailsRepository globusDetailsRepository;
-    private final GlobusUserRepository globusUserRepository;
+    private final GlobusManagerService globusManagerService;
 
     public PipelineManagerService(final MessageService messageService,
-                                  final GlobusFileHandlerService globusFileHandlerService,
-                                  final GlobusDetailsRepository globusDetailsRepository,
-                                  final GlobusUserRepository globusUserRepository) {
+                                  final GlobusManagerService globusManagerService) {
         this.messageService = messageService;
-        this.globusFileHandlerService = globusFileHandlerService;
-        this.globusDetailsRepository = globusDetailsRepository;
-        this.globusUserRepository = globusUserRepository;
+        this.globusManagerService = globusManagerService;
     }
 
-    public Mono<GlobusDetailsDTO> createDirectoryOnGuestCollection(final Path directoryName,
-                                                                   final String username) {//TODO: handle exceptions
-        return globusUserRepository
-                .findById(username)//TODO: handle 404
-                .map(globusUserDetails -> new GuestCollectionDirReqDTO(
-                        directoryName.toString(),
-                        globusUserDetails.getUserUID(),
-                        globusUserDetails.getUsername()))
-                .flatMap(globusFileHandlerService::createDirectoryOnGuestCollection);
+    /**
+     * Triggers pipeline with PGS Ids.
+     *
+     * @param pipelineDetails {@link PipelineDetails}
+     * @param polygenicScoreIds comma seperated polygenic score ids if multiple
+     *
+     * @return {@link Void}
+     */
+    public Mono<Void> triggerGeneticScoringPipelineWithPgsIds(final PipelineDetails pipelineDetails,
+                                                              final String polygenicScoreIds) {
+        final NXFParamsFile nxfParamsFile = buildWithPgsIds(
+                polygenicScoreIds,
+                pipelineDetails.getDatasetDetails().getGenomeBuild());
+        return triggerGeneticScoringPipeline(pipelineDetails, nxfParamsFile);
     }
 
-    public Mono<GlobusDetails> createOrUpdateGlobusRecord(final String globusUsername,
-                                                          final String guestCollectionId,
-                                                          final Path dirPathOnGuestCollection) {
-        return globusDetailsRepository
-                .findByDirPathOnGuestCollectionEndsWith(dirPathOnGuestCollection.toString())
-                .flatMap(globusDetails -> {
-                    globusDetails.updateGlobusUsername(globusUsername);
-                    return globusDetailsRepository.save(globusDetails);
-                })
-                .switchIfEmpty(defer(() -> globusDetailsRepository
-                        .getNextFilesetId()
-                        .map(nextFilesetId ->
-                                newInstance(
-                                        nextFilesetId,
-                                        globusUsername,
-                                        guestCollectionId,
-                                        dirPathOnGuestCollection
-                                ))
-                        .flatMap(globusDetailsRepository::save))
-                );
+    /**
+     * Triggers pipeline with PGS Trait Ids.
+     *
+     * @param pipelineDetails {@link PipelineDetails}
+     * @param polygenicTraitIds comma seperated trait ids if multiple
+     *
+     * @return {@link Void}
+     */
+    public Mono<Void> triggerGeneticScoringPipelineWithTraitIds(final PipelineDetails pipelineDetails,
+                                                                final String polygenicTraitIds) {
+        final NXFParamsFile nxfParamsFile = buildWithTraitIds(
+                polygenicTraitIds,
+                pipelineDetails.getDatasetDetails().getGenomeBuild());
+        return triggerGeneticScoringPipeline(pipelineDetails, nxfParamsFile);
     }
 
-    public Mono<Void> triggerGeneticScoringPipeline(final PipelineDetails pipelineDetails,
-                                                    final String polygenicScoreIds) {
+    private Mono<Void> triggerGeneticScoringPipeline(final PipelineDetails pipelineDetails,
+                                                     final NXFParamsFile nxfParamsFile) {
         final Set<FileDetails> files = new HashSet<>();
-        return globusFileHandlerService
-                .listFilesOnGuestCollection(get(pipelineDetails.getDatasetDetails().getGlobusDetails().getGlobusUsername()
-                        + pipelineDetails.getDatasetDetails().getGlobusDetails().getDirPathOnGuestCollection()))
-                .map(globusFileDetailsWrapperDTO -> globusFileDetailsWrapperDTO
-                        .getFileDetailsList()
-                        .stream()
-                        .peek(globusFileDetails -> files
-                                .add(new FileDetails(globusFileDetails.getFileName(),
-                                        globusFileDetails.getSize())))
-                        .collect(toMap(GlobusFileDetails::getProperty, GlobusFileDetails::getFileName)))
-                .map(stringStringMap -> {
-                    stringStringMap.put("sampleset", pipelineDetails.getDatasetDetails().getDatasetName());
-                    stringStringMap.put("chrom", null);
-                    return of(stringStringMap);
+        return globusManagerService
+                .listFilesOnGuestCollection(buildDirPath(pipelineDetails))
+                .map(globusFileDetailsWrapperDTO -> buildMapFromGlobusFiles(globusFileDetailsWrapperDTO, files))
+                .map(propertiesMap -> {
+                    addProperties(propertiesMap, pipelineDetails.getDatasetDetails().getDatasetName());
+                    return of(propertiesMap);
                 })
-                .flatMap(targetGenomes -> messageService
-                        .sendMessage(pipelineDetails.getPipelineId(), buildTriggerPipelineEvent(pipelineDetails, polygenicScoreIds, targetGenomes, files))
-                        .doOnRequest(unused -> LOGGER.info("Message is being sent! : {}", pipelineDetails.getPipelineId()))
-                        .doOnSuccess(unused -> LOGGER.info("Message sent! : {}", pipelineDetails.getPipelineId()))
-                );
+                .flatMap(targetGenomes -> submitPipelineRequest(pipelineDetails, nxfParamsFile, targetGenomes, files));
+    }
+
+    private Path buildDirPath(final PipelineDetails pipelineDetails) {
+        return get(pipelineDetails
+                .getDatasetDetails()
+                .getGlobusDetails()
+                .getGlobusUsername() + pipelineDetails
+                .getDatasetDetails()
+                .getGlobusDetails()
+                .getDirPathOnGuestCollection());
+    }
+
+    private Map<String, String> buildMapFromGlobusFiles(final GlobusFileDetailsWrapperDTO globusFileDetailsWrapperDTO,
+                                                        final Set<FileDetails> files) {
+        return globusFileDetailsWrapperDTO
+                .getFileDetailsList()
+                .stream()
+                .peek(globusFileDetails -> files
+                        .add(new FileDetails(globusFileDetails.getFileName(),
+                                globusFileDetails.getSize())))
+                .collect(toMap(GlobusFileDetails::getProperty, GlobusFileDetails::getFileName));
+    }
+
+    private void addProperties(final Map<String, String> propertiesMap,
+                               final String datasetName) {
+        propertiesMap.put("sampleset", datasetName);
+        propertiesMap.put("chrom", null);
+    }
+
+    private Mono<Void> submitPipelineRequest(final PipelineDetails pipelineDetails,
+                                             final NXFParamsFile nxfParamsFile,
+                                             final Collection<Map<String, String>> targetGenomes,
+                                             final Set<FileDetails> files) {
+        final PipelineParam pipelineParam = buildPipelineParam(pipelineDetails.getPipelineId(), nxfParamsFile, targetGenomes);
+        return messageService
+                .sendMessage(pipelineDetails.getPipelineId(), buildTriggerPipelineEvent(pipelineDetails, pipelineParam, files))
+                .doOnRequest(unused -> LOGGER.info("Message is being sent! : {}", pipelineDetails.getPipelineId()))
+                .doOnSuccess(unused -> LOGGER.info("Message sent! : {}", pipelineDetails.getPipelineId()));
     }
 
     private TriggerPipelineEvent buildTriggerPipelineEvent(final PipelineDetails pipelineDetails,
-                                                           final String polygenicScoreIds,
-                                                           final Collection<Map<String, String>> targetGenomes,
+                                                           PipelineParam pipelineParam,
                                                            final Set<FileDetails> files) {
         return new TriggerPipelineEvent(
-                buildPipelineParam(pipelineDetails, polygenicScoreIds, targetGenomes),
+                pipelineParam,
                 new GuestCollectionDirResDTO(
                         pipelineDetails.getDatasetDetails().getGlobusDetails().getGuestCollectionId(),
                         pipelineDetails.getDatasetDetails().getGlobusDetails().getGlobusUsername()
@@ -137,18 +155,30 @@ public class PipelineManagerService {
         );
     }
 
-    private PipelineParam buildPipelineParam(final PipelineDetails pipelineDetails,
-                                             final String polygenicScoreIds,
+    private PipelineParam buildPipelineParam(final String pipelineId,
+                                             final NXFParamsFile nxfParamsFile,
                                              final Collection<Map<String, String>> targetGenomes) {
-        final NXFParamsFile nxfParamsFile = new NXFParamsFile(
-                polygenicScoreIds,
-                FormatType.JSON,
-                pipelineDetails.getDatasetDetails().getGenomeBuild().getGenomeBuildValue());
         return new PipelineParam(
                 targetGenomes,
                 nxfParamsFile,
                 "/workspace/work/",
-                pipelineDetails.getPipelineId()
+                pipelineId
         );
+    }
+
+    private NXFParamsFile buildWithPgsIds(final String polygenicScoreIds,
+                                          final GenomeBuild genomeBuild) {
+        return createWithPgsIds(
+                polygenicScoreIds,
+                FormatType.JSON,
+                genomeBuild.getGenomeBuildValue());
+    }
+
+    private NXFParamsFile buildWithTraitIds(final String polygenicTraitIds,
+                                            final GenomeBuild genomeBuild) {
+        return createWithTraitIds(
+                polygenicTraitIds,
+                FormatType.JSON,
+                genomeBuild.getGenomeBuildValue());
     }
 }

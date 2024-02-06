@@ -49,9 +49,6 @@ public class UserAccount implements Persistable<String> {
     @Column("status")
     private UserAccountStatus status;
 
-    @Transient
-    private boolean newUserAccount;
-
     @Column("created_by")
     private String createdBy;
 
@@ -66,23 +63,12 @@ public class UserAccount implements Persistable<String> {
     @Column("updated_on")
     private LocalDateTime updatedOn;
 
+    @Transient
+    private boolean isNew;
+
     protected UserAccount() {
     }
 
-    /**
-     * Constructor to support creation of new user account
-     * also to support initialize default members for retrieval of
-     * exiting account.
-     *
-     * @param userId user id
-     * @param firstName firstname
-     * @param lastName lastname
-     * @param emailId email id
-     * @param userAccountStatus account status {@link UserAccountStatus}
-     * @param createdBy user id
-     * @param updatedBy user id
-     * @param newUserAccount whether account is new or existing
-     */
     private UserAccount(final String userId,
                         final String firstName,
                         final String lastName,
@@ -90,7 +76,7 @@ public class UserAccount implements Persistable<String> {
                         final UserAccountStatus userAccountStatus,
                         final String createdBy,
                         final String updatedBy,
-                        final boolean newUserAccount) {
+                        final boolean isNew) {
         this.userId = userId;
         this.givenName = firstName;
         this.familyName = lastName;
@@ -98,31 +84,18 @@ public class UserAccount implements Persistable<String> {
         this.status = userAccountStatus;
         this.createdBy = createdBy;
         this.updatedBy = updatedBy;
-        this.newUserAccount = newUserAccount;
+        this.isNew = isNew;
     }
 
-    /**
-     * Public constructor to build existing user account.
-     *
-     * @param userId user id
-     * @param firstName firstname
-     * @param lastName lastname
-     * @param emailId email id
-     * @param userAccountStatus account status {@link UserAccountStatus}
-     * @param createdBy user id
-     * @param createdOn object creation timestamp
-     * @param updatedBy user id
-     * @param updatedOn object update timestamp
-     */
-    public UserAccount(final String userId,
-                       final String firstName,
-                       final String lastName,
-                       final String emailId,
-                       final UserAccountStatus userAccountStatus,
-                       final String createdBy,
-                       final LocalDateTime createdOn,
-                       final String updatedBy,
-                       final LocalDateTime updatedOn) {
+    private UserAccount(final String userId,
+                        final String firstName,
+                        final String lastName,
+                        final String emailId,
+                        final UserAccountStatus userAccountStatus,
+                        final String createdBy,
+                        final LocalDateTime createdOn,
+                        final String updatedBy,
+                        final LocalDateTime updatedOn) {
         this(userId, firstName, lastName, emailId, userAccountStatus, createdBy, updatedBy, false);
         this.createdOn = createdOn;
         this.updatedOn = updatedOn;
@@ -164,6 +137,16 @@ public class UserAccount implements Persistable<String> {
         return updatedOn;
     }
 
+    @Override
+    public String getId() {
+        return userId;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew || !hasText(userId);
+    }
+
     /**
      * Static method to create new user account.
      *
@@ -175,11 +158,11 @@ public class UserAccount implements Persistable<String> {
      *
      * @return new user account {@link UserAccount}
      */
-    public static UserAccount newUserAccount(final String userId,
-                                             final String firstName,
-                                             final String lastName,
-                                             final String emailId,
-                                             final String createdBy) {
+    public static UserAccount create(final String userId,
+                                     final String firstName,
+                                     final String lastName,
+                                     final String emailId,
+                                     final String createdBy) {
         return new UserAccount(
                 userId,
                 firstName,
@@ -192,13 +175,29 @@ public class UserAccount implements Persistable<String> {
         );
     }
 
-    @Override
-    public String getId() {
-        return userId;
-    }
-
-    @Override
-    public boolean isNew() {
-        return newUserAccount || !hasText(userId);
+    /**
+     * Static method to load existing user account.
+     *
+     * @param userId user id
+     * @param firstName firstname
+     * @param lastName lastname
+     * @param emailId email id
+     * @param userAccountStatus account status {@link UserAccountStatus}
+     * @param createdBy user id
+     * @param createdOn object creation timestamp
+     * @param updatedBy user id
+     * @param updatedOn object update timestamp
+     */
+    public static UserAccount load(final String userId,
+                                   final String firstName,
+                                   final String lastName,
+                                   final String emailId,
+                                   final UserAccountStatus userAccountStatus,
+                                   final String createdBy,
+                                   final LocalDateTime createdOn,
+                                   final String updatedBy,
+                                   final LocalDateTime updatedOn) {
+        return new UserAccount(userId, firstName, lastName, emailId,
+                userAccountStatus, createdBy, createdOn, updatedBy, updatedOn);
     }
 }

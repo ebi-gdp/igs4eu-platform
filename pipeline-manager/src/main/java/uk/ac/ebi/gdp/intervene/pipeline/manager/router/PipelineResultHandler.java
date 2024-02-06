@@ -25,6 +25,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -42,6 +43,9 @@ import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
 
+/**
+ * Request handler for Pipeline related operations.
+ */
 public class PipelineResultHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(PipelineResultHandler.class);
     private final IPipelinePersistence pipelinePersistence;
@@ -59,21 +63,33 @@ public class PipelineResultHandler {
         this.s3Bucket = s3Bucket;
     }
 
+    /**
+     * Retrieves list of results files.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}
+     *
+     * @return List of files uploaded on S3 object represented by {@link S3ObjectDTO} Or http status 404(NotFound)
+     * @see HttpStatus
+     */
     public Mono<ServerResponse> listResultFiles(final ServerRequest serverRequest) {
+        LOGGER.info("Listing result files");
         return userManagerService
                 .getUserAccountDetails()
-                .doOnNext(userAccountDTO -> LOGGER.info("User Id: {}", userAccountDTO.accountId()))
                 .flatMap(userAccountDTO -> getPipelineResult(serverRequest, userAccountDTO.accountId()))
+                .doOnNext(pipelineResult -> LOGGER.info("Retrieved pipeline result"))
                 .flatMap(pipelineResult -> listFilesOnObjectStorage(pipelineResult.getPipelineId())
-                        .flatMap(files -> ok().bodyValue(new S3ObjectDTO(pipelineResult.getPipelineId(), files))))
-                .switchIfEmpty(status(NOT_FOUND).build());
+                        .flatMap(files -> ok().bodyValue(new S3ObjectDTO(pipelineResult.getPipelineId(), files)))
+                        .doOnNext(serverResponse -> LOGGER.info("Result file(s) have been successfully retrieved from S3 object storage")))
+                .switchIfEmpty(status(NOT_FOUND)
+                        .build()
+                        .doOnNext(serverResponse -> LOGGER.info("File(s) not found!")));
     }
 
     private Mono<PipelineResult> getPipelineResult(final ServerRequest serverRequest,
                                                    final String accountId) {
         final Optional<String> pipelineIdOptional = serverRequest.queryParam("pipelineId");
         if (pipelineIdOptional.isPresent()) {
-            return pipelinePersistence.getPipelineResult(accountId, pipelineIdOptional.get());
+            return pipelinePersistence.getPipelineResult(pipelineIdOptional.get(), accountId);
         } else {
             return pipelinePersistence.getPipelineResultRecent(accountId);
         }
@@ -92,23 +108,38 @@ public class PipelineResultHandler {
                 .collect(toList()));
     }
 
+    /**
+     * Streams file to be downloaded, retrieves file from S3 object storage.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}
+     *
+     * @return {@link InputStreamResource} Or http status 404(NotFound)
+     * @see HttpStatus
+     */
     public Mono<ServerResponse> streamFileFromS3(final ServerRequest serverRequest) {
+        LOGGER.info("Streaming file from S3 object storage");
         final String path = serverRequest
                 .queryParam("path")
                 .orElseThrow(RuntimeException::new);
         return userManagerService
                 .getUserAccountDetails()
-                .flatMap(userAccountDTO -> pipelinePersistence.getPipeline(serverRequest.pathVariable("pipelineId"),
-                        userAccountDTO.accountId()))
-                .flatMap(latestPipelineResult -> {
-                    final GetObjectRequest objectRequest = new GetObjectRequest(s3Bucket, path);
-                    final InputStreamResource inputStreamResource = new InputStreamResource(s3Client
-                            .getObject(objectRequest)
-                            .getObjectContent());
-                    return ok()
-                            .contentType(APPLICATION_OCTET_STREAM)
-                            .bodyValue(inputStreamResource);
-                })
-                .switchIfEmpty(status(NOT_FOUND).build());
+                .flatMap(userAccountDTO -> pipelinePersistence
+                        .getPipeline(serverRequest.pathVariable("pipelineId"), userAccountDTO.accountId())
+                        .doOnNext(ignorePipelineResult -> LOGGER.info("Retrieved pipeline result")))
+                .flatMap(ignorePipelineResult -> streamFileFromS3Bucket(path))
+                .doOnNext(serverResponse -> LOGGER.info("File found on S3 object storage & is being streamed"))
+                .switchIfEmpty(status(NOT_FOUND)
+                        .build()
+                        .doOnNext(serverResponse -> LOGGER.info("File not found on S3 object storage!")));
+    }
+
+    private Mono<ServerResponse> streamFileFromS3Bucket(final String path) {
+        final GetObjectRequest objectRequest = new GetObjectRequest(s3Bucket, path);
+        final InputStreamResource inputStreamResource = new InputStreamResource(s3Client
+                .getObject(objectRequest)
+                .getObjectContent());
+        return ok()
+                .contentType(APPLICATION_OCTET_STREAM)
+                .bodyValue(inputStreamResource);
     }
 }

@@ -26,6 +26,9 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Pipelin
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.CSCPipelineHandler;
 
+/**
+ * Kafka event listener to listen pipeline statuses
+ */
 public class PipelineEventListener {
     private final Logger LOGGER = LoggerFactory.getLogger(PipelineEventListener.class);
     private final CSCPipelineHandler cscPipelineHandler;

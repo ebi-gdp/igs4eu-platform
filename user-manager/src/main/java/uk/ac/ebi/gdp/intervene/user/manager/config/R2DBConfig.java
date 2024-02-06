@@ -23,7 +23,6 @@ import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
@@ -34,7 +33,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccountStatus;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountStatus;
-import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.AuthUserAccountMapper;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.mapper.AuthUserAccountEntityMapper;
 
 import java.util.List;
 
@@ -51,7 +50,7 @@ import static uk.ac.ebi.gdp.intervene.user.manager.converter.EnumConverter.UserA
  * @see ConnectionFactory
  * @see DatabaseClient
  * @see ReactiveTransactionManager
- * @see AuthUserAccountMapper
+ * @see AuthUserAccountEntityMapper
  */
 @EnableTransactionManagement
 @Configuration
@@ -113,21 +112,16 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
         );
     }
 
-    @Primary
     @Bean("r2dbcDatabaseClient")
-    public DatabaseClient databaseClient(final ConnectionFactory connectionFactory) {
+    public DatabaseClient r2dbcDatabaseClient(final ConnectionFactory connectionFactory) {
         return DatabaseClient.builder()
                 .connectionFactory(connectionFactory)
+                .bindMarkers(getDialect(connectionFactory).getBindMarkersFactory())
                 .build();
     }
 
-    @Bean("reactiveTransactionManager")
-    public ReactiveTransactionManager transactionManager(final ConnectionFactory connectionFactory) {
+    @Bean("r2dbcTransactionManager")
+    public ReactiveTransactionManager r2dbcTransactionManager(final ConnectionFactory connectionFactory) {
         return new R2dbcTransactionManager(connectionFactory);
-    }
-
-    @Bean
-    public AuthUserAccountMapper authUserAccountMapper() {
-        return new AuthUserAccountMapper();
     }
 }

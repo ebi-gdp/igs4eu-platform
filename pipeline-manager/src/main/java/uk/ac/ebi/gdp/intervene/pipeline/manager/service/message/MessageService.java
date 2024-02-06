@@ -20,6 +20,18 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.service.message;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 
+/**
+ * Interface to abstract messaging service to trigger pipeline.
+ * Implement accordingly e.g. send message over Kafka or upload to S3 object storage.
+ */
 public interface MessageService {
+    /**
+     * Sends/upload message to as per implementation.
+     *
+     * @param key message key
+     * @param message to be sent over kafka
+     *
+     * @return {@link Void}
+     */
     Mono<Void> sendMessage(String key, TriggerPipelineEvent message);
 }

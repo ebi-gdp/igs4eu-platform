@@ -22,8 +22,7 @@ import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus.COMPLETED;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.PipelineResultModelMapper.map;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineResultQueries.FIND_BY_STATUS_PIPELINE_ID_CONDITION;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.PipelineResultEntityMapper.map;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineResultQueries.FIND_BY_STATUS_USER_ID_CONDITION_DATA_LIMIT_QUERY;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineResultQueries.FIND_BY_STATUS_USER_ID_CONDITION_PIPELINE_ID_CONDITION;
 
@@ -45,23 +44,13 @@ public class CustomPipelineResultRepositoryImpl implements CustomPipelineResultR
     }
 
     @Override
-    public Mono<PipelineResult> findCompleted(final String userId,
-                                              final String pipelineId) {
+    public Mono<PipelineResult> findCompleted(final String pipelineId,
+                                              final String userId) {
         return databaseClient
                 .sql(FIND_BY_STATUS_USER_ID_CONDITION_PIPELINE_ID_CONDITION)
                 .bind("status", COMPLETED)
+                .bind("pipelineId", pipelineId)
                 .bind("userId", userId)
-                .bind("pipelineId", pipelineId)
-                .map(map()::apply)
-                .one();
-    }
-
-    @Override
-    public Mono<PipelineResult> findCompleted(final String pipelineId) {
-        return databaseClient
-                .sql(FIND_BY_STATUS_PIPELINE_ID_CONDITION)
-                .bind("status", COMPLETED)
-                .bind("pipelineId", pipelineId)
                 .map(map()::apply)
                 .one();
     }

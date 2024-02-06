@@ -15,15 +15,9 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
-import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
-import org.springframework.security.core.userdetails.UserDetails;
-import reactor.core.publisher.Mono;
+import java.util.Collection;
 
-public class AccessTokenReactiveUserDetailsService implements ReactiveUserDetailsService {
-    @Override
-    public Mono<UserDetails> findByUsername(final String accessToken) {
-        return null;
-    }
+public record PGSTraitWrapper(Collection<PGSTrait> results) {
 }

@@ -23,13 +23,14 @@ import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.ReactiveAuditorAware;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
-import org.springframework.data.r2dbc.dialect.PostgresDialect;
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 import org.springframework.r2dbc.connection.R2dbcTransactionManager;
+import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
@@ -37,12 +38,23 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Fileset
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
+import java.util.List;
+
 import static io.r2dbc.postgresql.client.SSLMode.fromValue;
 import static io.r2dbc.postgresql.codec.EnumCodec.builder;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.FilesetTypeConverter;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.GenomeBuildConverter;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.PipelineStatusTypeConverter;
 
+/**
+ * Reactive database config.
+ *
+ * @see AbstractR2dbcConfiguration
+ * @see ConnectionFactory
+ * @see DatabaseClient
+ * @see ReactiveTransactionManager
+ * @see ReactiveAuditorAware
+ */
 @EnableTransactionManagement
 @Configuration
 @EnableR2dbcAuditing
@@ -70,6 +82,7 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
     @Value("${datasource.pipeline-manager.ssl-mode}")
     private String sslMode;
 
+    @Primary
     @Override
     @Bean
     public ConnectionFactory connectionFactory() {
@@ -88,19 +101,27 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
                         .build());
     }
 
-    @Bean("reactiveTransactionManager")
-    public ReactiveTransactionManager transactionManager(final ConnectionFactory connectionFactory) {
+    @Bean("r2dbcDatabaseClient")
+    public DatabaseClient r2dbcDatabaseClient(final ConnectionFactory connectionFactory) {
+        return DatabaseClient.builder()
+                .connectionFactory(connectionFactory)
+                .bindMarkers(getDialect(connectionFactory).getBindMarkersFactory())
+                .build();
+    }
+
+    @Bean("r2dbcTransactionManager")
+    public ReactiveTransactionManager r2dbcTransactionManager(final ConnectionFactory connectionFactory) {
         return new R2dbcTransactionManager(connectionFactory);
     }
 
     @Bean
     @Override
     public R2dbcCustomConversions r2dbcCustomConversions() {
-        return R2dbcCustomConversions.of(
-                PostgresDialect.INSTANCE,
-                new PipelineStatusTypeConverter(),
-                new GenomeBuildConverter(),
-                new FilesetTypeConverter()
+        return new R2dbcCustomConversions(
+                getStoreConversions(),
+                List.of(new PipelineStatusTypeConverter(),
+                        new GenomeBuildConverter(),
+                        new FilesetTypeConverter())
         );
     }
 

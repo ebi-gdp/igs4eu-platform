@@ -26,9 +26,15 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import uk.ac.ebi.gdp.intervene.commons.security.GenericOAuth2SecurityConfig;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineManagerRouterConfig;
 
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 
+/**
+ * OAuth2 security config, extends {@link GenericOAuth2SecurityConfig}.
+ *
+ * @see SecurityWebFilterChain
+ */
 @Configuration
 @EnableWebFluxSecurity
 public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
@@ -39,10 +45,14 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
         return super.securityFilterChain(http, jwkSetURI);
     }
 
+    /**
+     * API call that needs to be authenticated by basic auth should be included here.
+     * Watch for patternPath value, this should match with router function defined in {@link PipelineManagerRouterConfig}
+     */
     @Order(HIGHEST_PRECEDENCE)
     @Bean
     public SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http) {
-        return super.securityFilterChainBasicAuth(http, "/csc/pipeline/**");
+        return super.securityFilterChainBasicAuth(http, "/integration/pipeline/**");
     }
 
     @Bean

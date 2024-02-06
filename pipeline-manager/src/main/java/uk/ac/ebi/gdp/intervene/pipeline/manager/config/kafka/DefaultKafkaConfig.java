@@ -40,6 +40,9 @@ import static org.apache.kafka.clients.consumer.ConsumerConfig.MAX_POLL_INTERVAL
 import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
 import static uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil.getJsonObjectMapper;
 
+/**
+ * Default kafka config, defines most common properties to integrate with kafka.
+ */
 public class DefaultKafkaConfig {
     private final KafkaProperties kafkaProperties;
     private final String groupInstanceId;

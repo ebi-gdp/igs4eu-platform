@@ -19,9 +19,35 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.utility;
 
 import reactor.core.publisher.Mono;
 
+/**
+ * Email service abstraction.
+ */
 public interface IEmailSender {
+    /**
+     * Sends email in HTML format, implement logic accordingly.
+     *
+     * @param emailData message to be sent
+     *
+     * @return {@link Void}
+     */
     Mono<Void> sendEmailInHTMLFormat(EmailData emailData);
 
+    /**
+     * Email record.
+     *
+     * @param to recipient address
+     * @param subject email subject
+     * @param body email body
+     */
     record EmailData(String to, String subject, String body) {
+
+        @Override
+        public String toString() {
+            return "EmailData {" +
+                    "to='" + to + '\'' +
+                    ", subject='" + subject + '\'' +
+                    ", body='" + body + '\'' +
+                    '}';
+        }
     }
 }

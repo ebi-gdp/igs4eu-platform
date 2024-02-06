@@ -25,16 +25,52 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Collection;
 import java.util.Map;
 
-public record PipelineParam(
-        @JsonInclude(JsonInclude.Include.NON_EMPTY) Collection<Map<String, String>> targetGenomes,
-        NXFParamsFile nxfParamsFile,
-        String nxfWork, String id) {
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
-    public record NXFParamsFile(
-            @JsonProperty("pgs_id") String pgsIds,
-            @JsonIgnore FormatType formatType,
-            String targetBuild
-    ) {
+public record PipelineParam(@JsonInclude(NON_EMPTY) Collection<Map<String, String>> targetGenomes,
+                            NXFParamsFile nxfParamsFile,
+                            String nxfWork,
+                            String id) {
+
+    @JsonInclude(NON_EMPTY)
+    public static class NXFParamsFile {
+        @JsonProperty("pgs_id")
+        String pgsIds;
+
+        @JsonProperty("trait_efo")
+        String traitIds;
+
+        @JsonIgnore
+        FormatType formatType;
+
+        @JsonProperty("target_build")
+        String targetBuild;
+
+        private NXFParamsFile() {
+        }
+
+        private NXFParamsFile(final String pgsIds,
+                              final String traitIds,
+                              final FormatType formatType,
+                              final String targetBuild) {
+            this.pgsIds = pgsIds;
+            this.traitIds = traitIds;
+            this.formatType = formatType;
+            this.targetBuild = targetBuild;
+        }
+
+        public static NXFParamsFile createWithPgsIds(final String pgsIds,
+                                                     final FormatType formatType,
+                                                     final String targetBuild) {
+            return new NXFParamsFile(pgsIds, null, formatType, targetBuild);
+        }
+
+        public static NXFParamsFile createWithTraitIds(final String traitIds,
+                                                       final FormatType formatType,
+                                                       final String targetBuild) {
+            return new NXFParamsFile(null, traitIds, formatType, targetBuild);
+        }
+
         @JsonGetter("format")
         public String getFormatType() {
             return formatType.getFormatType();

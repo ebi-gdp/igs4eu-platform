@@ -50,9 +50,6 @@ public class AuthUserAccount implements Persistable<String> {
     @Transient
     private UserAccount userAccount;
 
-    @Transient
-    private boolean newAuthUserAccount;
-
     @Column("created_by")
     private String createdBy;
 
@@ -67,59 +64,38 @@ public class AuthUserAccount implements Persistable<String> {
     @Column("updated_on")
     private LocalDateTime updatedOn;
 
+    @Transient
+    private boolean isNew;
+
     protected AuthUserAccount() {
     }
 
-    /**
-     * Constructor to support creation of new Auth user account
-     * also to support initialize default members for retrieval of
-     * exiting object.
-     *
-     * @param authUserId auth user id
-     * @param userId user account id
-     * @param authProviderType auth provider type {@link AuthProviderType}
-     * @param status account status of type {@link AuthUserAccountStatus}
-     * @param newAuthUserAccount whether account is new or existing
-     * @param createdBy user id
-     * @param updatedBy user id
-     */
     private AuthUserAccount(final String authUserId,
                             final String userId,
                             final AuthProviderType authProviderType,
                             final AuthUserAccountStatus status,
-                            final boolean newAuthUserAccount,
+                            final boolean isNew,
                             final String createdBy,
                             final String updatedBy) {
         this.authUserId = authUserId;
         this.userId = userId;
         this.authProviderType = authProviderType;
         this.status = status;
-        this.newAuthUserAccount = newAuthUserAccount;
+        this.isNew = isNew;
         this.createdBy = createdBy;
         this.updatedBy = updatedBy;
     }
 
-    /**
-     * Public constructor to build existing auth user account.
-     *
-     * @param authUserId auth user id
-     * @param authProviderType auth provider type {@link AuthProviderType}
-     * @param status account status of type {@link AuthUserAccountStatus}
-     * @param createdBy user id
-     * @param createdOn object creation time
-     * @param updatedBy user id
-     * @param updatedOn object updated time
-     * @param userAccount {@link UserAccount}
-     */
-    public AuthUserAccount(final String authUserId,
-                           final AuthProviderType authProviderType,
-                           final AuthUserAccountStatus status,
-                           final String createdBy,
-                           final LocalDateTime createdOn,
-                           final String updatedBy,
-                           final LocalDateTime updatedOn,
-                           final UserAccount userAccount) {
-        this(authUserId, userAccount.getUserId(), authProviderType, status, false, createdBy, updatedBy);
+    private AuthUserAccount(final String authUserId,
+                            final AuthProviderType authProviderType,
+                            final AuthUserAccountStatus status,
+                            final String createdBy,
+                            final LocalDateTime createdOn,
+                            final String updatedBy,
+                            final LocalDateTime updatedOn,
+                            final UserAccount userAccount) {
+        this(authUserId, userAccount.getUserId(), authProviderType, status,
+                false, createdBy, updatedBy);
         this.userAccount = userAccount;
         this.createdOn = createdOn;
         this.updatedOn = updatedOn;
@@ -161,6 +137,16 @@ public class AuthUserAccount implements Persistable<String> {
         return updatedOn;
     }
 
+    @Override
+    public String getId() {
+        return authUserId;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew || !hasText(authUserId);
+    }
+
     /**
      * Static method to support creation if new auth user account.
      *
@@ -171,10 +157,10 @@ public class AuthUserAccount implements Persistable<String> {
      *
      * @return newly created object {@link AuthUserAccount}
      */
-    public static AuthUserAccount newAuthUserAccount(final String authUserId,
-                                                     final String userId,
-                                                     final AuthProviderType authProviderType,
-                                                     final String createdBy) {
+    public static AuthUserAccount create(final String authUserId,
+                                         final String userId,
+                                         final AuthProviderType authProviderType,
+                                         final String createdBy) {
         return new AuthUserAccount(
                 authUserId,
                 userId,
@@ -186,13 +172,27 @@ public class AuthUserAccount implements Persistable<String> {
         );
     }
 
-    @Override
-    public String getId() {
-        return authUserId;
-    }
-
-    @Override
-    public boolean isNew() {
-        return newAuthUserAccount || !hasText(authUserId);
+    /**
+     * Static method to load existing auth user account.
+     *
+     * @param authUserId auth user id
+     * @param authProviderType auth provider type {@link AuthProviderType}
+     * @param status account status of type {@link AuthUserAccountStatus}
+     * @param createdBy user id
+     * @param createdOn object creation time
+     * @param updatedBy user id
+     * @param updatedOn object updated time
+     * @param userAccount {@link UserAccount}
+     */
+    public static AuthUserAccount load(final String authUserId,
+                                       final AuthProviderType authProviderType,
+                                       final AuthUserAccountStatus status,
+                                       final String createdBy,
+                                       final LocalDateTime createdOn,
+                                       final String updatedBy,
+                                       final LocalDateTime updatedOn,
+                                       final UserAccount userAccount) {
+        return new AuthUserAccount(authUserId, authProviderType,
+                status, createdBy, createdOn, updatedBy, updatedOn, userAccount);
     }
 }

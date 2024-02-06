@@ -21,7 +21,7 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.DatasetDetailsModelMapper.mapFullDatasetDetails;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.DatasetDetailsEntityMapper.fullMap;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.DatasetQueries.FIND_BY_DATASET_ID_AND_CREATED_BY;
 
 public class CustomDatasetDetailsRepositoryImpl implements CustomDatasetDetailsRepository {
@@ -31,13 +31,16 @@ public class CustomDatasetDetailsRepositoryImpl implements CustomDatasetDetailsR
         this.databaseClient = databaseClient;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<DatasetDetails> findByDatasetIdAndCreatedBy(final String datasetId,
                                                             final String createdBy) {
         return databaseClient
                 .sql(FIND_BY_DATASET_ID_AND_CREATED_BY)
                 .bind("datasetId", datasetId)
-                .map(mapFullDatasetDetails()::apply)
+                .map(fullMap()::apply)
                 .one();
     }
 }

@@ -20,8 +20,16 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
 
+/**
+ * Custom repository to handle {@link PipelineExecutionStatus} data
+ */
 public interface CustomPipelineExecutionStatusRepository {
+    /**
+     * Returns {@link PipelineExecutionStatus} & its dependents
+     *
+     * @param pipelineId pipeline id
+     *
+     * @return {@link PipelineExecutionStatus}
+     */
     Mono<PipelineExecutionStatus> findPipelineExecutionStatus(String pipelineId);
-
-    Mono<PipelineExecutionStatus> findPipelineExecutionStatus(String pipelineId, String userId);
 }

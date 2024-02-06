@@ -24,35 +24,34 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Fileset
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails;
 
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.function.BiFunction;
 
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getDataTime;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getLocalDateTime;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getString;
 
-public interface DatasetDetailsModelMapper {
-    static BiFunction<Row, Object, DatasetDetails> mapFullDatasetDetails() {
+public interface DatasetDetailsEntityMapper {
+    static BiFunction<Row, Object, DatasetDetails> fullMap() {
         return (row, object) -> {
             final GlobusDetails globusDetails = GlobusDetails.loadRecord(
-                    getString(row, "fileset_id"),
-                    getString(row, "globus_username"),
-                    getString(row, "guest_collection_id"),
-                    Path.of(getString(row, "dir_path_on_guest_collection")),
-                    getString(row, "created_by"),
-                    getDataTime(row, "created_on"),
-                    getString(row, "updated_by"),
-                    getDataTime(row, "updated_on")
+                    getString("fileset_id", row),
+                    getString("globus_username", row),
+                    getString("guest_collection_id", row),
+                    Path.of(getString("dir_path_on_guest_collection", row)),
+                    getString("created_by", row),
+                    getLocalDateTime("created_on", row),
+                    getString("updated_by", row),
+                    getLocalDateTime("updated_on", row)
             );
-            return new DatasetDetails(
-                    row.get("dataset_id", String.class),
-                    row.get("dataset_name", String.class),
-                    GenomeBuild.valueOf(row.get("genome_build", String.class)),
-                    FilesetType.valueOf(row.get("fileset_type", String.class)),
+            return DatasetDetails.load(
+                    getString("dataset_id", row),
+                    getString("dataset_name", row),
+                    GenomeBuild.valueOf(getString("genome_build", row)),
+                    FilesetType.valueOf(getString("fileset_type", row)),
                     globusDetails,
-                    getString(row, "gc_created_by"),
-                    row.get("gc_created_on", LocalDateTime.class),
-                    getString(row, "gc_updated_by"),
-                    row.get("gc_updated_on", LocalDateTime.class)
+                    getString("gc_created_by", row),
+                    getLocalDateTime("gc_created_on", row),
+                    getString("gc_updated_by", row),
+                    getLocalDateTime("gc_updated_on", row)
             );
         };
     }

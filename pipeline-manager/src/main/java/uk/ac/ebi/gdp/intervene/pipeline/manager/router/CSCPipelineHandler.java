@@ -17,6 +17,8 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -30,7 +32,11 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 
+/**
+ * CSC pipeline handler for EBI & CSC integration hybrid model.
+ */
 public class CSCPipelineHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CSCPipelineHandler.class);
     private final UserManagerService userManagerService;
     private final IPipelinePersistence pipelinePersistence;
     private final IEmailSender emailService;
@@ -46,36 +52,51 @@ public class CSCPipelineHandler {
         this.platformURL = platformURL;
     }
 
+    /**
+     * Update pipeline status.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}
+     *
+     * @return pipeline status represented by {@link PipelineStatusDTO}
+     */
     public Mono<ServerResponse> updatePipelineStatus(final ServerRequest serverRequest) {
+        final String pipelineId = serverRequest.pathVariable("pipelineId");
         return serverRequest
                 .bodyToMono(PipelineStatusDTO.class)
+                .doOnNext(pipelineStatusDTO -> LOGGER.info("Pipeline status is being updated to status: {} for Pipeline Id: {}", pipelineStatusDTO.getStatus(), pipelineId))
                 .flatMap(pipelineStatusDTO -> pipelinePersistence
-                        .updatePipelineStatus(serverRequest.pathVariable("pipelineId"),
+                        .updatePipelineStatus(pipelineId,
                                 pipelineStatusDTO))
                 .flatMap(pipelineExecutionStatus -> handlePipelineOutcome(pipelineExecutionStatus.getStatus(), pipelineExecutionStatus))
-                .flatMap(pipelineStatusDTO -> ok().build());
+                .flatMap(pipelineStatusDTO -> ok().build())
+                .doOnNext(pipelineStatusDTO -> LOGGER.info("Pipeline status has been updated for Pipeline Id: {}", pipelineId));
     }
 
     private Mono<Void> handlePipelineOutcome(final PipelineStatus pipelineStatus,
                                              final PipelineExecutionStatus pipelineExecutionStatus) {
         switch (pipelineStatus) {
             case COMPLETED -> {
+                LOGGER.trace("Executing block for COMPLETED case");
                 final PipelineResultEvent pipelineResultEvent = new PipelineResultEvent(
                         "",
                         pipelineExecutionStatus.getId(),
                         "");
                 return pipelinePersistence
-                        .persistPipelineResult(pipelineResultEvent)
+                        .createPipelineResult(pipelineResultEvent)
                         .flatMap(pipelineResult -> buildSuccessEmailData(pipelineResult.getPipelineId(),
                                 pipelineExecutionStatus.getPipelineDetails().getUserId()))
+                        .doOnNext(pipelineStatusDTO -> LOGGER.info("Sending an email in HTML format"))
                         .flatMap(emailService::sendEmailInHTMLFormat);
             }
             case ERROR -> {
+                LOGGER.trace("Executing block for ERROR case");
                 return buildErrorEmailData(pipelineExecutionStatus.getId(), pipelineExecutionStatus.getPipelineDetails().getUserId(),
                         pipelineExecutionStatus.getTraceName(), pipelineExecutionStatus.getTraceExit())
+                        .doOnNext(pipelineStatusDTO -> LOGGER.info("Sending an email in HTML format"))
                         .flatMap(emailService::sendEmailInHTMLFormat);
             }
             default -> {
+                LOGGER.trace("Executing block for default case");
                 return Mono.empty();
             }
         }
@@ -94,7 +115,7 @@ public class CSCPipelineHandler {
                                         pipelineId) +
                                 "<br><br>Please find download link to the result files" +
                                 "<br><br><a href=" + platformURL.formatted(pipelineId) + ">Download files</a>" +
-                                "<br/><br/>You can always find the most recent report under \"PGS Calculator\" => \"Download most recent results\". <br/><br/>INTERVENE Team")
+                                "<br/><br/>INTERVENE Team")
                 );
     }
 

@@ -20,6 +20,17 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 
+/**
+ * Custom repository to handle {@link DatasetDetails} data
+ */
 public interface CustomDatasetDetailsRepository {
+    /**
+     * Returns {@link DatasetDetails} & its dependents
+     *
+     * @param filesetId fileset id
+     * @param createdBy record created by e.g. user id
+     *
+     * @return {@link DatasetDetails}
+     */
     Mono<DatasetDetails> findByDatasetIdAndCreatedBy(String filesetId, String createdBy);
 }

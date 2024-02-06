@@ -43,9 +43,6 @@ public class GlobusDetails implements Persistable<String> {
 
     private String dirPathOnGuestCollection;
 
-    @Transient
-    private boolean newGlobusDetails;
-
     @CreatedBy
     @Column
     private String createdBy;
@@ -65,6 +62,9 @@ public class GlobusDetails implements Persistable<String> {
     @Transient
     private GlobusUserDetails globusUserDetails;
 
+    @Transient
+    private boolean isNew;
+
     protected GlobusDetails() {
     }
 
@@ -72,24 +72,24 @@ public class GlobusDetails implements Persistable<String> {
                           final String globusUsername,
                           final String guestCollectionId,
                           final String dirPathOnGuestCollection,
-                          final boolean isNewGlobusDetails) {
+                          final boolean isNew) {
         this.filesetId = filesetId;
         this.globusUsername = globusUsername;
         this.guestCollectionId = guestCollectionId;
         this.dirPathOnGuestCollection = dirPathOnGuestCollection;
-        this.newGlobusDetails = isNewGlobusDetails;
+        this.isNew = isNew;
     }
 
     private GlobusDetails(final String filesetId,
                           final String globusUsername,
                           final String guestCollectionId,
                           final String dirPathOnGuestCollection,
-                          final boolean isNewGlobusDetails,
+                          final boolean isNew,
                           final String createdBy,
                           final LocalDateTime createdOn,
                           final String updatedBy,
                           final LocalDateTime updatedOn) {
-        this(filesetId, globusUsername, guestCollectionId, dirPathOnGuestCollection, isNewGlobusDetails);
+        this(filesetId, globusUsername, guestCollectionId, dirPathOnGuestCollection, isNew);
         this.createdBy = createdBy;
         this.createdOn = createdOn;
         this.updatedBy = updatedBy;
@@ -185,6 +185,6 @@ public class GlobusDetails implements Persistable<String> {
 
     @Override
     public boolean isNew() {
-        return newGlobusDetails || !hasText(filesetId);
+        return isNew || !hasText(filesetId);
     }
 }

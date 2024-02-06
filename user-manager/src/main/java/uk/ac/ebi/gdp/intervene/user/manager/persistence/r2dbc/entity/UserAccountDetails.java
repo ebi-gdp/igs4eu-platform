@@ -36,9 +36,6 @@ public class UserAccountDetails implements Persistable<String> {
     @Column("user_id")
     private String userId;
 
-    @Transient
-    private boolean newUserAccountDetails;
-
     @Column("created_by")
     private String createdBy;
 
@@ -53,25 +50,19 @@ public class UserAccountDetails implements Persistable<String> {
     @Column("updated_on")
     private LocalDateTime updatedOn;
 
+    @Transient
+    private boolean isNew;
+
     protected UserAccountDetails() {
     }
 
-    /**
-     * Constructor to support creation of new User account details.
-     *
-     * @param userId user id
-     * @param createdBy user id who creates an account
-     * @param updatedBy user id who updates an account
-     * @param newUserAccountDetails whether new or existing
-     */
     private UserAccountDetails(final String userId,
                                final String createdBy,
-                               final String updatedBy,
-                               final boolean newUserAccountDetails) {
+                               final String updatedBy) {
         this.userId = userId;
         this.createdBy = createdBy;
         this.updatedBy = updatedBy;
-        this.newUserAccountDetails = newUserAccountDetails;
+        this.isNew = true;
     }
 
     public String getUserId() {
@@ -94,6 +85,16 @@ public class UserAccountDetails implements Persistable<String> {
         return updatedOn;
     }
 
+    @Override
+    public String getId() {
+        return userId;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew || !hasText(userId);
+    }
+
     /**
      * Static method to create new user account details.
      *
@@ -102,23 +103,11 @@ public class UserAccountDetails implements Persistable<String> {
      *
      * @return new {@link UserAccountDetails}
      */
-    public static UserAccountDetails newUserAccountDetails(final String userId,
-                                                           final String createdBy) {
+    public static UserAccountDetails create(final String userId,
+                                            final String createdBy) {
         return new UserAccountDetails(
                 userId,
                 createdBy,
-                createdBy,
-                true
-        );
-    }
-
-    @Override
-    public String getId() {
-        return userId;
-    }
-
-    @Override
-    public boolean isNew() {
-        return newUserAccountDetails || !hasText(userId);
+                createdBy);
     }
 }

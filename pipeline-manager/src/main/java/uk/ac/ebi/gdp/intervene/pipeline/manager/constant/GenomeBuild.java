@@ -17,6 +17,9 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.constant;
 
+/**
+ * Genome build types
+ */
 public enum GenomeBuild {
     GRCH37("GRCh37"), GRCH38("GRCh38");
 

@@ -15,32 +15,19 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper;
 
-import reactor.core.publisher.Mono;
+import io.r2dbc.spi.Row;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 
-/**
- * Custom repository to handle {@link PipelineResult} data
- */
-public interface CustomPipelineResultRepository {
-    /**
-     * Returns most recent completed record.
-     *
-     * @param userId for whom data to be retrieved
-     *
-     * @return {@link PipelineResult}
-     */
-    Mono<PipelineResult> findCompletedRecent(String userId);
+import java.util.function.BiFunction;
 
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getString;
 
-    /**
-     * Returns completed record.
-     *
-     * @param pipelineId pipeline id
-     * @param userId for whom data to be retrieved
-     *
-     * @return {@link PipelineResult}
-     */
-    Mono<PipelineResult> findCompleted(String pipelineId, String userId);
+public interface PipelineResultEntityMapper {
+    static BiFunction<Row, Object, PipelineResult> map() {
+        return (row, object) -> PipelineResult.create(
+                getString("pipeline_id", row),
+                getString("file_download_path", row));
+    }
 }
