@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.oauth2.server.resource.web.reactive.function.client.ServerBearerExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
@@ -54,6 +55,8 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.AllasMessageService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.KafkaMessageService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.MessageService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.EmailSender;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
 import java.net.URI;
 
@@ -217,5 +220,11 @@ public class PipelineManagerConfig {
                 webClient,
                 pgsTraitSearchURI
         );
+    }
+
+    @Bean
+    public IEmailSender emailService(final JavaMailSender mailSender,
+                                     final @Value("${spring.mail.username}") String emailFrom) {
+        return new EmailSender(mailSender, emailFrom);
     }
 }

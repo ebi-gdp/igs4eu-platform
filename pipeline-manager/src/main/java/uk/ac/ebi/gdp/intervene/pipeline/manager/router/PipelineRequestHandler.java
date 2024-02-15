@@ -25,10 +25,10 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.exception.ClientException;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PGSIdsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PGSTraitWrapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PaginationDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineDetailsDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.ScoreIdsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
@@ -210,11 +210,11 @@ public class PipelineRequestHandler {
         LOGGER.info("Executing pipeline for PGS Ids");
         return getPipelineDetails(serverRequest)
                 .flatMap(pipelineDetails -> serverRequest
-                        .bodyToMono(String.class)
-                        .flatMap(polygenicScoreIds /*TODO change polygenicScoreIds from string to list of ids */ -> pipelineManagerService
+                        .bodyToMono(ScoreIdsDTO.class)
+                        .flatMap(scoreIds -> pipelineManagerService
                                 .triggerGeneticScoringPipelineWithPgsIds(
                                         pipelineDetails,
-                                        polygenicScoreIds)
+                                        scoreIds.getScoreIds())
                                 .doOnSuccess(unused -> LOGGER.info("Pipeline execution request has been submitted!")))
                         .thenReturn(pipelineDetails))
                 .flatMap(this::updatePipelineExecutionStatus);
@@ -232,11 +232,11 @@ public class PipelineRequestHandler {
         LOGGER.info("Executing pipeline for Trait Ids");
         return getPipelineDetails(serverRequest)
                 .flatMap(pipelineDetails -> serverRequest
-                        .bodyToMono(String.class)
-                        .flatMap(polygenicTraitIds -> pipelineManagerService
+                        .bodyToMono(ScoreIdsDTO.class)
+                        .flatMap(scoreIds -> pipelineManagerService
                                 .triggerGeneticScoringPipelineWithTraitIds(
                                         pipelineDetails,
-                                        polygenicTraitIds)
+                                        scoreIds.getScoreIds())
                                 .doOnSuccess(unused -> LOGGER.info("Pipeline execution request has been submitted!")))
                         .thenReturn(pipelineDetails))
                 .flatMap(this::updatePipelineExecutionStatus);
@@ -271,10 +271,10 @@ public class PipelineRequestHandler {
     public Mono<ServerResponse> validatePGSIds(final ServerRequest serverRequest) {
         LOGGER.info("Validating PGS Ids");
         return serverRequest
-                .bodyToMono(PGSIdsDTO.class)
+                .bodyToMono(ScoreIdsDTO.class)
                 .mapNotNull(pgsIdsDTO -> redisTemplate
                         .opsForSet()
-                        .isMember("pgs_ids_set", pgsIdsDTO.getPgsIds().toArray()))
+                        .isMember("pgs_ids_set", pgsIdsDTO.getScoreIds().toArray()))
                 .filter(objectBooleanMap -> objectBooleanMap
                         .entrySet()
                         .parallelStream()

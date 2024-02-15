@@ -37,8 +37,9 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 /**
  * Inherits default {@link DefaultKafkaConfig} & declare beans
  */
-@EnableKafka
-@Configuration
+/*Temporarily turned off*/
+//@EnableKafka
+//@Configuration
 public class KafkaConfig extends DefaultKafkaConfig {
 
     public KafkaConfig(final KafkaProperties kafkaProperties,
@@ -61,12 +62,6 @@ public class KafkaConfig extends DefaultKafkaConfig {
     @Bean("kafkaListenerContainerFactory")
     public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, String>> kafkaListenerContainerFactory() {
         return defaultKafkaListenerContainerFactory();
-    }
-
-    @Bean
-    public IEmailSender emailService(final JavaMailSender mailSender,
-                                     final @Value("${spring.mail.username}") String emailFrom) {
-        return new EmailSender(mailSender, emailFrom);
     }
 
     @Bean

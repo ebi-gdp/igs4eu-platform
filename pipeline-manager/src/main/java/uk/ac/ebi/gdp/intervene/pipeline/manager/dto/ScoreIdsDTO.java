@@ -17,15 +17,15 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
-import java.util.List;
+import java.util.Set;
 
-public class PGSIdsDTO {
-    private List<String> pgsIds;
+public class ScoreIdsDTO {
+    private Set<String> scoreIds;
 
-    private PGSIdsDTO() {
+    private ScoreIdsDTO() {
     }
 
-    public List<String> getPgsIds() {
-        return pgsIds;
+    public Set<String> getScoreIds() {
+        return scoreIds;
     }
 }
