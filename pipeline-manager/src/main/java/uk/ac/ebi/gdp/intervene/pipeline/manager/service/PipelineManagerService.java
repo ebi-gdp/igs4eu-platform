@@ -62,14 +62,14 @@ public class PipelineManagerService {
      * Triggers pipeline with PGS Ids.
      *
      * @param pipelineDetails {@link PipelineDetails}
-     * @param polygenicScoreIds comma seperated polygenic score ids if multiple
+     * @param pgsIds polygenic score ids
      *
      * @return {@link Void}
      */
     public Mono<Void> triggerGeneticScoringPipelineWithPgsIds(final PipelineDetails pipelineDetails,
-                                                              final String polygenicScoreIds) {
+                                                              final Set<String> pgsIds) {
         final NXFParamsFile nxfParamsFile = buildWithPgsIds(
-                polygenicScoreIds,
+                String.join(",", pgsIds),
                 pipelineDetails.getDatasetDetails().getGenomeBuild());
         return triggerGeneticScoringPipeline(pipelineDetails, nxfParamsFile);
     }
@@ -78,14 +78,14 @@ public class PipelineManagerService {
      * Triggers pipeline with PGS Trait Ids.
      *
      * @param pipelineDetails {@link PipelineDetails}
-     * @param polygenicTraitIds comma seperated trait ids if multiple
+     * @param traitIds trait ids
      *
      * @return {@link Void}
      */
     public Mono<Void> triggerGeneticScoringPipelineWithTraitIds(final PipelineDetails pipelineDetails,
-                                                                final String polygenicTraitIds) {
+                                                                final Set<String> traitIds) {
         final NXFParamsFile nxfParamsFile = buildWithTraitIds(
-                polygenicTraitIds,
+                String.join(",", traitIds),
                 pipelineDetails.getDatasetDetails().getGenomeBuild());
         return triggerGeneticScoringPipeline(pipelineDetails, nxfParamsFile);
     }
