@@ -17,7 +17,7 @@
         <dependency>
             <groupId>uk.ebi.ac.gdp</groupId>
             <artifactId>file-handler-core</artifactId>
-            <version>1.0.2</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>uk.ac.ebi.gdp.intervene</groupId>

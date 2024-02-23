@@ -18,7 +18,6 @@
 package uk.ac.ebi.gdp.intervene.file.handler.service.ega;
 
 import org.apache.commons.io.IOUtils;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.retry.support.RetryTemplate;
@@ -36,6 +35,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -101,7 +101,7 @@ public class EGAFileService {
         return new RetryInputStream(
                 webClient,
                 retryTemplate,
-                downloadRequestURI,
+                Path.of(downloadRequestURI),
                 startRange,
                 endRange,
                 pipeSize
