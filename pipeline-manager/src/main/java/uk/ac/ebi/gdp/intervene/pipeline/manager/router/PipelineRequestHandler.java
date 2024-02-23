@@ -17,6 +17,8 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -28,6 +30,7 @@ import uk.ac.ebi.gdp.intervene.commons.exception.ClientException;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PGSTraitWrapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PaginationDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineDetailsDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PublicationDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.ScoreIdsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
@@ -37,6 +40,8 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.ACCEPTED;
@@ -46,6 +51,7 @@ import static org.springframework.web.reactive.function.server.ServerResponse.ok
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
 import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
+import static uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil.getJsonObjectMapper;
 
 /**
  * Request handler for Pipeline related operations.
@@ -58,19 +64,26 @@ public class PipelineRequestHandler {
     private final PipelineDetailsMapper pipelineDetailsMapper;
     private final StringRedisTemplate redisTemplate;
     private final PGSCatalogService pgsCatalogService;
+    private final String redisPgsIdsKeyPrefix;
+    private final String redisPubDataKeyPrefix;
 
     public PipelineRequestHandler(final PipelineManagerService pipelineManagerService,
                                   final IPipelinePersistence pipelinePersistence,
                                   final UserManagerService userManagerService,
                                   final PipelineDetailsMapper pipelineDetailsMapper,
                                   final StringRedisTemplate redisTemplate,
-                                  final PGSCatalogService pgsCatalogService) {
+                                  final PGSCatalogService pgsCatalogService,
+                                  final String redisPgsIdsKeyPrefix,
+                                  final String redisPubDataKeyPrefix) {
         this.pipelineManagerService = pipelineManagerService;
         this.pipelinePersistence = pipelinePersistence;
         this.userManagerService = userManagerService;
         this.pipelineDetailsMapper = pipelineDetailsMapper;
         this.redisTemplate = redisTemplate;
         this.pgsCatalogService = pgsCatalogService;
+        this.redisPgsIdsKeyPrefix = redisPgsIdsKeyPrefix;
+        this.redisPubDataKeyPrefix = redisPubDataKeyPrefix;
+
     }
 
     /**
@@ -242,6 +255,28 @@ public class PipelineRequestHandler {
                 .flatMap(this::updatePipelineExecutionStatus);
     }
 
+    /**
+     * Executes pipeline for Publication Ids.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}
+     *
+     * @return Http status 202(Accepted)
+     * @see HttpStatus
+     */
+    public Mono<ServerResponse> executePipelineForPublicationIds(final ServerRequest serverRequest) {
+        LOGGER.info("Executing pipeline for Publication Ids");
+        return getPipelineDetails(serverRequest)
+                .flatMap(pipelineDetails -> serverRequest
+                        .bodyToMono(ScoreIdsDTO.class)
+                        .flatMap(scoreIds -> pipelineManagerService
+                                .triggerGeneticScoringPipelineWithPublicationIds(
+                                        pipelineDetails,
+                                        scoreIds.getScoreIds())
+                                .doOnSuccess(unused -> LOGGER.info("Pipeline execution request has been submitted!")))
+                        .thenReturn(pipelineDetails))
+                .flatMap(this::updatePipelineExecutionStatus);
+    }
+
     private Mono<PipelineDetails> getPipelineDetails(final ServerRequest serverRequest) {
         return userManagerService
                 .getUserAccountDetails()
@@ -274,7 +309,7 @@ public class PipelineRequestHandler {
                 .bodyToMono(ScoreIdsDTO.class)
                 .mapNotNull(pgsIdsDTO -> redisTemplate
                         .opsForSet()
-                        .isMember("pgs_ids_set", pgsIdsDTO.getScoreIds().toArray()))
+                        .isMember(redisPgsIdsKeyPrefix, pgsIdsDTO.getScoreIds().toArray()))
                 .filter(objectBooleanMap -> objectBooleanMap
                         .entrySet()
                         .parallelStream()
@@ -286,14 +321,14 @@ public class PipelineRequestHandler {
     }
 
     /**
-     * Retrieves PGS Ids traits.
+     * Retrieves PGS Ids by traits.
      *
      * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}
      *
      * @return PGS trait according to search term, represented by {@link PGSTraitWrapper} Or http status 404(NotFound)
      * @see HttpStatus
      */
-    public Mono<ServerResponse> getPGSIdsByTraits(final ServerRequest serverRequest) {
+    public Mono<ServerResponse> searchPGSIdsByTraits(final ServerRequest serverRequest) {
         LOGGER.info("Retrieving Trait Ids from PGS Catalog API");
         final String searchTerm = serverRequest
                 .queryParam("searchTerm")
@@ -303,7 +338,45 @@ public class PipelineRequestHandler {
                 .filter(pgsTraitWrapper -> pgsTraitWrapper.results().size() > 0)
                 .flatMap(pgsTraitWrapper -> ok()
                         .bodyValue(pgsTraitWrapper))
-                .doOnNext(serverResponse -> LOGGER.info("Retrieved Trait Ids from PGS Catalog API"))
+                .doOnNext(serverResponse -> LOGGER.info("Searched Trait Ids from PGS Catalog API"))
                 .switchIfEmpty(error(resourceNotFound("Traits not found!")));
+    }
+
+    /**
+     * Retrieves Publication data by search term e.g. publication id, title, doi & PMID etc.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}
+     *
+     * @return Publication data according to search term, represented by {@link PublicationDTO}
+     */
+    public Mono<ServerResponse> searchPGPIdsByPublications(final ServerRequest serverRequest) {
+        LOGGER.info("Retrieving Publication data from PGS Catalog API");
+        final String searchTerm = serverRequest
+                .queryParam("searchTerm")
+                .orElseThrow(() -> ClientException.badRequest("Query parameter 'searchTerm' has an issue!"));
+        LOGGER.debug("Search term for publication data: {}", searchTerm);
+        return ok()
+                .bodyValue(redisTemplate
+                        .keys(redisPubDataKeyPrefix + "*" + searchTerm + "*")
+                        .parallelStream()
+                        .map(key -> {
+                            final String jsonValue = redisTemplate
+                                    .opsForValue()
+                                    .get(key);
+                            LOGGER.debug("Value: {} retrieved for search term: {} publication data", jsonValue, key);
+                            try {
+                                final JsonNode jsonNode = getJsonObjectMapper()
+                                        .readTree(jsonValue);
+                                return new PublicationDTO(
+                                        key.substring(key.indexOf(":") + 1),
+                                        jsonNode.get("pgpId").asText(),
+                                        jsonNode.get("pgsIdsCount").asInt());
+                            } catch (JsonProcessingException e) {
+                                return null;
+                            }
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet()))
+                .doOnNext(serverResponse -> LOGGER.info("Searched for Publication data from Redis"));
     }
 }

@@ -40,6 +40,9 @@ public record PipelineParam(@JsonInclude(NON_EMPTY) Collection<Map<String, Strin
         @JsonProperty("trait_efo")
         String traitIds;
 
+        @JsonProperty("pub_id")
+        String publicationIds;
+
         @JsonIgnore
         FormatType formatType;
 
@@ -51,10 +54,12 @@ public record PipelineParam(@JsonInclude(NON_EMPTY) Collection<Map<String, Strin
 
         private NXFParamsFile(final String pgsIds,
                               final String traitIds,
+                              final String publicationIds,
                               final FormatType formatType,
                               final String targetBuild) {
             this.pgsIds = pgsIds;
             this.traitIds = traitIds;
+            this.publicationIds = publicationIds;
             this.formatType = formatType;
             this.targetBuild = targetBuild;
         }
@@ -62,13 +67,19 @@ public record PipelineParam(@JsonInclude(NON_EMPTY) Collection<Map<String, Strin
         public static NXFParamsFile createWithPgsIds(final String pgsIds,
                                                      final FormatType formatType,
                                                      final String targetBuild) {
-            return new NXFParamsFile(pgsIds, null, formatType, targetBuild);
+            return new NXFParamsFile(pgsIds, null, null, formatType, targetBuild);
         }
 
         public static NXFParamsFile createWithTraitIds(final String traitIds,
                                                        final FormatType formatType,
                                                        final String targetBuild) {
-            return new NXFParamsFile(null, traitIds, formatType, targetBuild);
+            return new NXFParamsFile(null, traitIds, null, formatType, targetBuild);
+        }
+
+        public static NXFParamsFile createWithPublicationIds(final String publicationIds,
+                                                             final FormatType formatType,
+                                                             final String targetBuild) {
+            return new NXFParamsFile(null, null, publicationIds, formatType, targetBuild);
         }
 
         @JsonGetter("format")
