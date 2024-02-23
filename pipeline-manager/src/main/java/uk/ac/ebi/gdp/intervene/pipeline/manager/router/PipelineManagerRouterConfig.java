@@ -59,10 +59,12 @@ public class PipelineManagerRouterConfig {
                         .GET("/recent/top", serverRequest -> pipelineRequestHandler.getPipelineRecent())//TODO: rename path
                         .GET("/success/result", pipelineResultHandler::listResultFiles)
                         .POST("/pgs-ids/validate", pipelineRequestHandler::validatePGSIds)
-                        .GET("/pgs-ids-catalog-traits", pipelineRequestHandler::getPGSIdsByTraits)
+                        .GET("/pgs-ids-catalog-traits", pipelineRequestHandler::searchPGSIdsByTraits)
+                        .GET("/publication-data", pipelineRequestHandler::searchPGPIdsByPublications)
                         .path("/{pipelineId}", pbPId -> pbPId
                                 .POST("/execute/pgs-ids", pipelineRequestHandler::executePipelineForPgsIds)
                                 .POST("/execute/trait-ids", pipelineRequestHandler::executePipelineForTraitIds)
+                                .POST("/execute/publication-ids", pipelineRequestHandler::executePipelineForPublicationIds)
                                 .PATCH("/dataset", pipelineRequestHandler::updateDatasetId)
                                 .GET("/report", pipelineResultHandler::streamFileFromS3)
                                 .GET(pipelineRequestHandler::getPipeline))
@@ -86,14 +88,18 @@ public class PipelineManagerRouterConfig {
                                                          final UserManagerService userManagerService,
                                                          final PipelineDetailsMapper pipelineDetailsMapper,
                                                          final StringRedisTemplate redisTemplate,
-                                                         final PGSCatalogService pgsCatalogService) {
+                                                         final PGSCatalogService pgsCatalogService,
+                                                         @Value("${redis.pgs-ids.key-prefix}") final String redisPgsIdsKeyPrefix,
+                                                         @Value("${redis.pud-data.key-prefix}") final String redisPubDataKeyPrefix) {
         return new PipelineRequestHandler(
                 pipelineManagerService,
                 pipelinePersistence,
                 userManagerService,
                 pipelineDetailsMapper,
                 redisTemplate,
-                pgsCatalogService);
+                pgsCatalogService,
+                redisPgsIdsKeyPrefix,
+                redisPubDataKeyPrefix);
     }
 
     @Bean

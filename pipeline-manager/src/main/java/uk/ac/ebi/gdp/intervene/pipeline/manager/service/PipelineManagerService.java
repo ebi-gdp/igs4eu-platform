@@ -42,6 +42,7 @@ import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDir
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.FormatType;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile.createWithPgsIds;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile.createWithPublicationIds;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile.createWithTraitIds;
 
 /**
@@ -86,6 +87,22 @@ public class PipelineManagerService {
                                                                 final Set<String> traitIds) {
         final NXFParamsFile nxfParamsFile = buildWithTraitIds(
                 String.join(",", traitIds),
+                pipelineDetails.getDatasetDetails().getGenomeBuild());
+        return triggerGeneticScoringPipeline(pipelineDetails, nxfParamsFile);
+    }
+
+    /**
+     * Triggers pipeline with Publication Ids.
+     *
+     * @param pipelineDetails {@link PipelineDetails}
+     * @param publicationIds publication ids
+     *
+     * @return {@link Void}
+     */
+    public Mono<Void> triggerGeneticScoringPipelineWithPublicationIds(final PipelineDetails pipelineDetails,
+                                                                      final Set<String> publicationIds) {
+        final NXFParamsFile nxfParamsFile = buildWithPublicationIds(
+                String.join(",", publicationIds),
                 pipelineDetails.getDatasetDetails().getGenomeBuild());
         return triggerGeneticScoringPipeline(pipelineDetails, nxfParamsFile);
     }
@@ -178,6 +195,14 @@ public class PipelineManagerService {
                                             final GenomeBuild genomeBuild) {
         return createWithTraitIds(
                 polygenicTraitIds,
+                FormatType.JSON,
+                genomeBuild.getGenomeBuildValue());
+    }
+
+    private NXFParamsFile buildWithPublicationIds(final String publicationIds,
+                                                  final GenomeBuild genomeBuild) {
+        return createWithPublicationIds(
+                publicationIds,
                 FormatType.JSON,
                 genomeBuild.getGenomeBuildValue());
     }
