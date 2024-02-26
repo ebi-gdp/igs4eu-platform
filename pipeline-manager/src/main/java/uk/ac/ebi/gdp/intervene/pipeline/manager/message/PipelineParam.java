@@ -40,7 +40,7 @@ public record PipelineParam(@JsonInclude(NON_EMPTY) Collection<Map<String, Strin
         @JsonProperty("trait_efo")
         String traitIds;
 
-        @JsonProperty("pub_id")
+        @JsonProperty("pgp_id")
         String publicationIds;
 
         @JsonIgnore

@@ -54,15 +54,26 @@ stages:
 .deploy-module:
   stage: deploy
   image: bitnami/kubectl:latest #change to stable version
+  id_tokens:
+    GCP_ID_TOKEN:
+      aud: https://iam.googleapis.com/projects/968549395092/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
+  secrets:
+    IGS4EU_PLATFORM_SECRET:
+      gcp_secret_manager:
+        name: igs4eu-platform-secret
+      token: $GCP_ID_TOKEN
+  variables:
+    K8S_CLUSTER_AGENT: gdp/ga4k:k8s-agent
   script:
     - kubectl config get-contexts
-    - kubectl config use-context gdp/ga4k:k8s-agent
+    - kubectl config use-context $K8S_CLUSTER_AGENT
     - kubectl -n intervene-dev get pods
+    - echo $IGS4EU_PLATFORM_SECRET
   #   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
   #   - kubectl -f $MODULE/deployments/
-  only:
-    - /^\d+\.\d+\.\d+$/
-    - tags
+# only:
+#   - /^\d+\.\d+\.\d+$/
+#   - tags
 
 build-intervene-commons-module:
   variables:
@@ -73,6 +84,7 @@ build-intervene-commons-module:
     - changes:
         - '$INTERVENE_COMMONS_MODULE/**/*'
         - pom.xml
+        - .gitlab-ci.yml
 
 build-file-handler-module:
   variables:
@@ -83,6 +95,7 @@ build-file-handler-module:
     - changes:
         - '$FILE_HANDLER_MODULE/**/*'
         - pom.xml
+        - .gitlab-ci.yml
 
 containerize-file-handler-module:
   variables:
@@ -95,8 +108,8 @@ deploy-file-handler-module:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .deploy-module
-  needs:
-    - 'containerize-file-handler-module'
+# needs:
+#   - 'containerize-file-handler-module'
 
 build-pipeline-manager-module:
   variables:
@@ -107,6 +120,7 @@ build-pipeline-manager-module:
     - changes:
         - '$PIPELINE_MANAGER_MODULE/**/*'
         - pom.xml
+        - .gitlab-ci.yml
 
 containerize-pipeline-manager-module:
   variables:
@@ -131,6 +145,7 @@ build-user-manager-module:
     - changes:
         - '$USER_MANAGER_MODULE/**/*'
         - pom.xml
+        - .gitlab-ci.yml
 
 containerize-user-manager-module:
   variables:
