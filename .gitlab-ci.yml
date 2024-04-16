@@ -57,7 +57,7 @@ stages:
   image: bitnami/kubectl:latest #change to stable version
   id_tokens:
     GCP_ID_TOKEN:
-      aud: https://iam.googleapis.com/projects/968549395092/locations/global/workloadIdentityPools/gitlab-pool/providers/4654
+      aud: https://iam.googleapis.com/projects/968549395092/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
   secrets:
     IGS4EU_PLATFORM_SECRET:
       gcp_secret_manager:
