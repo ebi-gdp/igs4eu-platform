@@ -45,7 +45,8 @@ stages:
   script:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/${MODULE}/docker/Dockerfile"
+      --dockerfile "${CI_PROJECT_DIR}/docker/Dockerfile"
+      --build-arg "MODULE_NAME=${MODULE}"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${CI_COMMIT_TAG}-dev"
   only:
     - /^\d+\.\d+\.\d+$/
@@ -54,17 +55,26 @@ stages:
 .deploy-module:
   stage: deploy
   image: bitnami/kubectl:latest #change to stable version
+  id_tokens:
+    GCP_ID_TOKEN:
+      aud: https://iam.googleapis.com/projects/968549395092/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
+  secrets:
+    IGS4EU_PLATFORM_SECRET:
+      gcp_secret_manager:
+        name: igs4eu-platform-secret
+      token: $GCP_ID_TOKEN
   variables:
     K8S_CLUSTER_AGENT: gdp/ga4k:k8s-agent
   script:
     - kubectl config get-contexts
     - kubectl config use-context $K8S_CLUSTER_AGENT
     - kubectl -n intervene-dev get pods
+    - echo $IGS4EU_PLATFORM_SECRET
   #   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
   #   - kubectl -f $MODULE/deployments/
-  only:
-    - /^\d+\.\d+\.\d+$/
-    - tags
+ #only:
+ #  - /^\d+\.\d+\.\d+$/
+#   - tags
 
 build-intervene-commons-module:
   variables:
