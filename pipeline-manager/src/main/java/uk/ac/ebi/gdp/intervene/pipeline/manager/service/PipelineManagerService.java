@@ -30,16 +30,25 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.MessageService;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
+import static java.lang.Boolean.FALSE;
 import static java.nio.file.Paths.get;
 import static java.util.List.of;
 import static java.util.stream.Collectors.toMap;
 import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO.GlobusFileDetails;
 import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO.FileDetails;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.FormatType;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.TargetGenomeFileType.GENO;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.TargetGenomeFileType.PHENO;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.TargetGenomeFileType.VARIANTS;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.TargetGenomeFileType.VCF_GZ;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.TargetGenomeFileType.getPropertyName;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.FormatType.JSON;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile.createWithPgsIds;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile.createWithPublicationIds;
@@ -130,26 +139,48 @@ public class PipelineManagerService {
                 .getDirPathOnGuestCollection());
     }
 
-    private Map<String, String> buildMapFromGlobusFiles(final GlobusFileDetailsWrapperDTO globusFileDetailsWrapperDTO,
+    private Map<String, Object> buildMapFromGlobusFiles(final GlobusFileDetailsWrapperDTO globusFileDetailsWrapperDTO,
                                                         final Set<FileDetails> files) {
-        return globusFileDetailsWrapperDTO
-                .getFileDetailsList()
-                .stream()
-                .peek(globusFileDetails -> files
-                        .add(new FileDetails(globusFileDetails.getFileName(),
-                                globusFileDetails.getSize())))
-                .collect(toMap(GlobusFileDetails::getProperty, GlobusFileDetails::getFileName));
+        final Stream<GlobusFileDetails> globusFileDetailsStream = collectGlobusFiles(globusFileDetailsWrapperDTO.getFileDetailsList(), files);
+        final String globusFileName = globusFileDetailsWrapperDTO.getFileDetailsList().get(0).getFileName();
+        if (globusFileName.endsWith(VCF_GZ)) {
+            globusFileDetailsStream
+                    .forEach(element -> {
+                    });
+            return buildVcfMap(globusFileName);
+        } else {
+            return globusFileDetailsStream
+                    .collect(toMap(globusFileDetails -> getPropertyName(globusFileDetails.getFileName()), GlobusFileDetails::getFileName));
+        }
     }
 
-    private void addProperties(final Map<String, String> propertiesMap,
+    private void addProperties(final Map<String, Object> propertiesMap,
                                final String datasetName) {
         propertiesMap.put("sampleset", datasetName);
         propertiesMap.put("chrom", null);
+        propertiesMap.put("vcf_import_dosage", FALSE);
+    }
+
+    private Stream<GlobusFileDetails> collectGlobusFiles(final List<GlobusFileDetails> globusFileDetailsList,
+                                                         final Set<FileDetails> files) {
+        return globusFileDetailsList
+                .stream()
+                .peek(globusFileDetails -> files
+                        .add(new FileDetails(globusFileDetails.getFileName(),
+                                globusFileDetails.getSize())));
+    }
+
+    private Map<String, Object> buildVcfMap(final String globusFileName) {
+        final Map<String, Object> globusFilesMap = new HashMap<>(3);
+        globusFilesMap.put(GENO, globusFileName);
+        globusFilesMap.put(PHENO, globusFileName);
+        globusFilesMap.put(VARIANTS, globusFileName);
+        return globusFilesMap;
     }
 
     private Mono<Void> submitPipelineRequest(final PipelineDetails pipelineDetails,
                                              final NXFParamsFile nxfParamsFile,
-                                             final Collection<Map<String, String>> targetGenomes,
+                                             final Collection<Map<String, Object>> targetGenomes,
                                              final Set<FileDetails> files) {
         final PipelineParam pipelineParam = buildPipelineParam(pipelineDetails.getPipelineId(), nxfParamsFile, targetGenomes);
         return messageService
@@ -174,11 +205,10 @@ public class PipelineManagerService {
 
     private PipelineParam buildPipelineParam(final String pipelineId,
                                              final NXFParamsFile nxfParamsFile,
-                                             final Collection<Map<String, String>> targetGenomes) {
+                                             final Collection<Map<String, Object>> targetGenomes) {
         return new PipelineParam(
                 targetGenomes,
                 nxfParamsFile,
-                "/workspace/work/",
                 pipelineId
         );
     }
@@ -187,7 +217,7 @@ public class PipelineManagerService {
                                           final GenomeBuild genomeBuild) {
         return createWithPgsIds(
                 polygenicScoreIds,
-                FormatType.JSON,
+                JSON,
                 genomeBuild.getGenomeBuildValue());
     }
 
@@ -195,7 +225,7 @@ public class PipelineManagerService {
                                             final GenomeBuild genomeBuild) {
         return createWithTraitIds(
                 polygenicTraitIds,
-                FormatType.JSON,
+                JSON,
                 genomeBuild.getGenomeBuildValue());
     }
 
@@ -203,7 +233,7 @@ public class PipelineManagerService {
                                                   final GenomeBuild genomeBuild) {
         return createWithPublicationIds(
                 publicationIds,
-                FormatType.JSON,
+                JSON,
                 genomeBuild.getGenomeBuildValue());
     }
 }

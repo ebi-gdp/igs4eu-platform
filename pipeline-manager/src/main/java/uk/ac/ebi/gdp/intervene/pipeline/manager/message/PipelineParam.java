@@ -27,9 +27,8 @@ import java.util.Map;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
-public record PipelineParam(@JsonInclude(NON_EMPTY) Collection<Map<String, String>> targetGenomes,
+public record PipelineParam(@JsonInclude(NON_EMPTY) Collection<Map<String, Object>> targetGenomes,
                             NXFParamsFile nxfParamsFile,
-                            String nxfWork,
                             String id) {
 
     @JsonInclude(NON_EMPTY)

@@ -17,9 +17,7 @@
  */
 package uk.ac.ebi.gdp.intervene.commons.dto.filehandler;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.commons.io.FilenameUtils;
 
 import java.util.List;
 
@@ -53,10 +51,6 @@ public class GlobusFileDetailsWrapperDTO implements IGlobusFileDetailsWrapper {
         return copyOf(fileDetailsList);
     }
 
-    /*public List<GlobusFileDetails> getData() {
-        return copyOf(data);
-    }*/
-
     public static class GlobusFileDetails {
         private String type;
         private long size;
@@ -76,20 +70,6 @@ public class GlobusFileDetailsWrapperDTO implements IGlobusFileDetailsWrapper {
 
         public String getFileName() {
             return fileName;
-        }
-
-        @JsonIgnore
-        public String getFileNameWithoutExtension() {
-            return FilenameUtils.getExtension(fileName);
-        }
-
-        @JsonIgnore
-        public String getProperty() {
-            if (fileName.endsWith(".vcf.gz")) {
-                return "vcf_path";
-            } else {
-                return getFileNameWithoutExtension();
-            }
         }
     }
 }
