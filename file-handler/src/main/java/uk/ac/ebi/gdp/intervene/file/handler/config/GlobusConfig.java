@@ -45,9 +45,7 @@ public class GlobusConfig {
 
     @Bean
     public AuthService authService(@Qualifier("globusAuthWebClient") final WebClient webClient) {
-        return new AuthService(
-                webClient
-        );
+        return new AuthService(webClient);
     }
 
     @Bean("globusAuthWebClient")

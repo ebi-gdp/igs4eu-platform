@@ -38,29 +38,28 @@ import static uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil.getJsonObjectMa
  * Allas is a S3 object storage implementation at CSC.
  * Implements {@link MessageService}
  */
-public class AllasMessageService implements MessageService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AllasMessageService.class);
-    private final AmazonS3 s3ClientAllas;
+public class S3MessageService implements MessageService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(S3MessageService.class);
+    private final AmazonS3 s3Client;
     private final String bucketName;
 
-    public AllasMessageService(final AmazonS3 s3ClientAllas,
-                               final String bucketName) {
-        this.s3ClientAllas = s3ClientAllas;
+    public S3MessageService(final AmazonS3 s3Client,
+                            final String bucketName) {
+        this.s3Client = s3Client;
         this.bucketName = bucketName;
     }
 
     /**
      * Upload file to Allas.
-     *
      * {@inheritDoc}
      */
     public Mono<Void> sendMessage(final String key,
                                   final TriggerPipelineEvent message) {
-        if (!s3ClientAllas.doesBucketExistV2(bucketName)) {
-            s3ClientAllas.createBucket(bucketName);
+        if (!s3Client.doesBucketExistV2(bucketName)) {
+            s3Client.createBucket(bucketName);
         }
         try {
-            s3ClientAllas.putObject(buildObjectRequest(key, message));
+            s3Client.putObject(buildObjectRequest(key, message));
             return empty();
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
