@@ -22,6 +22,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineStatusDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineResultEvent;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
@@ -112,6 +113,7 @@ public class PipelinePersistence implements IPipelinePersistence {
     private Mono<Void> doUpdatePipelineStatus(final PipelineStatusDTO pipelineStatusDTO,
                                               final PipelineExecutionStatus pipelineExecutionStatus) {
         switch (getPipelineStatusByDescription(pipelineStatusDTO.getStatus())) {
+
             case STARTED -> pipelineExecutionStatus.started(pipelineStatusDTO.getUtcTime());
             case COMPLETED -> pipelineExecutionStatus.completed(pipelineStatusDTO.getUtcTime());
             case ERROR -> pipelineExecutionStatus.error(
@@ -223,5 +225,10 @@ public class PipelinePersistence implements IPipelinePersistence {
     @Override
     public Mono<PipelineExecutionStatus> savePipelineExecutionStatus(final PipelineExecutionStatus pipelineExecutionStatus) {
         return pipelineExecutionStatusRepository.save(pipelineExecutionStatus);
+    }
+
+    @Override
+    public Mono<DatasetDetails> getDatasetName(final String pipelineId) {
+        return pipelineDetailsRepository.findDatasetName(pipelineId);
     }
 }

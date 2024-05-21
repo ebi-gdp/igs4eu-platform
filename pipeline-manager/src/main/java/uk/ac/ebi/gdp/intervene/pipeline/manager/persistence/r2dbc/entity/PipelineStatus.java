@@ -18,7 +18,7 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
 public enum PipelineStatus {
-    NEW("New"), PENDING("Pending"), COMPLETED("Completed"), STARTED("Started"), ERROR("Error");
+    NEW("New"), PENDING("Pending"), COMPLETED("Succeeded"), STARTED("Deployed"), ERROR("Failed");
 
     private final String pipelineStatus;
 
@@ -31,7 +31,7 @@ public enum PipelineStatus {
     }
 
     public static PipelineStatus getPipelineStatusByDescription(final String pipelineStatusArg) {
-        for (final PipelineStatus pipelineStatus : PipelineStatus.values()) {
+        for (final PipelineStatus pipelineStatus : values()) {
             if (pipelineStatus.getPipelineStatus().equalsIgnoreCase(pipelineStatusArg)) {
                 return pipelineStatus;
             }

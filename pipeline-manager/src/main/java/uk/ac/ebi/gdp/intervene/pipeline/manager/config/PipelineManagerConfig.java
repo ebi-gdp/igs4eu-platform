@@ -22,6 +22,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.google.cloud.storage.StorageOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -45,10 +46,13 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.Pip
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.PipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GCPCloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.ICloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.S3CloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.HttpMessageService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.MessageService;
@@ -60,6 +64,11 @@ import java.net.URI;
 
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.propagateRequestId;
 import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.jsonExchangeStrategies;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.CSC;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.EBI_EMBASSY;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.GCP;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.HTTP;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.S3;
 
 /**
  * Bean config for pipeline manager service.
@@ -70,10 +79,6 @@ public class PipelineManagerConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(PipelineManagerConfig.class);
     private static final String PIPELINE_EXECUTION_PLATFORM = "pipeline-execution.platform";
     private static final String PIPELINE_REQUEST_MODE = "pipeline-request.mode";
-    private static final String EBI_EMBASSY = "EBI_EMBASSY";
-    private static final String CSC = "CSC";
-    private static final String HTTP = "HTTP";
-    private static final String S3 = "S3";
 
     @Bean
     public IPipelinePersistence pipelinePersistence(final PipelineDetailsRepository pipelineDetailsRepository,
@@ -116,8 +121,21 @@ public class PipelineManagerConfig {
     @ConditionalOnProperty(value = PIPELINE_REQUEST_MODE, havingValue = S3)
     @Bean("s3MssageService")
     public MessageService s3MessageService(@Qualifier("allasS3") final AmazonS3 s3Client,
-                                           @Value("${s3.bucket-name}") final String bucketName) {
+                                           @Value("${cloud.storage.bucket-name-format}") final String bucketName) {
         return new S3MessageService(s3Client, bucketName);
+    }
+
+    @ConditionalOnProperty(value = PIPELINE_EXECUTION_PLATFORM, havingValue = GCP)
+    @Bean
+    public ICloudStorage gcpCloudStorage(@Value("${cloud.gcp.project-id}") final String gcpProjectId) {
+        return new GCPCloudStorage(
+                StorageOptions.newBuilder().setProjectId(gcpProjectId).build().getService());
+    }
+
+    @ConditionalOnProperty(value = PIPELINE_EXECUTION_PLATFORM, havingValue = CSC)
+    @Bean
+    public ICloudStorage s3CloudStorage(final AmazonS3 amazonS3) {
+        return new S3CloudStorage(amazonS3);
     }
 
     @ConditionalOnProperty(value = PIPELINE_REQUEST_MODE, havingValue = HTTP)

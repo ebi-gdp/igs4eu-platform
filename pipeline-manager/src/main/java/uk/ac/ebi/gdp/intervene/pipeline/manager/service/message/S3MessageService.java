@@ -55,11 +55,12 @@ public class S3MessageService implements MessageService {
      */
     public Mono<Void> sendMessage(final String key,
                                   final TriggerPipelineEvent message) {
-        if (!s3Client.doesBucketExistV2(bucketName)) {
-            s3Client.createBucket(bucketName);
+        final String formattedBucketName = bucketName.formatted(message.pipelineParam().id());
+        if (!s3Client.doesBucketExistV2(formattedBucketName)) {
+            s3Client.createBucket(formattedBucketName);
         }
         try {
-            s3Client.putObject(buildObjectRequest(key, message));
+            s3Client.putObject(buildObjectRequest(key, message, formattedBucketName));
             return empty();
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
@@ -68,7 +69,8 @@ public class S3MessageService implements MessageService {
     }
 
     private PutObjectRequest buildObjectRequest(final String key,
-                                                final TriggerPipelineEvent message) throws JsonProcessingException {
+                                                final TriggerPipelineEvent message,
+                                                final String formattedBucketName) throws JsonProcessingException {
         final ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentType(APPLICATION_JSON_VALUE);
         metadata.addUserMetadata("title", "JSON file for %s pipeline".formatted(key));
@@ -76,7 +78,7 @@ public class S3MessageService implements MessageService {
         final byte[] messageByteArray = getJsonObjectMapper()
                 .writeValueAsBytes(message);
         return new PutObjectRequest(
-                bucketName,
+                formattedBucketName,
                 "job-queue/%s.json".formatted(key),
                 new ByteArrayInputStream(messageByteArray),
                 metadata

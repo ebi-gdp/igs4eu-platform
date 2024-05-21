@@ -20,14 +20,17 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 import org.springframework.r2dbc.core.DatabaseClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.PipelineDetailsEntityMapper.map;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.PipelineDetailsEntityMapper.fullMap;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.PipelineDetailsEntityMapper.map;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.PipelineDetailsEntityMapper.tinyMap;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineQueries.FIND_BY_USER_ID_FULL_DETAILS_ORDER_BY_LIMIT;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineQueries.FIND_BY_USER_ID_FULL_DETAILS_PIPELINE_ID_CONDITION;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineQueries.FIND_BY_USER_ID_ORDER_BY_LIMIT_OFFSET;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineQueries.FIND_BY_USER_ID_PIPELINE_ID_CONDITION;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.PipelineQueries.FIND_DATASET_BY_PIPELINE_ID_USER_ID_CONDITION;
 
 public class CustomPipelineDetailsRepositoryImpl implements CustomPipelineDetailsRepository {
     private final DatabaseClient databaseClient;
@@ -89,6 +92,14 @@ public class CustomPipelineDetailsRepositoryImpl implements CustomPipelineDetail
                 .bind("userId", userId)
                 .bind("pipelineId", pipelineId)
                 .map(map()::apply)
+                .one();
+    }
+
+    public Mono<DatasetDetails> findDatasetName(final String pipelineId) {
+        return databaseClient
+                .sql(FIND_DATASET_BY_PIPELINE_ID_USER_ID_CONDITION)
+                .bind("pipelineId", pipelineId)
+                .map(tinyMap()::apply)
                 .one();
     }
 }

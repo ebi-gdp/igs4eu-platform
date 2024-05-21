@@ -21,7 +21,7 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.reposit
 
 public interface PipelineQueries {
     //@formatter:off
-    String FIND_BY_USER_ID = "SELECT " +
+    String FIND_BY_USER_ID = "SELECT" +
                              " p.pipeline_id," +
                              " p.pipeline_uid," +
                              " p.user_id," +
@@ -48,18 +48,18 @@ public interface PipelineQueries {
                              " d.created_on as dataset_created_on," +
                              " d.updated_by as dataset_updated_by," +
                              " d.updated_on as dataset_updated_on " +
-                             "FROM " +
+                             "FROM" +
                              " pipeline_details p " +
                              "INNER JOIN" +
-                             " pipeline_execution_status s " +
+                             " pipeline_execution_status s" +
                              " ON p.pipeline_id = s.pipeline_id " +
                              "INNER JOIN" +
-                             " dataset_details d " +
+                             " dataset_details d" +
                              " ON p.dataset_id = d.dataset_id " +
                              "WHERE" +
                              " p.user_id = :userId";
 
-    String FIND_BY_USER_ID_FULL_DETAILS = "SELECT " +
+    String FIND_BY_USER_ID_FULL_DETAILS = "SELECT" +
                                           " p.pipeline_id," +
                                           " p.pipeline_uid," +
                                           " p.user_id," +
@@ -101,10 +101,10 @@ public interface PipelineQueries {
                                           "FROM" +
                                           " pipeline_details p " +
                                           "INNER JOIN" +
-                                          " pipeline_execution_status s " +
+                                          " pipeline_execution_status s" +
                                           " ON p.pipeline_id = s.pipeline_id " +
                                           "INNER JOIN" +
-                                          " dataset_details d " +
+                                          " dataset_details d" +
                                           " ON p.dataset_id = d.dataset_id " +
                                           "INNER JOIN" +
                                           " globus_guest_collection_files_details g" +
@@ -114,6 +114,17 @@ public interface PipelineQueries {
                                           " ON u.globus_username = g.globus_username " +
                                           "WHERE" +
                                           " p.user_id = :userId";
+
+    String FIND_DATASET = "SELECT" +
+                          " d.dataset_id," +
+                          " d.dataset_name " +
+                          "FROM" +
+                          " pipeline_details p " +
+                          "INNER JOIN" +
+                          " dataset_details d" +
+                          " ON p.dataset_id = d.dataset_id " +
+                          "WHERE" +
+                          " p.pipeline_id = :pipelineId";
 
     String PIPELINE_ID_CONDITION = "AND " +
                                    "p.pipeline_id = :pipelineId";
@@ -137,5 +148,7 @@ public interface PipelineQueries {
 
     String FIND_BY_USER_ID_PIPELINE_ID_CONDITION = joinQuery(FIND_BY_USER_ID,
             PIPELINE_ID_CONDITION);
+
+    String FIND_DATASET_BY_PIPELINE_ID_USER_ID_CONDITION = joinQuery(FIND_DATASET, PIPELINE_ID_CONDITION);
     //@formatter:on
 }

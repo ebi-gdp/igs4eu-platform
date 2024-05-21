@@ -17,7 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +33,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.Dat
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.ICloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
@@ -66,7 +66,7 @@ public class PipelineManagerRouterConfig {
                                 .POST("/execute/trait-ids", pipelineRequestHandler::executePipelineForTraitIds)
                                 .POST("/execute/publication-ids", pipelineRequestHandler::executePipelineForPublicationIds)
                                 .PATCH("/dataset", pipelineRequestHandler::updateDatasetId)
-                                .GET("/report", pipelineResultHandler::streamFileFromS3)
+                                .GET("/report", pipelineResultHandler::streamFileFromCloudStorage)
                                 .GET(pipelineRequestHandler::getPipeline))
                         .POST(pipelineRequestHandler::createPipeline)
                         .GET(pipelineRequestHandler::getPipelines))
@@ -105,13 +105,15 @@ public class PipelineManagerRouterConfig {
     @Bean
     public PipelineResultHandler pipelineResultHandler(final IPipelinePersistence pipelinePersistence,
                                                        final UserManagerService userManagerService,
-                                                       final AmazonS3 s3Client,
-                                                       @Value("${s3.bucket-name}") final String s3Bucket) {
+                                                       final ICloudStorage cloudStorage,
+                                                       @Value("${cloud.storage.bucket-name-format}") final String bucketNameFormat,
+                                                       @Value("${cloud.storage.bucket-prefix}") final String bucketFilePrefix) {
         return new PipelineResultHandler(
                 pipelinePersistence,
                 userManagerService,
-                s3Client,
-                s3Bucket);
+                cloudStorage,
+                bucketNameFormat,
+                bucketFilePrefix);
     }
 
     @Bean
