@@ -91,6 +91,11 @@ public interface PipelineDetailsEntityMapper {
         };
     }
 
+    static BiFunction<Row, Object, DatasetDetails> tinyMap() {
+        return (row, object) -> DatasetDetails.loadDatasetIdAndNameOnly(getString("dataset_id", row),
+                getString("dataset_name", row));
+    }
+
     static PipelineDetails getPipelineDetails(final Row row,
                                               final PipelineExecutionStatus pipelineExecutionStatus,
                                               final DatasetDetails datasetDetails) {

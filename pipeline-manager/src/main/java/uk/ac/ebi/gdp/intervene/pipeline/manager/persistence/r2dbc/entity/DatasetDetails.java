@@ -189,6 +189,8 @@ public class DatasetDetails implements Persistable<String> {
     }
 
     /**
+     * Load dataset details.
+     *
      * @param datasetId dataset id
      * @param datasetName dataset name
      * @param genomeBuild {@link GenomeBuild}
@@ -213,6 +215,8 @@ public class DatasetDetails implements Persistable<String> {
     }
 
     /**
+     * Load dataset details.
+     *
      * @param datasetId dataset id
      * @param datasetName dataset name
      * @param genomeBuild {@link GenomeBuild}
@@ -236,5 +240,22 @@ public class DatasetDetails implements Persistable<String> {
                                       final LocalDateTime updatedOn) {
         return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType,
                 globusDetails, createdBy, createdOn, updatedBy, updatedOn);
+    }
+
+    /**
+     * This method only introduced to load Dataset name.
+     * Required for downloading pipeline result from bucket.
+     *
+     * @param datasetId dataset Id
+     * @param datasetName name of dataset name
+     *
+     * @return {@link DatasetDetails}
+     */
+    public static DatasetDetails loadDatasetIdAndNameOnly(final String datasetId,
+                                                          final String datasetName) {
+        final DatasetDetails datasetDetails = new DatasetDetails();
+        datasetDetails.datasetId = datasetId;
+        datasetDetails.datasetName = datasetName;
+        return datasetDetails;
     }
 }

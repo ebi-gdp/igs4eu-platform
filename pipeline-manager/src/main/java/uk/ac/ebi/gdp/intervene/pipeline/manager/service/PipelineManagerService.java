@@ -41,6 +41,7 @@ import static java.lang.Boolean.FALSE;
 import static java.nio.file.Paths.get;
 import static java.util.List.of;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.io.FilenameUtils.getExtension;
 import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO.GlobusFileDetails;
 import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO.FileDetails;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.TargetGenomeFileType.GENO;
@@ -159,6 +160,17 @@ public class PipelineManagerService {
         propertiesMap.put("sampleset", datasetName);
         propertiesMap.put("chrom", null);
         propertiesMap.put("vcf_import_dosage", FALSE);
+        propertiesMap.put("format", getFileFormat(getExtension(propertiesMap.get("geno").toString())));
+    }
+
+    private String getFileFormat(final String genoFileNameExtension) {
+        if (genoFileNameExtension.startsWith("p")) {
+            return "pfile";
+        } else if (genoFileNameExtension.startsWith("b")) {
+            return "bfile";
+        } else {
+            return "vcf";
+        }
     }
 
     private Stream<GlobusFileDetails> collectGlobusFiles(final List<GlobusFileDetails> globusFileDetailsList,
@@ -195,7 +207,6 @@ public class PipelineManagerService {
         return new TriggerPipelineEvent(
                 pipelineParam,
                 new GuestCollectionDirResDTO(
-                        pipelineDetails.getDatasetDetails().getGlobusDetails().getGuestCollectionId(),
                         pipelineDetails.getDatasetDetails().getGlobusDetails().getGlobusUsername()
                                 + pipelineDetails.getDatasetDetails().getGlobusDetails().getDirPathOnGuestCollection(),
                         files

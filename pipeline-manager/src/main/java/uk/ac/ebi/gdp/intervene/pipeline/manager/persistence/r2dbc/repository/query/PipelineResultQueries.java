@@ -24,10 +24,10 @@ public interface PipelineResultQueries {
     String FIND_BY_STATUS = "SELECT " +
                             " p.pipeline_id," +
                             " r.file_download_path " +
-                            "FROM " +
+                            "FROM" +
                             " pipeline_details p " +
                             "INNER JOIN" +
-                            " pipeline_result r " +
+                            " pipeline_result r" +
                             " ON p.pipeline_id = r.pipeline_id " +
                             "INNER JOIN" +
                             " pipeline_execution_status s" +
@@ -35,13 +35,13 @@ public interface PipelineResultQueries {
                             "WHERE" +
                             " s.status = :status";
 
-    String USER_ID_CONDITION = "AND " +
-                               "p.user_id = :userId";
+    String USER_ID_CONDITION = "AND" +
+                               " p.user_id = :userId";
 
-    String PIPELINE_ID_CONDITION = "AND " +
-                                   "p.pipeline_id = :pipelineId";
+    String PIPELINE_ID_CONDITION = "AND" +
+                                   " p.pipeline_id = :pipelineId";
 
-    String DATA_LIMIT_QUERY = "ORDER BY " +
+    String DATA_LIMIT_QUERY = "ORDER BY" +
                               " p.pipeline_id DESC " +
                               "LIMIT 1";
 

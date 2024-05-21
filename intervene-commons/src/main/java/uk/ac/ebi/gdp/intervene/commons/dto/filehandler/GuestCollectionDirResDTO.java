@@ -47,6 +47,11 @@ public class GuestCollectionDirResDTO {
         this.files = copyOf(files);
     }
 
+    public GuestCollectionDirResDTO(final String dirPathOnGuestCollection,
+                                    final Set<FileDetails> files) {
+        this(null, dirPathOnGuestCollection, files);
+    }
+
     public String getGuestCollectionId() {
         return guestCollectionId;
     }
@@ -67,6 +72,6 @@ public class GuestCollectionDirResDTO {
         return files;
     }
 
-    public record FileDetails(String filename, long fileSize) {
+    public record FileDetails(String filename, long size) {
     }
 }

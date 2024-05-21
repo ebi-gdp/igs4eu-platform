@@ -65,11 +65,10 @@ public class CSCPipelineHandler {
                 .bodyToMono(PipelineStatusDTO.class)
                 .doOnNext(pipelineStatusDTO -> LOGGER.info("Pipeline status is being updated to status: {} for Pipeline Id: {}", pipelineStatusDTO.getStatus(), pipelineId))
                 .flatMap(pipelineStatusDTO -> pipelinePersistence
-                        .updatePipelineStatus(pipelineId,
-                                pipelineStatusDTO))
+                        .updatePipelineStatus(pipelineId, pipelineStatusDTO))
                 .flatMap(pipelineExecutionStatus -> handlePipelineOutcome(pipelineExecutionStatus.getStatus(), pipelineExecutionStatus))
-                .flatMap(pipelineStatusDTO -> ok().build())
-                .doOnNext(pipelineStatusDTO -> LOGGER.info("Pipeline status has been updated for Pipeline Id: {}", pipelineId));
+                .then(Mono.defer(() -> ok().build()))
+                .doOnSuccess(pipelineStatusDTO -> LOGGER.info("Pipeline status has been updated for Pipeline Id: {}", pipelineId));
     }
 
     private Mono<Void> handlePipelineOutcome(final PipelineStatus pipelineStatus,
@@ -85,21 +84,25 @@ public class CSCPipelineHandler {
                         .createPipelineResult(pipelineResultEvent)
                         .flatMap(pipelineResult -> buildSuccessEmailData(pipelineResult.getPipelineId(),
                                 pipelineExecutionStatus.getPipelineDetails().getUserId()))
-                        .doOnNext(pipelineStatusDTO -> LOGGER.info("Sending an email in HTML format"))
-                        .flatMap(emailService::sendEmailInHTMLFormat);
+                        .flatMap(this::sendEmailInHTMLFormat);
             }
             case ERROR -> {
                 LOGGER.trace("Executing block for ERROR case");
                 return buildErrorEmailData(pipelineExecutionStatus.getId(), pipelineExecutionStatus.getPipelineDetails().getUserId(),
                         pipelineExecutionStatus.getTraceName(), pipelineExecutionStatus.getTraceExit())
-                        .doOnNext(pipelineStatusDTO -> LOGGER.info("Sending an email in HTML format"))
-                        .flatMap(emailService::sendEmailInHTMLFormat);
+                        .flatMap(this::sendEmailInHTMLFormat);
             }
             default -> {
                 LOGGER.trace("Executing block for default case");
                 return Mono.empty();
             }
         }
+    }
+
+    private Mono<Void> sendEmailInHTMLFormat(final IEmailSender.EmailData emailData) {
+        return emailService
+                .sendEmailInHTMLFormat(emailData)
+                .doOnSuccess(unused -> LOGGER.info("Email sent in HTML format"));
     }
 
     private Mono<IEmailSender.EmailData> buildSuccessEmailData(final String pipelineId,

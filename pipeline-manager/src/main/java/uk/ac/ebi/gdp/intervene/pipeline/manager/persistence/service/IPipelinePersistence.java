@@ -21,6 +21,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineStatusDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineResultEvent;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
@@ -165,4 +166,13 @@ public interface IPipelinePersistence {
      * @return pipeline execution status represented by {@link PipelineExecutionStatus}
      */
     Mono<PipelineExecutionStatus> savePipelineExecutionStatus(PipelineExecutionStatus pipelineExecutionStatus);
+
+    /**
+     * Get dataset name for given pipeline id.
+     *
+     * @param pipelineId pipeline id
+     *
+     * @return dataset details (contains only id & name) represented by {@link DatasetDetails}
+     */
+    Mono<DatasetDetails> getDatasetName(String pipelineId);
 }

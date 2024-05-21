@@ -19,6 +19,7 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 
 /**
@@ -62,4 +63,13 @@ public interface CustomPipelineDetailsRepository {
      * @return {@link PipelineDetails}
      */
     Mono<PipelineDetails> find(String pipelineId, String userId);
+
+    /**
+     * Finds dataset name for a given pipeline id
+     *
+     * @param pipelineId pipeline id
+     *
+     * @return {@link DatasetDetails}
+     */
+    Mono<DatasetDetails> findDatasetName(String pipelineId);
 }

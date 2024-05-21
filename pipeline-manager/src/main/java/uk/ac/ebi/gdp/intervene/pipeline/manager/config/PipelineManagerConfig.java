@@ -22,6 +22,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.google.cloud.storage.StorageOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,14 +32,12 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.oauth2.server.resource.web.reactive.function.client.ServerBearerExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
 import uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusUserRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineDetailsRepository;
@@ -47,20 +46,29 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.Pip
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.PipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GCPCloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.ICloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.S3CloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.AllasMessageService;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.KafkaMessageService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.HttpMessageService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.MessageService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.S3MessageService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.EmailSender;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
 import java.net.URI;
 
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.propagateRequestId;
+import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.jsonExchangeStrategies;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.CSC;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.EBI_EMBASSY;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.GCP;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.HTTP;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.S3;
 
 /**
  * Bean config for pipeline manager service.
@@ -69,6 +77,8 @@ import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.propagateRequestId;
 @Configuration
 public class PipelineManagerConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(PipelineManagerConfig.class);
+    private static final String PIPELINE_EXECUTION_PLATFORM = "pipeline-execution.platform";
+    private static final String PIPELINE_REQUEST_MODE = "pipeline-request.mode";
 
     @Bean
     public IPipelinePersistence pipelinePersistence(final PipelineDetailsRepository pipelineDetailsRepository,
@@ -80,18 +90,71 @@ public class PipelineManagerConfig {
                 pipelineResultRepository);
     }
 
-    @ConditionalOnProperty(value = "pipeline-execution.platform", havingValue = "EBI_EMBASSY")
-    @Bean("kafkaMessageService")
-    public MessageService kafkaMessageService(final KafkaTemplate<String, TriggerPipelineEvent> triggerPipelineEventKT,
-                                              @Value("${kafka.pipeline-trigger.topic}") final String pipelineTriggerTopic) {
-        return new KafkaMessageService(triggerPipelineEventKT, pipelineTriggerTopic);
+    @ConditionalOnProperty(value = PIPELINE_EXECUTION_PLATFORM, havingValue = CSC)
+    @Bean("allasS3")
+    public AmazonS3 allasS3(@Value("${allas.s3.endpoint}") final String endpoint,
+                            @Value("${allas.s3.credentials.access-key}") final String accessKey,
+                            @Value("${allas.s3.credentials.secret-key}") final String secretKey,
+                            @Value("${allas.s3.credentials.region}") final String region) {
+        return amazonS3(
+                endpoint,
+                accessKey,
+                secretKey,
+                region
+        );
     }
 
-    @ConditionalOnProperty(value = "pipeline-execution.platform", havingValue = "CSC")
-    @Bean("allasMessageService")
-    public MessageService allasMessageService(@Qualifier("allasS3") final AmazonS3 s3ClientAllas,
-                                              @Value("${s3.bucket-name}") final String bucketName) {
-        return new AllasMessageService(s3ClientAllas, bucketName);
+    @ConditionalOnProperty(value = PIPELINE_EXECUTION_PLATFORM, havingValue = EBI_EMBASSY)
+    @Bean("embassyS3")
+    public AmazonS3 embassyS3(@Value("${ebi-embassy.s3.endpoint}") final String endpoint,
+                              @Value("${ebi-embassy.s3.credentials.access-key}") final String accessKey,
+                              @Value("${ebi-embassy.s3.credentials.secret-key}") final String secretKey,
+                              @Value("${ebi-embassy.s3.credentials.region}") final String region) {
+        return amazonS3(
+                endpoint,
+                accessKey,
+                secretKey,
+                region
+        );
+    }
+
+    @ConditionalOnProperty(value = PIPELINE_REQUEST_MODE, havingValue = S3)
+    @Bean("s3MssageService")
+    public MessageService s3MessageService(@Qualifier("allasS3") final AmazonS3 s3Client,
+                                           @Value("${cloud.storage.bucket-name-format}") final String bucketName) {
+        return new S3MessageService(s3Client, bucketName);
+    }
+
+    @ConditionalOnProperty(value = PIPELINE_EXECUTION_PLATFORM, havingValue = GCP)
+    @Bean
+    public ICloudStorage gcpCloudStorage(@Value("${cloud.gcp.project-id}") final String gcpProjectId) {
+        return new GCPCloudStorage(
+                StorageOptions.newBuilder().setProjectId(gcpProjectId).build().getService());
+    }
+
+    @ConditionalOnProperty(value = PIPELINE_EXECUTION_PLATFORM, havingValue = CSC)
+    @Bean
+    public ICloudStorage s3CloudStorage(final AmazonS3 amazonS3) {
+        return new S3CloudStorage(amazonS3);
+    }
+
+    @ConditionalOnProperty(value = PIPELINE_REQUEST_MODE, havingValue = HTTP)
+    @Configuration
+    public static class HttpMessageServiceConfig {
+        @Bean("httpMessageService")
+        public MessageService httpMessageService(@Qualifier("pipelineRequestWebClient") final WebClient webClient,
+                                                 @Value("${intervene.pipeline-request.uri}") final URI pipelineRequestURI) {
+            return new HttpMessageService(webClient, pipelineRequestURI);
+        }
+
+        @Bean("pipelineRequestWebClient")
+        public WebClient webClientBasic(@Value("${intervene.pipeline-request.base-url}") final String baseURL) {
+            return WebClient
+                    .builder()
+                    .exchangeStrategies(jsonExchangeStrategies())
+                    .baseUrl(baseURL)
+                    .build();
+        }
     }
 
     @Bean
@@ -155,34 +218,6 @@ public class PipelineManagerConfig {
                 .build();
     }
 
-    @ConditionalOnProperty(value = "pipeline-execution.platform", havingValue = "EBI_EMBASSY")
-    @Bean("embassyS3")
-    public AmazonS3 embassyS3(@Value("${ebi-embassy.s3.endpoint}") final String endpoint,
-                              @Value("${ebi-embassy.s3.credentials.access-key}") final String accessKey,
-                              @Value("${ebi-embassy.s3.credentials.secret-key}") final String secretKey,
-                              @Value("${ebi-embassy.s3.credentials.region}") final String region) {
-        return amazonS3(
-                endpoint,
-                accessKey,
-                secretKey,
-                region
-        );
-    }
-
-    @ConditionalOnProperty(value = "pipeline-execution.platform", havingValue = "CSC")
-    @Bean("allasS3")
-    public AmazonS3 allasS3(@Value("${allas.s3.endpoint}") final String endpoint,
-                            @Value("${allas.s3.credentials.access-key}") final String accessKey,
-                            @Value("${allas.s3.credentials.secret-key}") final String secretKey,
-                            @Value("${allas.s3.credentials.region}") final String region) {
-        return amazonS3(
-                endpoint,
-                accessKey,
-                secretKey,
-                region
-        );
-    }
-
     private AmazonS3 amazonS3(final String endpoint,
                               final String accessKey,
                               final String secretKey,
@@ -218,8 +253,7 @@ public class PipelineManagerConfig {
                                                @Value("${pgs-catalog.rest.search-url}") final URI pgsTraitSearchURI) {
         return new PGSCatalogService(
                 webClient,
-                pgsTraitSearchURI
-        );
+                pgsTraitSearchURI);
     }
 
     @Bean
