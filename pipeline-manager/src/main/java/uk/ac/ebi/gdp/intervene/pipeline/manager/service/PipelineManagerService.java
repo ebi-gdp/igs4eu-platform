@@ -47,13 +47,13 @@ import static uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDir
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.TargetGenomeFileType.GENO;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.TargetGenomeFileType.PHENO;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.TargetGenomeFileType.VARIANTS;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.TargetGenomeFileType.VCF_GZ;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.TargetGenomeFileType.getPropertyName;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.FormatType.JSON;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile.createWithPgsIds;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile.createWithPublicationIds;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam.NXFParamsFile.createWithTraitIds;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.VCF_PATH_GZ;
 
 /**
  * Pipeline manager service, core service to perform Pipeline operations.
@@ -144,7 +144,7 @@ public class PipelineManagerService {
                                                         final Set<FileDetails> files) {
         final Stream<GlobusFileDetails> globusFileDetailsStream = collectGlobusFiles(globusFileDetailsWrapperDTO.getFileDetailsList(), files);
         final String globusFileName = globusFileDetailsWrapperDTO.getFileDetailsList().get(0).getFileName();
-        if (globusFileName.endsWith(VCF_GZ)) {
+        if (globusFileName.endsWith(VCF_PATH_GZ.getFileExtension())) {
             globusFileDetailsStream
                     .forEach(element -> {
                     });

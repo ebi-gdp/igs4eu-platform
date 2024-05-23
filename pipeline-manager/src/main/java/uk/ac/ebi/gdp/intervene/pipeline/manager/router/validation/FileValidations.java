@@ -34,7 +34,7 @@ import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badReque
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.BED;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.BIM;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.BIM_GZ;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.BIM_ZST;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.FAM;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.INVALID;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.PGEN;
@@ -98,7 +98,7 @@ public class FileValidations<DTO extends IGlobusFileDetailsWrapper> {
 
     private Map<FileExtension, Integer> buildFileExtensionMap(final List<GlobusFileDetails> globusFileDetailsList) {
         final Map<FileExtension, Integer> fileExtensionMap = new HashMap<>(10);
-        fileExtensionMap.put(BIM_GZ, 0);
+        fileExtensionMap.put(BIM_ZST, 0);
         fileExtensionMap.put(BIM, 0);
         fileExtensionMap.put(BED, 0);
         fileExtensionMap.put(FAM, 0);
@@ -124,7 +124,7 @@ public class FileValidations<DTO extends IGlobusFileDetailsWrapper> {
     }
 
     private boolean validateGroupOne(final Map<FileExtension, Integer> extensionMap) {
-        return validate(extensionMap, BIM_GZ, BIM)
+        return validate(extensionMap, BIM_ZST, BIM)
                 && validateSingleCount(extensionMap, BED)
                 && validateSingleCount(extensionMap, FAM);
     }
@@ -147,7 +147,7 @@ public class FileValidations<DTO extends IGlobusFileDetailsWrapper> {
     }
 
     private boolean validateGroupOneEmptyFiles(final Map<FileExtension, Integer> extensionMap) {
-        return validateZeroCount(extensionMap, BIM_GZ)
+        return validateZeroCount(extensionMap, BIM_ZST)
                 && validateZeroCount(extensionMap, BIM)
                 && validateZeroCount(extensionMap, BED)
                 && validateZeroCount(extensionMap, FAM);
@@ -179,7 +179,7 @@ public class FileValidations<DTO extends IGlobusFileDetailsWrapper> {
      */
     public enum FileExtension {
         BIM("bim"),
-        BIM_GZ("bim.gz"),
+        BIM_ZST("bim.zst"),
         BED("bed"),
         FAM("fam"),
         PVAR("pvar"),
