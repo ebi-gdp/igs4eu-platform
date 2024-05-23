@@ -17,18 +17,27 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.constant;
 
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.BED;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.BIM;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.BIM_ZST;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.FAM;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.PGEN;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.PSAM;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.PVAR;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations.FileExtension.PVAR_ZST;
+
 public interface TargetGenomeFileType {
-    String GENO = "geno", PGEN = ".pgen", BED = ".bed";
-    String PHENO = "pheno", PSAM = ".psam", FAM = ".fam";
-    String VARIANTS = "variants", PVAR = ".pvar", BIM = ".bim";
-    String VCF_GZ = ".vcf.gz";
+    String GENO = "geno";
+    String PHENO = "pheno";
+    String VARIANTS = "variants";
 
     static String getPropertyName(final String fileName) {
-        if (fileName.endsWith(PGEN) || fileName.endsWith(BED)) {
+        if (fileName.endsWith(PGEN.getFileExtension()) || fileName.endsWith(BED.getFileExtension())) {
             return GENO;
-        } else if (fileName.endsWith(PSAM) || fileName.endsWith(FAM)) {
+        } else if (fileName.endsWith(PSAM.getFileExtension()) || fileName.endsWith(FAM.getFileExtension())) {
             return PHENO;
-        } else if (fileName.endsWith(PVAR) || fileName.endsWith(BIM)) {
+        } else if (fileName.endsWith(PVAR.getFileExtension()) || fileName.endsWith(PVAR_ZST.getFileExtension())
+                || fileName.endsWith(BIM.getFileExtension()) || fileName.endsWith(BIM_ZST.getFileExtension())) {
             return VARIANTS;
         } else {
             return "";
