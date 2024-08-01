@@ -7,6 +7,7 @@ variables:
   FILE_HANDLER_MODULE: 'file-handler'
   PIPELINE_MANAGER_MODULE: 'pipeline-manager'
   USER_MANAGER_MODULE: 'user-manager'
+  KEY_HANDLER_MODULE: 'key-handler'
 
 cache:
   key: $CACHE_KEY
@@ -152,3 +153,28 @@ deploy-user-manager-module:
     - .deploy-module
   needs:
     - 'containerize-user-manager-module'
+
+build-key-handler-module:
+  variables:
+    MODULE: $KEY_HANDLER_MODULE
+  extends:
+    - .build-module
+  rules:
+    - changes:
+        - '$KEY_HANDLER_MODULE/**/*'
+        - pom.xml
+        - .gitlab-ci.yml
+
+containerize-key-handler-module:
+  variables:
+    MODULE: $KEY_HANDLER_MODULE
+  extends:
+    - .containerize-module
+
+deploy-key-handler-module:
+  variables:
+    MODULE: $KEY_HANDLER_MODULE
+  extends:
+    - .deploy-module
+  needs:
+    - 'containerize-key-handler-module'
