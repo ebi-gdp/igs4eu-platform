@@ -38,5 +38,6 @@ public interface DatasetMapper {
                            String userId);
 
     @Mapping(target = "globusDetails.username", source = "datasetDetails.globusDetails.globusUsername")
+    @Mapping(target = "publicKey", source = "datasetDetails.datasetCryptographyDetails.publicKey")
     DatasetDetailsDTO toDTO(DatasetDetails datasetDetails);
 }

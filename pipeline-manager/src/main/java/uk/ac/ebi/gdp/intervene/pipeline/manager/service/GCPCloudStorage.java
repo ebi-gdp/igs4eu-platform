@@ -35,6 +35,12 @@ import java.util.stream.Stream;
 public class GCPCloudStorage implements ICloudStorage {
     private final Storage storage;
 
+    /**
+     * Constructs a {@code GCPCloudStorage} instance.
+     * This service provides operations for interacting with Google Cloud Storage.
+     *
+     * @param storage the Google Cloud Storage client used to perform storage operations.
+     */
     public GCPCloudStorage(final Storage storage) {
         this.storage = storage;
     }

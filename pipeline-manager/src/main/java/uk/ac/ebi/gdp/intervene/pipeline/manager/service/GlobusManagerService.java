@@ -30,7 +30,6 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.Glo
 import java.nio.file.Path;
 
 import static reactor.core.publisher.Mono.defer;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails.newInstance;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusUserDetails.create;
 
 /**
@@ -41,6 +40,15 @@ public class GlobusManagerService {
     private final GlobusDetailsRepository globusDetailsRepository;
     private final GlobusUserRepository globusUserRepository;
 
+    /**
+     * Constructs a {@code GlobusManagerService} instance.
+     * This service is responsible for managing operations related to Globus, including handling files,
+     * accessing details, and managing users associated with Globus.
+     *
+     * @param globusFileHandlerService the service responsible for handling file operations in Globus.
+     * @param globusDetailsRepository the repository for accessing and managing Globus details.
+     * @param globusUserRepository the repository for managing Globus user information.
+     */
     public GlobusManagerService(final GlobusFileHandlerService globusFileHandlerService,
                                 final GlobusDetailsRepository globusDetailsRepository,
                                 final GlobusUserRepository globusUserRepository) {
@@ -90,7 +98,7 @@ public class GlobusManagerService {
                 .switchIfEmpty(defer(() -> globusDetailsRepository
                         .getNextFilesetId()
                         .map(nextFilesetId ->
-                                newInstance(
+                                GlobusDetails.create(
                                         nextFilesetId,
                                         globusUsername,
                                         guestCollectionId,

@@ -46,8 +46,7 @@ public interface PipelineDetailsEntityMapper {
                     getString("gu_updated_by", row),
                     getLocalDateTime("gu_updated_on", row)
             );
-
-            final GlobusDetails globusDetails = GlobusDetails.loadRecord(
+            final GlobusDetails globusDetails = GlobusDetails.load(
                     getString("fileset_id", row),
                     getString("globus_username", row),
                     getString("guest_collection_id", row),
@@ -57,7 +56,6 @@ public interface PipelineDetailsEntityMapper {
                     getString("globus_updated_by", row),
                     getLocalDateTime("globus_updated_on", row));
             globusDetails.setGlobusUserDetails(globusUserDetails);
-
             final DatasetDetails datasetDetails = DatasetDetails.load(
                     getString("dataset_id", row),
                     getString("dataset_name", row),

@@ -27,10 +27,10 @@ public interface CustomDatasetDetailsRepository {
     /**
      * Returns {@link DatasetDetails} & its dependents
      *
-     * @param filesetId fileset id
+     * @param datasetId dataset id
      * @param createdBy record created by e.g. user id
      *
      * @return {@link DatasetDetails}
      */
-    Mono<DatasetDetails> findByDatasetIdAndCreatedBy(String filesetId, String createdBy);
+    Mono<DatasetDetails> findByDatasetIdAndCreatedBy(String datasetId, String createdBy);
 }

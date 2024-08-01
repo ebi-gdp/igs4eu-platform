@@ -39,6 +39,16 @@ public class GlobusFileHandlerService {
     private final URI globusListDirFilesURI;
     private final URI globusCreatDirURI;
 
+    /**
+     * Constructs a {@code GlobusFileHandlerService} instance.
+     * This service provides operations for handling files with Globus, including user interactions,
+     * listing directory files, and creating directories.
+     *
+     * @param fileHandlerWebClient the WebClient used for making HTTP requests to Globus services.
+     * @param globusUserURI the URI for accessing Globus user-related operations.
+     * @param globusListDirFilesURI the URI for listing files in a Globus directory.
+     * @param globusCreatDirURI the URI for creating a directory in Globus.
+     */
     public GlobusFileHandlerService(final WebClient fileHandlerWebClient,
                                     final URI globusUserURI,
                                     final URI globusListDirFilesURI,

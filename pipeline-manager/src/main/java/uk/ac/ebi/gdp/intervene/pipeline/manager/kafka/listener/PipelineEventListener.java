@@ -24,19 +24,19 @@ import org.springframework.kafka.support.Acknowledgment;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineResultEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.router.CSCPipelineHandler;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineHandler;
 
 /**
  * Kafka event listener to listen pipeline statuses
  */
 public class PipelineEventListener {
     private final Logger LOGGER = LoggerFactory.getLogger(PipelineEventListener.class);
-    private final CSCPipelineHandler cscPipelineHandler;
+    private final PipelineHandler pipelineHandler;
     private final IPipelinePersistence pipelinePersistence;
 
-    public PipelineEventListener(final CSCPipelineHandler cscPipelineHandler,
+    public PipelineEventListener(final PipelineHandler pipelineHandler,
                                  final IPipelinePersistence pipelinePersistence) {
-        this.cscPipelineHandler = cscPipelineHandler;
+        this.pipelineHandler = pipelineHandler;
         this.pipelinePersistence = pipelinePersistence;
     }
 

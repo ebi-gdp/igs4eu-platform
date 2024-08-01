@@ -35,17 +35,17 @@ import static org.springframework.web.reactive.function.server.ServerResponse.ok
 /**
  * CSC pipeline handler for EBI & CSC integration hybrid model.
  */
-public class CSCPipelineHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CSCPipelineHandler.class);
+public class PipelineHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PipelineHandler.class);
     private final UserManagerService userManagerService;
     private final IPipelinePersistence pipelinePersistence;
     private final IEmailSender emailService;
     private final String platformURL;
 
-    public CSCPipelineHandler(final UserManagerService userManagerService,
-                              final IPipelinePersistence pipelinePersistence,
-                              final IEmailSender emailService,
-                              final String platformURL) {
+    public PipelineHandler(final UserManagerService userManagerService,
+                           final IPipelinePersistence pipelinePersistence,
+                           final IEmailSender emailService,
+                           final String platformURL) {
         this.userManagerService = userManagerService;
         this.pipelinePersistence = pipelinePersistence;
         this.emailService = emailService;

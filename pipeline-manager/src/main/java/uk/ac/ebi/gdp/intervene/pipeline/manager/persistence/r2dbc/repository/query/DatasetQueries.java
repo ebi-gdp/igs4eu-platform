@@ -28,6 +28,13 @@ public interface DatasetQueries {
                                                " d.created_on," +
                                                " d.updated_by," +
                                                " d.updated_on," +
+                                               " c.public_key," +
+                                               " c.secret_id," +
+                                               " c.secret_id_version," +
+                                               " c.created_by," +
+                                               " c.created_on," +
+                                               " c.updated_by," +
+                                               " c.updated_on," +
                                                " f.fileset_id," +
                                                " f.globus_username," +
                                                " f.guest_collection_id," +
@@ -38,6 +45,9 @@ public interface DatasetQueries {
                                                " f.updated_on as gc_updated_on " +
                                                "FROM" +
                                                " dataset_details d " +
+                                               "INNER JOIN" +
+                                               " dataset_cryptography_details c" +
+                                               " ON d.dataset_id = c.dataset_id " +
                                                "INNER JOIN" +
                                                " globus_guest_collection_files_details f" +
                                                " ON d.fileset_id = f.fileset_id " +

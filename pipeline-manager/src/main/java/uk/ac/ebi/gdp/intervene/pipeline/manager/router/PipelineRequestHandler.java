@@ -34,6 +34,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PublicationDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.ScoreIdsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
@@ -41,9 +42,9 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.web.reactive.function.server.ServerResponse.badRequest;
@@ -287,10 +288,7 @@ public class PipelineRequestHandler {
     private Mono<ServerResponse> updatePipelineExecutionStatus(final PipelineDetails pipelineDetails) {
         return pipelinePersistence
                 .getPipelineExecutionStatus(pipelineDetails.getPipelineId())
-                .map(pipelineExecutionStatus -> {
-                    pipelineExecutionStatus.pending();
-                    return pipelineExecutionStatus;
-                })
+                .doOnNext(PipelineExecutionStatus::pending)
                 .flatMap(pipelinePersistence::savePipelineExecutionStatus)
                 .flatMap(pipelineExecutionStatus -> status(ACCEPTED).bodyValue("Request received!"));
     }
@@ -335,7 +333,7 @@ public class PipelineRequestHandler {
                 .orElseThrow(() -> ClientException.badRequest("Query parameter 'searchTerm' has an issue!"));
         return pgsCatalogService
                 .searchPGSIdsByTraits(searchTerm)
-                .filter(pgsTraitWrapper -> pgsTraitWrapper.results().size() > 0)
+                .filter(pgsTraitWrapper -> !pgsTraitWrapper.results().isEmpty())
                 .flatMap(pgsTraitWrapper -> ok()
                         .bodyValue(pgsTraitWrapper))
                 .doOnNext(serverResponse -> LOGGER.info("Searched Trait Ids from PGS Catalog API"))
@@ -359,24 +357,26 @@ public class PipelineRequestHandler {
                 .bodyValue(redisTemplate
                         .keys(redisPubDataKeyPrefix + "*" + searchTerm + "*")
                         .parallelStream()
-                        .map(key -> {
-                            final String jsonValue = redisTemplate
-                                    .opsForValue()
-                                    .get(key);
-                            LOGGER.debug("Value: {} retrieved for search term: {} publication data", jsonValue, key);
-                            try {
-                                final JsonNode jsonNode = getJsonObjectMapper()
-                                        .readTree(jsonValue);
-                                return new PublicationDTO(
-                                        key.substring(key.indexOf(":") + 1),
-                                        jsonNode.get("pgpId").asText(),
-                                        jsonNode.get("pgsIdsCount").asInt());
-                            } catch (JsonProcessingException e) {
-                                return null;
-                            }
-                        })
+                        .map(this::searchForPublicationBySearchTerm)
                         .filter(Objects::nonNull)
-                        .collect(Collectors.toSet()))
+                        .collect(toSet()))
                 .doOnNext(serverResponse -> LOGGER.info("Searched for Publication data from Redis"));
+    }
+
+    private PublicationDTO searchForPublicationBySearchTerm(final String key) {
+        final String jsonValue = redisTemplate
+                .opsForValue()
+                .get(key);
+        LOGGER.debug("Value: {} retrieved for search term: {} publication data", jsonValue, key);
+        try {
+            final JsonNode jsonNode = getJsonObjectMapper()
+                    .readTree(jsonValue);
+            return new PublicationDTO(
+                    key.substring(key.indexOf(":") + 1),
+                    jsonNode.get("pgpId").asText(),
+                    jsonNode.get("pgsIdsCount").asInt());
+        } catch (JsonProcessingException e) {
+            return null;
+        }
     }
 }

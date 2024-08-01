@@ -63,6 +63,14 @@ public class PipelineManagerService {
     private final MessageService messageService;
     private final GlobusManagerService globusManagerService;
 
+    /**
+     * Constructs a {@code PipelineManagerService} instance.
+     * This service manages the overall pipeline execution process, integrating messaging services
+     * and Globus file management functionalities.
+     *
+     * @param messageService the service used for sending and receiving messages within the pipeline.
+     * @param globusManagerService the service used for handling Globus-related file operations.
+     */
     public PipelineManagerService(final MessageService messageService,
                                   final GlobusManagerService globusManagerService) {
         this.messageService = messageService;
