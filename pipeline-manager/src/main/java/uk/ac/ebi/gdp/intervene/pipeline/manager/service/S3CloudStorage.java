@@ -34,6 +34,12 @@ import java.util.stream.Stream;
 public class S3CloudStorage implements ICloudStorage {
     private final AmazonS3 s3Client;
 
+    /**
+     * Constructs an {@code S3CloudStorage} instance.
+     * This service provides functionalities to interact with Amazon S3 cloud storage.
+     *
+     * @param s3Client the Amazon S3 client used to perform operations on S3.
+     */
     public S3CloudStorage(final AmazonS3 s3Client) {
         this.s3Client = s3Client;
     }

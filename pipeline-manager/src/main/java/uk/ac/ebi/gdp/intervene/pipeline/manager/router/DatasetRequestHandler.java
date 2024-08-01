@@ -28,10 +28,14 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetDetailsDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetResponseDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PaginationDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.DatasetMapper;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetCryptographyDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetCryptographyDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetDetailsRepository;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.KeyHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
 import java.util.List;
@@ -53,15 +57,21 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.
 public class DatasetRequestHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(DatasetRequestHandler.class);
     private final DatasetDetailsRepository datasetDetailsRepository;
+    private final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository;
     private final DatasetMapper datasetMapper;
     private final UserManagerService userManagerService;
+    private final KeyHandlerService keyHandlerService;
 
     public DatasetRequestHandler(final DatasetDetailsRepository datasetDetailsRepository,
+                                 final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository,
                                  final DatasetMapper datasetMapper,
-                                 final UserManagerService userManagerService) {
+                                 final UserManagerService userManagerService,
+                                 final KeyHandlerService keyHandlerService) {
         this.datasetDetailsRepository = datasetDetailsRepository;
+        this.datasetCryptographyDetailsRepository = datasetCryptographyDetailsRepository;
         this.datasetMapper = datasetMapper;
         this.userManagerService = userManagerService;
+        this.keyHandlerService = keyHandlerService;
     }
 
     /**
@@ -78,31 +88,45 @@ public class DatasetRequestHandler {
                 .flatMap(datasetDetailsDTO -> userManagerService
                         .getUserAccountDetails()
                         .flatMap(userAccountDTO -> datasetDetailsRepository
-                                .findByDatasetIdAndCreatedBy(datasetDetailsDTO.getFilesetId(), userAccountDTO.accountId())
+                                .findByDatasetIdAndCreatedBy(datasetDetailsDTO.getDatasetId(), userAccountDTO.accountId())
                                 .flatMap(datasetDetails -> updateDataset(datasetDetails,
-                                        valueOf(datasetDetailsDTO.getGenomeBuild().toUpperCase())))
-                                .switchIfEmpty(defer(() -> createDataset(datasetDetailsDTO, userAccountDTO.accountId())))));
-
+                                        valueOf(datasetDetailsDTO.getGenomeBuild().toUpperCase()),
+                                        datasetDetailsDTO.getDatasetName()))
+                                .switchIfEmpty(buildDatasetWithKeys(datasetDetailsDTO, userAccountDTO.accountId()))));
     }
 
     private Mono<ServerResponse> updateDataset(final DatasetDetails datasetDetails,
-                                               final GenomeBuild genomeBuild) {
+                                               final GenomeBuild genomeBuild,
+                                               final String datasetName) {
         LOGGER.info("Dataset details are being updated");
-        datasetDetails.updateGenomeBuild(genomeBuild);
+        datasetDetails.updateDataset(genomeBuild, datasetName);
         return datasetDetailsRepository
                 .save(datasetDetails)
                 .flatMap(persistedDatasetDetails -> status(OK)
-                        .bodyValue(persistedDatasetDetails.getDatasetId()))
+                        .bodyValue(new DatasetResponseDTO(persistedDatasetDetails.getDatasetId())))
                 .doOnNext(serverResponse -> LOGGER.info("Dataset details have been updated"));
     }
 
-    private Mono<ServerResponse> createDataset(final DatasetDetailsDTO datasetDetailsDTO,
-                                               final String accountId) {
+    private Mono<ServerResponse> buildDatasetWithKeys(final DatasetDetailsDTO datasetDetailsDTO,
+                                                      final String accountId) {
+        return defer(() -> createDataset(datasetDetailsDTO, accountId)
+                .flatMap(datasetId -> keyHandlerService
+                        .generateKeys()
+                        .flatMap(publicKeyDetailsDTO -> createDatasetCryptography(datasetId,
+                                publicKeyDetailsDTO.getPublicKey(),
+                                publicKeyDetailsDTO.getSecretId(),
+                                publicKeyDetailsDTO.getSecretIdVersion())))
+                .map(datasetCryptographyDetails -> new DatasetResponseDTO(datasetCryptographyDetails.getDatasetId()))
+                .flatMap(datasetResponseDTO -> status(CREATED)
+                        .bodyValue(datasetResponseDTO)));
+    }
+
+    private Mono<String> createDataset(final DatasetDetailsDTO datasetDetailsDTO,
+                                       final String accountId) {
         return buildDataset(datasetDetailsDTO, accountId)
                 .doOnNext(datasetDetails -> LOGGER.info("Dataset details are being created"))
                 .flatMap(datasetDetailsRepository::save)
-                .flatMap(datasetDetails -> status(CREATED)
-                        .bodyValue(datasetDetails.getDatasetId()))
+                .map(DatasetDetails::getDatasetId)
                 .doOnNext(serverResponse -> LOGGER.info("Dataset details have been created"));
     }
 
@@ -114,6 +138,17 @@ public class DatasetRequestHandler {
                         nextDatasetId,
                         GLOBUS,
                         userId));
+    }
+
+    private Mono<DatasetCryptographyDetails> createDatasetCryptography(final String datasetId,
+                                                                       final String publicKey,
+                                                                       final String secretId,
+                                                                       final String secretKeyVersion) {
+        return datasetCryptographyDetailsRepository
+                .save(DatasetCryptographyDetails.create(datasetId,
+                        publicKey,
+                        secretId,
+                        secretKeyVersion));
     }
 
     /**

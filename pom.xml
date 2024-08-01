@@ -20,6 +20,7 @@
         <module>pipeline-manager</module>
         <module>user-manager</module>
         <module>intervene-commons</module>
+        <module>key-handler</module>
     </modules>
 
     <properties>
@@ -46,19 +47,19 @@
     <repositories>
         <repository>
             <id>gitlab-maven</id>
-            <url>https://gitlab.ebi.ac.uk/api/v4/projects/4752/packages/maven</url>
+            <url>https://gitlab.ebi.ac.uk/api/v4/groups/1071/-/packages/maven</url>
         </repository>
     </repositories>
 
     <distributionManagement>
         <repository>
             <id>gitlab-maven</id>
-            <url>https://gitlab.ebi.ac.uk/api/v4/projects/4752/packages/maven</url>
+            <url>https://gitlab.ebi.ac.uk/api/v4/groups/1071/-/packages/maven</url>
         </repository>
 
         <snapshotRepository>
             <id>gitlab-maven</id>
-            <url>https://gitlab.ebi.ac.uk/api/v4/projects/4752/packages/maven</url>
+            <url>https://gitlab.ebi.ac.uk/api/v4/groups/1071/-/packages/maven</url>
         </snapshotRepository>
     </distributionManagement>
 
@@ -89,6 +90,13 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
                 <version>${open-api-swagger-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>libraries-bom</artifactId>
+                <version>26.38.0</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

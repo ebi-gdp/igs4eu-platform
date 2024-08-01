@@ -29,11 +29,13 @@ import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.DatasetMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.GlobusUserDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetCryptographyDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.ICloudStorage;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.KeyHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
@@ -49,7 +51,7 @@ public class PipelineManagerRouterConfig {
     @Bean
     public RouterFunction<ServerResponse> pipelineRoutes(final PipelineRequestHandler pipelineRequestHandler,
                                                          final GlobusRequestHandler globusRequestHandler,
-                                                         final CSCPipelineHandler cscPipelineHandler,
+                                                         final PipelineHandler pipelineHandler,
                                                          final PipelineResultHandler pipelineResultHandler,
                                                          final DatasetRequestHandler datasetRequestHandler) {
         return route()
@@ -71,7 +73,7 @@ public class PipelineManagerRouterConfig {
                         .POST(pipelineRequestHandler::createPipeline)
                         .GET(pipelineRequestHandler::getPipelines))
                 //Make sure this path is secured under basic auth, allows pipeline executor to trigger API
-                .path("/integration/pipeline/{pipelineId}/status", pbCSC -> pbCSC.PATCH(cscPipelineHandler::updatePipelineStatus))
+                .path("/integration/pipeline/{pipelineId}/status", pb -> pb.PATCH(pipelineHandler::updatePipelineStatus))
                 .path("/dataset", db -> db
                         .GET("/{datasetId}", datasetRequestHandler::getDatasetDetails)
                         .GET(datasetRequestHandler::getDatasets)
@@ -118,12 +120,16 @@ public class PipelineManagerRouterConfig {
 
     @Bean
     public DatasetRequestHandler datasetRequestHandler(final DatasetDetailsRepository datasetDetailsRepository,
+                                                       final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository,
                                                        final DatasetMapper datasetMapper,
-                                                       final UserManagerService userManagerService) {
+                                                       final UserManagerService userManagerService,
+                                                       final KeyHandlerService keyHandlerService) {
         return new DatasetRequestHandler(
                 datasetDetailsRepository,
+                datasetCryptographyDetailsRepository,
                 datasetMapper,
-                userManagerService);
+                userManagerService,
+                keyHandlerService);
     }
 
     @Bean
@@ -139,11 +145,11 @@ public class PipelineManagerRouterConfig {
     }
 
     @Bean
-    public CSCPipelineHandler cscPipelineHandler(final UserManagerService userManagerService,
-                                                 final IPipelinePersistence pipelinePersistence,
-                                                 final IEmailSender emailService,
-                                                 @Value("${intervene.platform.url}") final String platformURL) {
-        return new CSCPipelineHandler(
+    public PipelineHandler cscPipelineHandler(final UserManagerService userManagerService,
+                                              final IPipelinePersistence pipelinePersistence,
+                                              final IEmailSender emailService,
+                                              @Value("${intervene.platform.url}") final String platformURL) {
+        return new PipelineHandler(
                 userManagerService,
                 pipelinePersistence,
                 emailService,

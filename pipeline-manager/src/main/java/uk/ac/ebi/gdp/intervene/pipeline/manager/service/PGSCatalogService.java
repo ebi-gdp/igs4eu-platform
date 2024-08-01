@@ -30,6 +30,14 @@ public class PGSCatalogService {
     private final WebClient webClient;
     private final URI pgsTraitSearchURI;
 
+    /**
+     * Constructs a {@code PGSCatalogService} instance.
+     * This service provides operations for interacting with the PGS (Polygenic Score) Catalog,
+     * including searching for traits.
+     *
+     * @param webClient the WebClient used for making HTTP requests to the PGS Catalog service.
+     * @param pgsTraitSearchURI the URI for accessing the trait search functionality in the PGS Catalog.
+     */
     public PGSCatalogService(final WebClient webClient,
                              final URI pgsTraitSearchURI) {
         this.webClient = webClient;

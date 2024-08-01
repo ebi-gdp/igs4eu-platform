@@ -11,6 +11,7 @@ public class DatasetDetailsDTO {
     private String datasetName;
     private GenomeBuild genomeBuild;
     private String filesetId;
+    private String publicKey;
     private GlobusDetailsDTO globusDetails;
 
     public DatasetDetailsDTO() {
@@ -46,6 +47,14 @@ public class DatasetDetailsDTO {
 
     public void setFilesetId(String filesetId) {
         this.filesetId = filesetId;
+    }
+
+    public String getPublicKey() {
+        return publicKey;
+    }
+
+    public void setPublicKey(String publicKey) {
+        this.publicKey = publicKey;
     }
 
     public GlobusDetailsDTO getGlobusDetails() {

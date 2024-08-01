@@ -96,10 +96,10 @@ public class GlobusDetails implements Persistable<String> {
         this.updatedOn = updatedOn;
     }
 
-    public static GlobusDetails newInstance(final String filesetId,
-                                            final String globusUsername,
-                                            final String guestCollectionId,
-                                            final Path dirPathOnGuestCollection) {
+    public static GlobusDetails create(final String filesetId,
+                                       final String globusUsername,
+                                       final String guestCollectionId,
+                                       final Path dirPathOnGuestCollection) {
         return new GlobusDetails(
                 filesetId,
                 globusUsername,
@@ -109,14 +109,14 @@ public class GlobusDetails implements Persistable<String> {
         );
     }
 
-    public static GlobusDetails loadRecord(final String filesetId,
-                                           final String globusUsername,
-                                           final String guestCollectionId,
-                                           final Path dirPathOnGuestCollection,
-                                           final String createdBy,
-                                           final LocalDateTime createdOn,
-                                           final String updatedBy,
-                                           final LocalDateTime updatedOn) {
+    public static GlobusDetails load(final String filesetId,
+                                     final String globusUsername,
+                                     final String guestCollectionId,
+                                     final Path dirPathOnGuestCollection,
+                                     final String createdBy,
+                                     final LocalDateTime createdOn,
+                                     final String updatedBy,
+                                     final LocalDateTime updatedOn) {
         return new GlobusDetails(
                 filesetId,
                 globusUsername,

@@ -61,6 +61,9 @@ public class DatasetDetails implements Persistable<String> {
     private GlobusDetails globusDetails;
 
     @Transient
+    private DatasetCryptographyDetails datasetCryptographyDetails;
+
+    @Transient
     private boolean isNew;
 
     protected DatasetDetails() {
@@ -98,6 +101,7 @@ public class DatasetDetails implements Persistable<String> {
                            final String datasetName,
                            final GenomeBuild genomeBuild,
                            final FilesetType filesetType,
+                           final DatasetCryptographyDetails datasetCryptographyDetails,
                            final GlobusDetails globusDetails,
                            final String createdBy,
                            final LocalDateTime createdOn,
@@ -105,7 +109,9 @@ public class DatasetDetails implements Persistable<String> {
                            final LocalDateTime updatedOn) {
         this(datasetId, datasetName, genomeBuild, filesetType, createdBy,
                 createdOn, updatedBy, updatedOn);
+        this.datasetCryptographyDetails = datasetCryptographyDetails;
         this.globusDetails = globusDetails;
+        this.filesetId = globusDetails.getFilesetId();
     }
 
     /**
@@ -170,12 +176,18 @@ public class DatasetDetails implements Persistable<String> {
         return updatedOn;
     }
 
+    public DatasetCryptographyDetails getDatasetCryptographyDetails() {
+        return datasetCryptographyDetails;
+    }
+
     public GlobusDetails getGlobusDetails() {
         return globusDetails;
     }
 
-    public void updateGenomeBuild(GenomeBuild genomeBuild) {
+    public void updateDataset(final GenomeBuild genomeBuild,
+                              final String datasetName) {
         this.genomeBuild = genomeBuild;
+        this.datasetName = datasetName;
     }
 
     @Override
@@ -221,6 +233,34 @@ public class DatasetDetails implements Persistable<String> {
      * @param datasetName dataset name
      * @param genomeBuild {@link GenomeBuild}
      * @param filesetType {@link FilesetType}
+     * @param datasetCryptographyDetails {@link DatasetCryptographyDetails}
+     * @param createdBy user id
+     * @param createdOn {@link LocalDateTime}
+     * @param updatedBy user id
+     * @param updatedOn {@link LocalDateTime}
+     *
+     * @return {@link DatasetDetails}
+     */
+    public static DatasetDetails load(final String datasetId,
+                                      final String datasetName,
+                                      final GenomeBuild genomeBuild,
+                                      final FilesetType filesetType,
+                                      final DatasetCryptographyDetails datasetCryptographyDetails,
+                                      final String createdBy,
+                                      final LocalDateTime createdOn,
+                                      final String updatedBy,
+                                      final LocalDateTime updatedOn) {
+        return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType,
+                datasetCryptographyDetails, null, createdBy, createdOn, updatedBy, updatedOn);
+    }
+
+    /**
+     * Load dataset details.
+     *
+     * @param datasetId dataset id
+     * @param datasetName dataset name
+     * @param genomeBuild {@link GenomeBuild}
+     * @param filesetType {@link FilesetType}
      * @param globusDetails {@link GlobusDetails}
      * @param createdBy user id
      * @param createdOn {@link LocalDateTime}
@@ -239,7 +279,37 @@ public class DatasetDetails implements Persistable<String> {
                                       final String updatedBy,
                                       final LocalDateTime updatedOn) {
         return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType,
-                globusDetails, createdBy, createdOn, updatedBy, updatedOn);
+                null, globusDetails, createdBy, createdOn, updatedBy, updatedOn);
+    }
+
+    /**
+     * Load dataset details.
+     *
+     * @param datasetId dataset id
+     * @param datasetName dataset name
+     * @param genomeBuild {@link GenomeBuild}
+     * @param filesetType {@link FilesetType}
+     * @param datasetCryptographyDetails {@link DatasetCryptographyDetails}
+     * @param globusDetails {@link GlobusDetails}
+     * @param createdBy user id
+     * @param createdOn {@link LocalDateTime}
+     * @param updatedBy user id
+     * @param updatedOn {@link LocalDateTime}
+     *
+     * @return {@link DatasetDetails}
+     */
+    public static DatasetDetails load(final String datasetId,
+                                      final String datasetName,
+                                      final GenomeBuild genomeBuild,
+                                      final FilesetType filesetType,
+                                      final DatasetCryptographyDetails datasetCryptographyDetails,
+                                      final GlobusDetails globusDetails,
+                                      final String createdBy,
+                                      final LocalDateTime createdOn,
+                                      final String updatedBy,
+                                      final LocalDateTime updatedOn) {
+        return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType,
+                datasetCryptographyDetails, globusDetails, createdBy, createdOn, updatedBy, updatedOn);
     }
 
     /**

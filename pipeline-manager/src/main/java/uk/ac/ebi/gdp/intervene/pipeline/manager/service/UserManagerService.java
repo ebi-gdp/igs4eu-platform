@@ -33,6 +33,15 @@ public class UserManagerService {
     private final String basicAuth;
     private final URI userAccountURI;
 
+    /**
+     * Constructs a {@code UserManagerService} instance.
+     * This service is responsible for managing user accounts, providing functionalities
+     * to interact with the user management system.
+     *
+     * @param userManagerWebClient the WebClient used to perform HTTP requests to the user management service
+     * @param basicAuth the basic authentication token for accessing the user management service
+     * @param userAccountURI the URI of the user account endpoint
+     */
     public UserManagerService(final WebClient userManagerWebClient,
                               final String basicAuth,
                               final URI userAccountURI) {
