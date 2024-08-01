@@ -120,7 +120,7 @@ public class FileValidations<DTO extends IGlobusFileDetailsWrapper> {
 
     private void updateFileCount(final Map<FileExtension, Integer> fileExtensionMap,
                                  final FileExtension fileExtension) {
-        fileExtensionMap.compute(fileExtension, (key, count) -> count + 1);
+        fileExtensionMap.compute(fileExtension, (key, count) -> (count != null) ? count + 1 : 1);
     }
 
     private boolean validateGroupOne(final Map<FileExtension, Integer> extensionMap) {
@@ -178,15 +178,15 @@ public class FileValidations<DTO extends IGlobusFileDetailsWrapper> {
      * Enum constants of File extensions to support.
      */
     public enum FileExtension {
-        BIM("bim"),
-        BIM_ZST("bim.zst"),
-        BED("bed"),
-        FAM("fam"),
-        PVAR("pvar"),
-        PVAR_ZST("pvar.zst"),
-        PGEN("pgen"),
-        PSAM("psam"),
-        VCF_PATH_GZ("vcf.gz"),
+        BIM("bim.c4gh"),
+        BIM_ZST("bim.zst.c4gh"),
+        BED("bed.c4gh"),
+        FAM("fam.c4gh"),
+        PVAR("pvar.c4gh"),
+        PVAR_ZST("pvar.zst.c4gh"),
+        PGEN("pgen.c4gh"),
+        PSAM("psam.c4gh"),
+        VCF_PATH_GZ("vcf.gz.c4gh"),
         INVALID("invalid.ext");
 
         private final String fileExtension;
