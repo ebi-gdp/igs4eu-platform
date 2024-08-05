@@ -23,6 +23,8 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetDetailsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 
+import java.time.LocalDateTime;
+
 import static org.mapstruct.InjectionStrategy.CONSTRUCTOR;
 
 @Mapper(componentModel = "spring", injectionStrategy = CONSTRUCTOR)
@@ -31,11 +33,13 @@ public interface DatasetMapper {
     @Mapping(target = "filesetType", source = "filesetType")
     @Mapping(target = "createdBy", source = "userId")
     @Mapping(target = "updatedBy", source = "userId")
+    @Mapping(target = "expiresAt", source = "expiresAt")
     @Mapping(target = "genomeBuild", expression = "java(GenomeBuild.valueOf(datasetDetailsDTO.getGenomeBuild().toUpperCase()))")
     DatasetDetails toModel(DatasetDetailsDTO datasetDetailsDTO,
                            String datasetId,
                            FilesetType filesetType,
-                           String userId);
+                           String userId,
+                           LocalDateTime expiresAt);
 
     @Mapping(target = "globusDetails.username", source = "datasetDetails.globusDetails.globusUsername")
     @Mapping(target = "publicKey", source = "datasetDetails.datasetCryptographyDetails.publicKey")

@@ -56,6 +56,7 @@ public interface DatasetDetailsEntityMapper {
                     getString("dataset_name", row),
                     GenomeBuild.valueOf(getString("genome_build", row)),
                     FilesetType.valueOf(getString("fileset_type", row)),
+                    getLocalDateTime("expires_at", row),
                     datasetCryptographyDetails,
                     globusDetails,
                     getString("gc_created_by", row),

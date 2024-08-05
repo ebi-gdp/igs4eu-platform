@@ -22,7 +22,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.commons.dto.keyhandler.PublicKeyDetailsDTO;
+import uk.ac.ebi.gdp.intervene.commons.dto.keyhandler.DatasetCryptographyDetailsDTO;
+import uk.ac.ebi.gdp.intervene.commons.dto.keyhandler.SecretDetailsDTO;
 import uk.ac.ebi.gdp.intervene.cryptography.aes.AESCryptography;
 import uk.ac.ebi.gdp.intervene.key.handler.dto.PrivateKeyDetailsDTO;
 import uk.ac.ebi.gdp.intervene.key.handler.secret.ISecretManager;
@@ -82,7 +83,7 @@ public class KeyRequestHandler {
     /**
      * Generate private/public key pair.
      *
-     * @return a Mono emitting the ServerResponse containing {@link PublicKeyDetailsDTO}.
+     * @return a Mono emitting the ServerResponse containing {@link DatasetCryptographyDetailsDTO}.
      */
     public Mono<ServerResponse> generateKeys() {
         final String randomUUID = generateRandomUUID();
@@ -100,17 +101,23 @@ public class KeyRequestHandler {
                                     return encryptedKey;
                                 })
                                 .flatMap(encryptedPrivateKey -> uploadPrivateKeyOnSecretManager(randomUUID, encryptedPrivateKey.getBytes()))
-                                .flatMap(secretIdVersion -> ok()
-                                        .bodyValue(new PublicKeyDetailsDTO(
-                                                randomUUID,
-                                                secretIdVersion,
-                                                readFileContentAsString(publicKeyPath))))
+                                .flatMap(secretDetailsDTO -> ok()
+                                        .bodyValue(buildDatasetCryptographyDetailsDTO(secretDetailsDTO, publicKeyPath)))
                                 .doOnNext(secretIdVersionNotInUse -> deleteFiles(List.of(privateKeyPath, publicKeyPath)));
                     } else {
                         return status(INTERNAL_SERVER_ERROR)
                                 .build();
                     }
                 });
+    }
+
+    private DatasetCryptographyDetailsDTO buildDatasetCryptographyDetailsDTO(final SecretDetailsDTO secretDetailsDTO,
+                                                                             final Path publicKeyPath) {
+        return new DatasetCryptographyDetailsDTO(
+                secretDetailsDTO.getSecretId(),
+                secretDetailsDTO.getSecretIdVersion(),
+                readFileContentAsString(publicKeyPath),
+                secretDetailsDTO.getExpiresAt());
     }
 
     private void validateFileKeyPairs(final Path privateKeyPath,
@@ -134,8 +141,8 @@ public class KeyRequestHandler {
         }).subscribeOn(boundedElastic());
     }
 
-    private Mono<String> uploadPrivateKeyOnSecretManager(final String secretId,
-                                                         final byte[] privateKeyEncryptedContent) {
+    private Mono<SecretDetailsDTO> uploadPrivateKeyOnSecretManager(final String secretId,
+                                                                   final byte[] privateKeyEncryptedContent) {
         try {
             return secretManager.uploadSecret(secretId,
                     new ByteArrayInputStream(privateKeyEncryptedContent));

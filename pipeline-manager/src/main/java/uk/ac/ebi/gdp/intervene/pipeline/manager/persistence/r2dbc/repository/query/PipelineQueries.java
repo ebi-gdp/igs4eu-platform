@@ -44,6 +44,7 @@ public interface PipelineQueries {
                              " d.dataset_name," +
                              " d.genome_build, " +
                              " d.fileset_type," +
+                             " d.expires_at," +
                              " d.created_by as dataset_created_by," +
                              " d.created_on as dataset_created_on," +
                              " d.updated_by as dataset_updated_by," +
@@ -82,6 +83,7 @@ public interface PipelineQueries {
                                           " d.genome_build," +
                                           " d.fileset_id," +
                                           " d.fileset_type," +
+                                          " d.expires_at," +
                                           " d.created_by as dataset_created_by," +
                                           " d.created_on as dataset_created_on," +
                                           " d.updated_by as dataset_updated_by," +

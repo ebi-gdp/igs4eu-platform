@@ -24,6 +24,7 @@ public interface DatasetQueries {
                                                " d.dataset_name," +
                                                " d.genome_build," +
                                                " d.fileset_type," +
+                                               " d.expires_at," +
                                                " d.created_by," +
                                                " d.created_on," +
                                                " d.updated_by," +

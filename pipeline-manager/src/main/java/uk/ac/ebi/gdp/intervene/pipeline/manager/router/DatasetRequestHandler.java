@@ -38,6 +38,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.Dat
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.KeyHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -109,21 +110,23 @@ public class DatasetRequestHandler {
 
     private Mono<ServerResponse> buildDatasetWithKeys(final DatasetDetailsDTO datasetDetailsDTO,
                                                       final String accountId) {
-        return defer(() -> createDataset(datasetDetailsDTO, accountId)
-                .flatMap(datasetId -> keyHandlerService
-                        .generateKeys()
-                        .flatMap(publicKeyDetailsDTO -> createDatasetCryptography(datasetId,
-                                publicKeyDetailsDTO.getPublicKey(),
-                                publicKeyDetailsDTO.getSecretId(),
-                                publicKeyDetailsDTO.getSecretIdVersion())))
+        return defer(() -> keyHandlerService
+                .generateKeys()
+                .flatMap(datasetCryptographyDetailsDTO -> createDataset(datasetDetailsDTO, accountId,
+                        datasetCryptographyDetailsDTO.getExpiresAt())
+                        .flatMap(datasetId -> createDatasetCryptography(datasetId,
+                                datasetCryptographyDetailsDTO.getPublicKey(),
+                                datasetCryptographyDetailsDTO.getSecretId(),
+                                datasetCryptographyDetailsDTO.getSecretIdVersion())))
                 .map(datasetCryptographyDetails -> new DatasetResponseDTO(datasetCryptographyDetails.getDatasetId()))
                 .flatMap(datasetResponseDTO -> status(CREATED)
                         .bodyValue(datasetResponseDTO)));
     }
 
     private Mono<String> createDataset(final DatasetDetailsDTO datasetDetailsDTO,
-                                       final String accountId) {
-        return buildDataset(datasetDetailsDTO, accountId)
+                                       final String accountId,
+                                       final LocalDateTime expiresAt) {
+        return buildDataset(datasetDetailsDTO, accountId, expiresAt)
                 .doOnNext(datasetDetails -> LOGGER.info("Dataset details are being created"))
                 .flatMap(datasetDetailsRepository::save)
                 .map(DatasetDetails::getDatasetId)
@@ -131,13 +134,15 @@ public class DatasetRequestHandler {
     }
 
     private Mono<DatasetDetails> buildDataset(final DatasetDetailsDTO datasetDetailsDTO,
-                                              final String userId) {
+                                              final String userId,
+                                              final LocalDateTime expiresAt) {
         return datasetDetailsRepository
                 .getNextDatasetId()
                 .map(nextDatasetId -> datasetMapper.toModel(datasetDetailsDTO,
                         nextDatasetId,
                         GLOBUS,
-                        userId));
+                        userId,
+                        expiresAt));
     }
 
     private Mono<DatasetCryptographyDetails> createDatasetCryptography(final String datasetId,
