@@ -2,7 +2,10 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
+
+import java.time.LocalDateTime;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -10,6 +13,7 @@ public class DatasetDetailsDTO {
     private String datasetId;
     private String datasetName;
     private GenomeBuild genomeBuild;
+    private LocalDateTime expiresAt;
     private String filesetId;
     private String publicKey;
     private GlobusDetailsDTO globusDetails;
@@ -31,6 +35,19 @@ public class DatasetDetailsDTO {
 
     public void setGenomeBuild(GenomeBuild genomeBuild) {
         this.genomeBuild = genomeBuild;
+    }
+
+    public LocalDateTime getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(LocalDateTime expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+
+    @JsonProperty
+    public boolean isExpired() {
+        return expiresAt.isBefore(LocalDateTime.now());
     }
 
     public String getDatasetId() {

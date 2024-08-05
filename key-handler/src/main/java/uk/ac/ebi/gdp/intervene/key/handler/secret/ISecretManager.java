@@ -18,6 +18,7 @@
 package uk.ac.ebi.gdp.intervene.key.handler.secret;
 
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.dto.keyhandler.SecretDetailsDTO;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,11 +35,11 @@ public interface ISecretManager {
      * @param secretId the identifier of the secret to be uploaded.
      * @param secretContent the content of the secret as an InputStream.
      *
-     * @return a Mono emitting the version number of the uploaded secret as a String.
+     * @return a Mono emitting the secret id, version number & expiry timestamp of the uploaded secret as {@link SecretDetailsDTO}.
      * @throws IOException if an I/O error occurs during the secret upload process.
      */
-    Mono<String> uploadSecret(String secretId,
-                              InputStream secretContent) throws IOException;
+    Mono<SecretDetailsDTO> uploadSecret(String secretId,
+                                        InputStream secretContent) throws IOException;
 
     /**
      * Downloads a secret from the secret manager.

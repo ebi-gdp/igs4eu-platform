@@ -19,7 +19,7 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
 
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.commons.dto.keyhandler.PublicKeyDetailsDTO;
+import uk.ac.ebi.gdp.intervene.commons.dto.keyhandler.DatasetCryptographyDetailsDTO;
 
 import java.net.URI;
 
@@ -49,14 +49,14 @@ public class KeyHandlerService {
      * Generates a new pair of cryptographic keys.
      * This method initiates the key generation process and returns the details of the generated public key.
      *
-     * @return a {@link Mono} that emits the details of the generated public key encapsulated in a {@link PublicKeyDetailsDTO} object.
+     * @return a {@link Mono} that emits the details of the generated public key encapsulated in a {@link DatasetCryptographyDetailsDTO} object.
      */
-    public Mono<PublicKeyDetailsDTO> generateKeys() {
+    public Mono<DatasetCryptographyDetailsDTO> generateKeys() {
         return keyHandlerServiceWebClient
                 .post()
                 .uri(keyHandlerURI.getPath())
                 .accept(APPLICATION_JSON)
                 .retrieve()
-                .bodyToMono(PublicKeyDetailsDTO.class);
+                .bodyToMono(DatasetCryptographyDetailsDTO.class);
     }
 }

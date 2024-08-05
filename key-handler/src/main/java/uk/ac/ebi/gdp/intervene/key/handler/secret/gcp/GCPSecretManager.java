@@ -27,18 +27,25 @@ import com.google.cloud.secretmanager.v1.SecretPayload;
 import com.google.cloud.secretmanager.v1.SecretVersion;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
 import com.google.protobuf.Duration;
+import com.google.protobuf.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.dto.constant.GCPRegion;
+import uk.ac.ebi.gdp.intervene.commons.dto.keyhandler.SecretDetailsDTO;
 import uk.ac.ebi.gdp.intervene.key.handler.secret.ISecretManager;
 import uk.ac.ebi.gdp.intervene.key.handler.secret.SecretConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
+import java.time.LocalDateTime;
 
 import static com.google.cloud.secretmanager.v1.SecretManagerServiceClient.create;
 import static com.google.protobuf.ByteString.readFrom;
+import static java.time.Instant.ofEpochSecond;
+import static java.time.LocalDateTime.ofInstant;
+import static java.time.ZoneId.systemDefault;
 import static reactor.core.publisher.Mono.just;
 
 /**
@@ -70,8 +77,8 @@ public class GCPSecretManager implements ISecretManager {
      * {@inheritDoc}
      */
     @Override
-    public Mono<String> uploadSecret(final String secretId,
-                                     final InputStream secretContent) throws IOException {
+    public Mono<SecretDetailsDTO> uploadSecret(final String secretId,
+                                               final InputStream secretContent) throws IOException {
         // Initialize client that will be used to send requests.
         try (final SecretManagerServiceClient smsClient = create()) {
             // Build the parent name from the project.
@@ -88,7 +95,10 @@ public class GCPSecretManager implements ISecretManager {
             // Add secret version
             final SecretVersion addedVersion = smsClient
                     .addSecretVersion(request);
-            return just(addedVersion.getName());
+            return just(new SecretDetailsDTO(
+                    secretId,
+                    addedVersion.getName(),
+                    timestampToLocalDateTime(createdSecret.getExpireTime())));
         }
     }
 
@@ -132,6 +142,14 @@ public class GCPSecretManager implements ISecretManager {
                 .newBuilder()
                 .setData(readFrom(secretContent))
                 .build();
+    }
+
+    public LocalDateTime timestampToLocalDateTime(final Timestamp timestamp) {
+        // Convert Timestamp to Instant
+        final Instant instant = ofEpochSecond(timestamp.getSeconds(), timestamp.getNanos());
+
+        // Convert Instant to LocalDateTime
+        return ofInstant(instant, systemDefault());
     }
 
     /**

@@ -45,6 +45,8 @@ public class DatasetDetails implements Persistable<String> {
 
     private FilesetType filesetType;
 
+    private LocalDateTime expiresAt;
+
     @CreatedBy
     private String createdBy;
 
@@ -73,12 +75,14 @@ public class DatasetDetails implements Persistable<String> {
                            final String datasetName,
                            final GenomeBuild genomeBuild,
                            final FilesetType filesetType,
+                           final LocalDateTime expiresAt,
                            final String createdBy,
                            final String updatedBy) {
         this.datasetId = datasetId;
         this.datasetName = datasetName;
         this.genomeBuild = genomeBuild;
         this.filesetType = filesetType;
+        this.expiresAt = expiresAt;
         this.createdBy = createdBy;
         this.updatedBy = updatedBy;
     }
@@ -87,12 +91,13 @@ public class DatasetDetails implements Persistable<String> {
                            final String datasetName,
                            final GenomeBuild genomeBuild,
                            final FilesetType filesetType,
+                           final LocalDateTime expiresAt,
                            final String createdBy,
                            final LocalDateTime createdOn,
                            final String updatedBy,
                            final LocalDateTime updatedOn) {
         this(datasetId, datasetName, genomeBuild, filesetType,
-                createdBy, updatedBy);
+                expiresAt, createdBy, updatedBy);
         this.createdOn = createdOn;
         this.updatedOn = updatedOn;
     }
@@ -101,14 +106,15 @@ public class DatasetDetails implements Persistable<String> {
                            final String datasetName,
                            final GenomeBuild genomeBuild,
                            final FilesetType filesetType,
+                           final LocalDateTime expiresAt,
                            final DatasetCryptographyDetails datasetCryptographyDetails,
                            final GlobusDetails globusDetails,
                            final String createdBy,
                            final LocalDateTime createdOn,
                            final String updatedBy,
                            final LocalDateTime updatedOn) {
-        this(datasetId, datasetName, genomeBuild, filesetType, createdBy,
-                createdOn, updatedBy, updatedOn);
+        this(datasetId, datasetName, genomeBuild, filesetType, expiresAt,
+                createdBy, createdOn, updatedBy, updatedOn);
         this.datasetCryptographyDetails = datasetCryptographyDetails;
         this.globusDetails = globusDetails;
         this.filesetId = globusDetails.getFilesetId();
@@ -123,6 +129,7 @@ public class DatasetDetails implements Persistable<String> {
      * @param genomeBuild {link GenomeBuild}
      * @param filesetId fileset id
      * @param filesetType {link FilesetType}
+     * @param expiresAt dataset expiry timestamp
      * @param createdBy user id
      * @param updatedBy user id
      */
@@ -132,10 +139,11 @@ public class DatasetDetails implements Persistable<String> {
                           final GenomeBuild genomeBuild,
                           final String filesetId,
                           final FilesetType filesetType,
+                          final LocalDateTime expiresAt,
                           final String createdBy,
                           final String updatedBy) {
         this(datasetId, datasetName, genomeBuild, filesetType,
-                createdBy, updatedBy);
+                expiresAt, createdBy, updatedBy);
         this.filesetId = filesetId;
         isNew = true;
     }
@@ -158,6 +166,10 @@ public class DatasetDetails implements Persistable<String> {
 
     public FilesetType getFilesetType() {
         return filesetType;
+    }
+
+    public LocalDateTime getExpiresAt() {
+        return expiresAt;
     }
 
     public String getCreatedBy() {
@@ -207,6 +219,7 @@ public class DatasetDetails implements Persistable<String> {
      * @param datasetName dataset name
      * @param genomeBuild {@link GenomeBuild}
      * @param filesetType {@link FilesetType}
+     * @param expiresAt dataset expiry timestamp {@link LocalDateTime}
      * @param createdBy user id
      * @param createdOn {@link LocalDateTime}
      * @param updatedBy user id
@@ -218,12 +231,13 @@ public class DatasetDetails implements Persistable<String> {
                                       final String datasetName,
                                       final GenomeBuild genomeBuild,
                                       final FilesetType filesetType,
+                                      final LocalDateTime expiresAt,
                                       final String createdBy,
                                       final LocalDateTime createdOn,
                                       final String updatedBy,
                                       final LocalDateTime updatedOn) {
         return new DatasetDetails(datasetId, datasetName, genomeBuild,
-                filesetType, createdBy, createdOn, updatedBy, updatedOn);
+                filesetType, expiresAt, createdBy, createdOn, updatedBy, updatedOn);
     }
 
     /**
@@ -233,34 +247,7 @@ public class DatasetDetails implements Persistable<String> {
      * @param datasetName dataset name
      * @param genomeBuild {@link GenomeBuild}
      * @param filesetType {@link FilesetType}
-     * @param datasetCryptographyDetails {@link DatasetCryptographyDetails}
-     * @param createdBy user id
-     * @param createdOn {@link LocalDateTime}
-     * @param updatedBy user id
-     * @param updatedOn {@link LocalDateTime}
-     *
-     * @return {@link DatasetDetails}
-     */
-    public static DatasetDetails load(final String datasetId,
-                                      final String datasetName,
-                                      final GenomeBuild genomeBuild,
-                                      final FilesetType filesetType,
-                                      final DatasetCryptographyDetails datasetCryptographyDetails,
-                                      final String createdBy,
-                                      final LocalDateTime createdOn,
-                                      final String updatedBy,
-                                      final LocalDateTime updatedOn) {
-        return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType,
-                datasetCryptographyDetails, null, createdBy, createdOn, updatedBy, updatedOn);
-    }
-
-    /**
-     * Load dataset details.
-     *
-     * @param datasetId dataset id
-     * @param datasetName dataset name
-     * @param genomeBuild {@link GenomeBuild}
-     * @param filesetType {@link FilesetType}
+     * @param expiresAt dataset expiry timestamp {@link LocalDateTime}
      * @param globusDetails {@link GlobusDetails}
      * @param createdBy user id
      * @param createdOn {@link LocalDateTime}
@@ -273,12 +260,13 @@ public class DatasetDetails implements Persistable<String> {
                                       final String datasetName,
                                       final GenomeBuild genomeBuild,
                                       final FilesetType filesetType,
+                                      final LocalDateTime expiresAt,
                                       final GlobusDetails globusDetails,
                                       final String createdBy,
                                       final LocalDateTime createdOn,
                                       final String updatedBy,
                                       final LocalDateTime updatedOn) {
-        return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType,
+        return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType, expiresAt,
                 null, globusDetails, createdBy, createdOn, updatedBy, updatedOn);
     }
 
@@ -289,6 +277,7 @@ public class DatasetDetails implements Persistable<String> {
      * @param datasetName dataset name
      * @param genomeBuild {@link GenomeBuild}
      * @param filesetType {@link FilesetType}
+     * @param expiresAt dataset expiry timestamp {@link LocalDateTime}
      * @param datasetCryptographyDetails {@link DatasetCryptographyDetails}
      * @param globusDetails {@link GlobusDetails}
      * @param createdBy user id
@@ -302,13 +291,14 @@ public class DatasetDetails implements Persistable<String> {
                                       final String datasetName,
                                       final GenomeBuild genomeBuild,
                                       final FilesetType filesetType,
+                                      final LocalDateTime expiresAt,
                                       final DatasetCryptographyDetails datasetCryptographyDetails,
                                       final GlobusDetails globusDetails,
                                       final String createdBy,
                                       final LocalDateTime createdOn,
                                       final String updatedBy,
                                       final LocalDateTime updatedOn) {
-        return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType,
+        return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType, expiresAt,
                 datasetCryptographyDetails, globusDetails, createdBy, createdOn, updatedBy, updatedOn);
     }
 
