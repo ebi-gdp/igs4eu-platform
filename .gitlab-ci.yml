@@ -8,6 +8,8 @@ variables:
   PIPELINE_MANAGER_MODULE: 'pipeline-manager'
   USER_MANAGER_MODULE: 'user-manager'
   KEY_HANDLER_MODULE: 'key-handler'
+  DOCKER_FILE: 'docker/Dockerfile'
+  KEY_HANDLER_DOCKER_FILE: 'docker/key-handler/Dockerfile'
 
 cache:
   key: $CACHE_KEY
@@ -46,7 +48,7 @@ stages:
   script:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/docker/Dockerfile"
+      --dockerfile "${CI_PROJECT_DIR}/${DOCKER_FILE}"
       --build-arg "MODULE_NAME=${MODULE}"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${CI_COMMIT_TAG}-dev"
   only:
@@ -93,6 +95,7 @@ build-file-handler-module:
 containerize-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
+    DOCKER_FILE: $DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -118,6 +121,7 @@ build-pipeline-manager-module:
 containerize-pipeline-manager-module:
   variables:
     MODULE: $PIPELINE_MANAGER_MODULE
+    DOCKER_FILE: $DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -143,6 +147,7 @@ build-user-manager-module:
 containerize-user-manager-module:
   variables:
     MODULE: $USER_MANAGER_MODULE
+    DOCKER_FILE: $DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -168,6 +173,7 @@ build-key-handler-module:
 containerize-key-handler-module:
   variables:
     MODULE: $KEY_HANDLER_MODULE
+    DOCKER_FILE: $KEY_HANDLER_DOCKER_FILE
   extends:
     - .containerize-module
 
