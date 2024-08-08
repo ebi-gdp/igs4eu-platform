@@ -8,7 +8,7 @@ variables:
   PIPELINE_MANAGER_MODULE: 'pipeline-manager'
   USER_MANAGER_MODULE: 'user-manager'
   KEY_HANDLER_MODULE: 'key-handler'
-  DOCKER_FILE: 'docker/Dockerfile'
+  GENERIC_DOCKER_FILE: 'docker/Dockerfile'
   KEY_HANDLER_DOCKER_FILE: 'docker/key-handler/Dockerfile'
 
 cache:
@@ -95,7 +95,7 @@ build-file-handler-module:
 containerize-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
-    DOCKER_FILE: $DOCKER_FILE
+    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -121,7 +121,7 @@ build-pipeline-manager-module:
 containerize-pipeline-manager-module:
   variables:
     MODULE: $PIPELINE_MANAGER_MODULE
-    DOCKER_FILE: $DOCKER_FILE
+    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -147,7 +147,7 @@ build-user-manager-module:
 containerize-user-manager-module:
   variables:
     MODULE: $USER_MANAGER_MODULE
-    DOCKER_FILE: $DOCKER_FILE
+    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
 
