@@ -34,12 +34,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.oauth2.server.resource.web.reactive.function.client.ServerBearerExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
+import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
+import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
 import uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusUserRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineDetailsRepository;
@@ -58,6 +62,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.S3CloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.HttpMessageService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.KafkaMessageService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.MessageService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.S3MessageService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.EmailSender;
@@ -71,6 +76,7 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.CSC
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.EBI_EMBASSY;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.GCP;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.HTTP;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.KAFKA;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.S3;
 
 /**
@@ -81,7 +87,7 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.S3;
 public class PipelineManagerConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(PipelineManagerConfig.class);
     private static final String PIPELINE_EXECUTION_PLATFORM = "pipeline-execution.platform";
-    private static final String PIPELINE_REQUEST_MODE = "pipeline-request.mode";
+    public static final String PIPELINE_REQUEST_MODE = "pipeline-request.mode";
 
     @Bean
     public IPipelinePersistence pipelinePersistence(final PipelineDetailsRepository pipelineDetailsRepository,
@@ -229,6 +235,13 @@ public class PipelineManagerConfig {
         }
     }
 
+    @ConditionalOnProperty(value = PIPELINE_REQUEST_MODE, havingValue = KAFKA)
+    @Bean("kafkaMessageService")
+    public MessageService httpMessageService(final KafkaTemplate<String, TriggerPipelineEvent> triggerPipelineEventKT,
+                                             @Value("${kafka.pipeline-launch.topic}") final String launchPipelineTopicName) {
+        return new KafkaMessageService(triggerPipelineEventKT, launchPipelineTopicName);
+    }
+
     /**
      * Creates a {@link PipelineManagerService} bean.
      * This bean is used to manage the pipeline operations and requires instances of {@link MessageService}.
@@ -260,12 +273,12 @@ public class PipelineManagerConfig {
      */
     @Bean
     public UserManagerService userManagerService(@Qualifier("userManagerWebClient") final WebClient userManagerWebClient,
-                                                 @Value("${user-manager.basic.auth}") final String basicAuth,
-                                                 @Value("${intervene.user-manager.user-account.uri}") final URI userAccountURI) {
+                                                 @Value("${intervene.user-manager.user-account.uri}") final URI userAccountURI,
+                                                 @Value("${user-manager.basic.auth}") final String basicAuth) {
         return new UserManagerService(
                 userManagerWebClient,
-                basicAuth,
-                userAccountURI
+                userAccountURI,
+                basicAuth
         );
     }
 
@@ -458,14 +471,26 @@ public class PipelineManagerConfig {
      * Creates an {@link IEmailSender} bean for sending emails.
      * This bean uses {@link JavaMailSender} to send emails and is configured with the email address to be used as the sender.
      *
-     * @param mailSender the {@link JavaMailSender} instance used for sending emails
-     * @param emailFrom the email address to be used as the sender, injected from configuration properties
+     * @param mailSender the {@link JavaMailSender} instance used for sending emails.
+     * @param emailFrom the email address to be used as the sender, injected from configuration properties.
      *
-     * @return an {@link IEmailSender} instance configured with the provided {@link JavaMailSender} and sender email address
+     * @return an {@link IEmailSender} instance configured with the provided {@link JavaMailSender} and sender email address.
      */
     @Bean
     public IEmailSender emailService(final JavaMailSender mailSender,
                                      final @Value("${spring.mail.username}") String emailFrom) {
         return new EmailSender(mailSender, emailFrom);
+    }
+
+    /**
+     * Creates {@link DPAConsentCheck} bean for checking user consent status on DPA.
+     *
+     * @param userManagerService the {@link UserManagerService} default implementation.
+     *
+     * @return {@link DPAConsentCheck} instance.
+     */
+    @Bean
+    public DPAConsentCheck dpaConsentCheck(final IUserManagerService userManagerService) {
+        return new DPAConsentCheck(userManagerService);
     }
 }

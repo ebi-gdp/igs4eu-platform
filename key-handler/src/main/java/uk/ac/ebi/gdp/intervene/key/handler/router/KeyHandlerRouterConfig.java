@@ -23,11 +23,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
 
 import java.nio.file.Path;
 
 import static java.nio.file.Paths.get;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
+import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.buildUniqueRequestId;
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 
 /**
@@ -36,20 +38,39 @@ import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 @Configuration
 public class KeyHandlerRouterConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyHandlerRouterConfig.class);
+    private static final Path keys = get("/key");
 
     /**
      * Defines a RouterFunction bean that routes HTTP requests.
      *
      * @param keyHandler the handler function that processes requests.
+     * @param dpaConsentCheck service to check DPA.
      *
      * @return a RouterFunction that routes requests to the appropriate handler.
      */
     @Bean
-    public RouterFunction<ServerResponse> keyHandlerRoutes(final KeyRequestHandler keyHandler) {
-        final Path keys = get("/key");
+    public RouterFunction<ServerResponse> keyHandlerRoutes(final KeyRequestHandler keyHandler,
+                                                           final DPAConsentCheck dpaConsentCheck) {
         return route()
                 .filter(logRequestIdHeader(LOGGER))
+                .filter(dpaConsentCheck.hasUserGivenConsent())
                 .POST(keys.toString(), serverRequest -> keyHandler.generateKeys())
+                .build();
+    }
+
+    /**
+     * Defines a RouterFunction to access secret keys. This route should be protected under
+     * basic auth.
+     *
+     * @param keyHandler {@link KeyRequestHandler}
+     *
+     * @return a RouterFunction that routes requests to the appropriate handler.
+     */
+    @Bean
+    public RouterFunction<ServerResponse> pipelineRoutesBasicAuth(final KeyRequestHandler keyHandler) {
+        return route()
+                .filter(buildUniqueRequestId(LOGGER))
+                //Make sure this path is secured under basic auth
                 .GET(keys.resolve("{keyId}/version/{versionId}").toString(), keyHandler::retrievePrivateKey)
                 .build();
     }

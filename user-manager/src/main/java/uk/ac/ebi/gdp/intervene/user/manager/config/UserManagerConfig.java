@@ -21,9 +21,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
+import uk.ac.ebi.gdp.intervene.user.manager.dpa.AuditLogUserDPAConsentService;
+import uk.ac.ebi.gdp.intervene.user.manager.dpa.IAuditLogUserDPAConsentService;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.AuthUserAccountRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountDetailsRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserAccountRepository;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserConsentAuditLogRepository;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.UserConsentDetailsRepository;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.IUserAccountPersistenceService;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.UserAccountPersistenceService;
 
@@ -46,5 +50,24 @@ public class UserManagerConfig {
                 userAccountDetailsRepository,
                 authUserAccountRepository
         );
+    }
+
+    /**
+     * Implementation to handle user consent database status.
+     *
+     * @param userAccountPersistenceService {@link UserAccountPersistenceService} instance.
+     * @param userConsentAuditLogRepository {@link UserConsentAuditLogRepository} instance.
+     * @param userConsentDetailsRepository {@link UserConsentDetailsRepository} instance.
+     *
+     * @return {@link AuditLogUserDPAConsentService} default implementation instance.
+     */
+    @Bean
+    public IAuditLogUserDPAConsentService userConsentService(final IUserAccountPersistenceService userAccountPersistenceService,
+                                                             final UserConsentAuditLogRepository userConsentAuditLogRepository,
+                                                             final UserConsentDetailsRepository userConsentDetailsRepository) {
+        return new AuditLogUserDPAConsentService(
+                userAccountPersistenceService,
+                userConsentAuditLogRepository,
+                userConsentDetailsRepository);
     }
 }

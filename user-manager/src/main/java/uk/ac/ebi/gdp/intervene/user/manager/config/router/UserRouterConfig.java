@@ -32,13 +32,13 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.UserAccountDTO;
 import uk.ac.ebi.gdp.intervene.user.manager.auth.AuthenticationContext;
+import uk.ac.ebi.gdp.intervene.user.manager.dpa.IAuditLogUserDPAConsentService;
+import uk.ac.ebi.gdp.intervene.user.manager.handler.UserDPAConsentHandler;
 import uk.ac.ebi.gdp.intervene.user.manager.handler.UserHandler;
 import uk.ac.ebi.gdp.intervene.user.manager.mapper.UserAccountMapper;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.IUserAccountPersistenceService;
 
-import java.nio.file.Path;
-
-import static java.nio.file.Paths.get;
+import static org.springframework.web.reactive.function.server.RequestPredicates.path;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 
@@ -61,13 +61,18 @@ public class UserRouterConfig {
                     ))
     })
     @Bean
-    public RouterFunction<ServerResponse> userRoutes(final UserHandler userHandler) {
-        final Path userAccount = get("/user/account");
+    public RouterFunction<ServerResponse> userRoutes(final UserHandler userHandler,
+                                                     final UserDPAConsentHandler userDPAConsentHandler) {
         return route()
                 .filter(logRequestIdHeader(LOGGER))
-                .GET(userAccount.toString(), serverRequest -> userHandler.getUserAccount())
-                .GET(userAccount.resolve("{accountId}").toString(), userHandler::getUserAccount)
-                .POST(userAccount.toString(), serverRequest -> userHandler.createUserAccount())
+                .path("/user/account", ub -> ub
+                        .path("/consent/data", cub -> cub
+                                .POST(serverRequest -> userDPAConsentHandler.giveConsent())
+                                .DELETE(serverRequest -> userDPAConsentHandler.revokeConsent())
+                                .GET(serverRequest -> userDPAConsentHandler.getDPAConsentContent()))
+                        .GET(path("/{accountId:^(?!consent$).+}"), userHandler::getUserAccount)
+                        .GET(serverRequest -> userHandler.getUserAccount())
+                        .POST(serverRequest -> userHandler.createUserAccount()))
                 .build();
     }
 
@@ -79,5 +84,10 @@ public class UserRouterConfig {
                 userAccountPersistenceService,
                 userAccountMapper,
                 authenticationContext);
+    }
+
+    @Bean
+    public UserDPAConsentHandler userConsentHandler(final IAuditLogUserDPAConsentService auditLogUserConsentService) {
+        return new UserDPAConsentHandler(auditLogUserConsentService);
     }
 }

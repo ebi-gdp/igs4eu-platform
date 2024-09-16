@@ -18,13 +18,13 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.DatasetMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.GlobusUserDetailsMapper;
@@ -41,24 +41,26 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
+import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.buildUniqueRequestId;
 
 @Configuration
 public class PipelineManagerRouterConfig {
-    private final Logger LOGGER = LoggerFactory.getLogger(PipelineManagerRouterConfig.class);
+    private final Logger LOGGER = getLogger(PipelineManagerRouterConfig.class);
 
     @Bean
     public RouterFunction<ServerResponse> pipelineRoutes(final PipelineRequestHandler pipelineRequestHandler,
                                                          final GlobusRequestHandler globusRequestHandler,
-                                                         final PipelineHandler pipelineHandler,
                                                          final PipelineResultHandler pipelineResultHandler,
-                                                         final DatasetRequestHandler datasetRequestHandler) {
+                                                         final DatasetRequestHandler datasetRequestHandler,
+                                                         final DPAConsentCheck dpaConsentCheck) {
         return route()
                 .filter(buildUniqueRequestId(LOGGER))
+                .filter(dpaConsentCheck.hasUserGivenConsent())
                 .path("/pipeline", pb -> pb
                         .POST("/globus/dir-guest-collection", globusRequestHandler::createDirectoryOnGuestCollection)
-                        .GET("/recent/top", serverRequest -> pipelineRequestHandler.getPipelineRecent())//TODO: rename path
+                        .GET("/recent/top", pipelineRequestHandler::getPipelineRecent)//TODO: rename path
                         .GET("/success/result", pipelineResultHandler::listResultFiles)
                         .POST("/pgs-ids/validate", pipelineRequestHandler::validatePGSIds)
                         .GET("/pgs-ids-catalog-traits", pipelineRequestHandler::searchPGSIdsByTraits)
@@ -72,8 +74,6 @@ public class PipelineManagerRouterConfig {
                                 .GET(pipelineRequestHandler::getPipeline))
                         .POST(pipelineRequestHandler::createPipeline)
                         .GET(pipelineRequestHandler::getPipelines))
-                //Make sure this path is secured under basic auth, allows pipeline executor to trigger API
-                .path("/integration/pipeline/{pipelineId}/status", pb -> pb.PATCH(pipelineHandler::updatePipelineStatus))
                 .path("/dataset", db -> db
                         .GET("/{datasetId}", datasetRequestHandler::getDatasetDetails)
                         .GET(datasetRequestHandler::getDatasets)
@@ -85,9 +85,17 @@ public class PipelineManagerRouterConfig {
     }
 
     @Bean
+    public RouterFunction<ServerResponse> pipelineRoutesBasicAuth(final PipelineStatusHandler pipelineStatusHandler) {
+        return route()
+                .filter(buildUniqueRequestId(LOGGER))
+                //Make sure this path is secured under basic auth, allows pipeline executor to trigger API
+                .path("/integration/pipeline/{pipelineId}/status", pb -> pb.PATCH(pipelineStatusHandler::updatePipelineStatus))
+                .build();
+    }
+
+    @Bean
     public PipelineRequestHandler pipelineRequestHandler(final PipelineManagerService pipelineManagerService,
                                                          final IPipelinePersistence pipelinePersistence,
-                                                         final UserManagerService userManagerService,
                                                          final PipelineDetailsMapper pipelineDetailsMapper,
                                                          final StringRedisTemplate redisTemplate,
                                                          final PGSCatalogService pgsCatalogService,
@@ -96,7 +104,6 @@ public class PipelineManagerRouterConfig {
         return new PipelineRequestHandler(
                 pipelineManagerService,
                 pipelinePersistence,
-                userManagerService,
                 pipelineDetailsMapper,
                 redisTemplate,
                 pgsCatalogService,
@@ -106,13 +113,11 @@ public class PipelineManagerRouterConfig {
 
     @Bean
     public PipelineResultHandler pipelineResultHandler(final IPipelinePersistence pipelinePersistence,
-                                                       final UserManagerService userManagerService,
                                                        final ICloudStorage cloudStorage,
                                                        @Value("${cloud.storage.bucket-name-format}") final String bucketNameFormat,
                                                        @Value("${cloud.storage.bucket-prefix}") final String bucketFilePrefix) {
         return new PipelineResultHandler(
                 pipelinePersistence,
-                userManagerService,
                 cloudStorage,
                 bucketNameFormat,
                 bucketFilePrefix);
@@ -122,34 +127,30 @@ public class PipelineManagerRouterConfig {
     public DatasetRequestHandler datasetRequestHandler(final DatasetDetailsRepository datasetDetailsRepository,
                                                        final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository,
                                                        final DatasetMapper datasetMapper,
-                                                       final UserManagerService userManagerService,
                                                        final KeyHandlerService keyHandlerService) {
         return new DatasetRequestHandler(
                 datasetDetailsRepository,
                 datasetCryptographyDetailsRepository,
                 datasetMapper,
-                userManagerService,
                 keyHandlerService);
     }
 
     @Bean
     public GlobusRequestHandler globusUserRequestHandler(final GlobusManagerService globusManagerService,
-                                                         final UserManagerService userManagerService,
                                                          final GlobusUserDetailsMapper globusUserDetailsMapper,
                                                          final FileValidations<IGlobusFileDetailsWrapper> fileValidations) {
         return new GlobusRequestHandler(
-                userManagerService,
                 globusManagerService,
                 globusUserDetailsMapper,
                 fileValidations);
     }
 
     @Bean
-    public PipelineHandler cscPipelineHandler(final UserManagerService userManagerService,
-                                              final IPipelinePersistence pipelinePersistence,
-                                              final IEmailSender emailService,
-                                              @Value("${intervene.platform.url}") final String platformURL) {
-        return new PipelineHandler(
+    public PipelineStatusHandler cscPipelineHandler(final UserManagerService userManagerService,
+                                                    final IPipelinePersistence pipelinePersistence,
+                                                    final IEmailSender emailService,
+                                                    @Value("${intervene.platform.url}") final String platformURL) {
+        return new PipelineStatusHandler(
                 userManagerService,
                 pipelinePersistence,
                 emailService,

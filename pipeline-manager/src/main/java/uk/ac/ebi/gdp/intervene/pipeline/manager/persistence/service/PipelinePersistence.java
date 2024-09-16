@@ -113,7 +113,6 @@ public class PipelinePersistence implements IPipelinePersistence {
     private Mono<Void> doUpdatePipelineStatus(final PipelineStatusDTO pipelineStatusDTO,
                                               final PipelineExecutionStatus pipelineExecutionStatus) {
         switch (getPipelineStatusByDescription(pipelineStatusDTO.getStatus())) {
-
             case STARTED -> pipelineExecutionStatus.started(pipelineStatusDTO.getUtcTime());
             case COMPLETED -> pipelineExecutionStatus.completed(pipelineStatusDTO.getUtcTime());
             case ERROR -> pipelineExecutionStatus.error(

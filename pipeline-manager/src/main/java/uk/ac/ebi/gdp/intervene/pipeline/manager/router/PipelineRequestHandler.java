@@ -20,7 +20,6 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -38,13 +37,13 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Pipelin
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
 import java.util.List;
 import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.web.reactive.function.server.ServerResponse.badRequest;
@@ -53,15 +52,15 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
 import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
 import static uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil.getJsonObjectMapper;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.UserAccountUtil.userAccount;
 
 /**
  * Request handler for Pipeline related operations.
  */
 public class PipelineRequestHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PipelineRequestHandler.class);
+    private static final Logger LOGGER = getLogger(PipelineRequestHandler.class);
     private final PipelineManagerService pipelineManagerService;
     private final IPipelinePersistence pipelinePersistence;
-    private final UserManagerService userManagerService;
     private final PipelineDetailsMapper pipelineDetailsMapper;
     private final StringRedisTemplate redisTemplate;
     private final PGSCatalogService pgsCatalogService;
@@ -70,7 +69,6 @@ public class PipelineRequestHandler {
 
     public PipelineRequestHandler(final PipelineManagerService pipelineManagerService,
                                   final IPipelinePersistence pipelinePersistence,
-                                  final UserManagerService userManagerService,
                                   final PipelineDetailsMapper pipelineDetailsMapper,
                                   final StringRedisTemplate redisTemplate,
                                   final PGSCatalogService pgsCatalogService,
@@ -78,13 +76,11 @@ public class PipelineRequestHandler {
                                   final String redisPubDataKeyPrefix) {
         this.pipelineManagerService = pipelineManagerService;
         this.pipelinePersistence = pipelinePersistence;
-        this.userManagerService = userManagerService;
         this.pipelineDetailsMapper = pipelineDetailsMapper;
         this.redisTemplate = redisTemplate;
         this.pgsCatalogService = pgsCatalogService;
         this.redisPgsIdsKeyPrefix = redisPgsIdsKeyPrefix;
         this.redisPubDataKeyPrefix = redisPubDataKeyPrefix;
-
     }
 
     /**
@@ -97,8 +93,7 @@ public class PipelineRequestHandler {
     public Mono<ServerResponse> createPipeline(final ServerRequest serverRequest) {
         return serverRequest
                 .bodyToMono(String.class)
-                .flatMap(datasetId -> userManagerService
-                        .getUserAccountDetails()
+                .flatMap(datasetId -> userAccount(serverRequest)
                         .doOnNext(userAccountDTO -> LOGGER.info("Creating pipeline instance for Dataset Id: {}", datasetId))
                         .flatMap(userAccountDTO -> pipelinePersistence
                                 .createPipeline(userAccountDTO.accountId(), datasetId)
@@ -116,8 +111,7 @@ public class PipelineRequestHandler {
      */
     public Mono<ServerResponse> getPipeline(final ServerRequest serverRequest) {
         final String pipelineId = serverRequest.pathVariable("pipelineId");
-        return userManagerService
-                .getUserAccountDetails()
+        return userAccount(serverRequest)
                 .doOnNext(userAccountDTO -> LOGGER.info("Retrieving pipeline details for {}", pipelineId))
                 .flatMap(userAccountDTO -> pipelinePersistence
                         .getPipelineFull(pipelineId,
@@ -136,8 +130,7 @@ public class PipelineRequestHandler {
      * @return Paginated list of pipelines represented by {@link PaginationDTO}
      */
     public Mono<ServerResponse> getPipelines(final ServerRequest serverRequest) {
-        return userManagerService
-                .getUserAccountDetails()
+        return userAccount(serverRequest)
                 .doOnNext(userAccountDTO -> LOGGER.info("Retrieving all pipelines"))
                 .flatMap(userAccountDTO -> pipelinePersistence
                         .getPipelinesCount(userAccountDTO.accountId())
@@ -170,9 +163,8 @@ public class PipelineRequestHandler {
      *
      * @return Pipeline details represented by {@link PipelineDetailsDTO}
      */
-    public Mono<ServerResponse> getPipelineRecent() {
-        return userManagerService
-                .getUserAccountDetails()
+    public Mono<ServerResponse> getPipelineRecent(final ServerRequest serverRequest) {
+        return userAccount(serverRequest)
                 .doOnNext(userAccountDTO -> LOGGER.info("Retrieving recent pipeline details"))
                 .flatMap(userAccountDTO -> pipelinePersistence.getPipelineFullRecent(userAccountDTO.accountId()))
                 .map(pipelineDetailsMapper::toDTO)
@@ -191,8 +183,7 @@ public class PipelineRequestHandler {
      */
     public Mono<ServerResponse> updateDatasetId(final ServerRequest serverRequest) {
         final String pipelineId = serverRequest.pathVariable("pipelineId");
-        return userManagerService
-                .getUserAccountDetails()
+        return userAccount(serverRequest)
                 .doOnNext(userAccountDTO -> LOGGER.info("Updating dataset id for pipeline details"))
                 .flatMap(userAccount -> {
                     LOGGER.info("Retrieving pipeline details: {}", pipelineId);
@@ -279,8 +270,7 @@ public class PipelineRequestHandler {
     }
 
     private Mono<PipelineDetails> getPipelineDetails(final ServerRequest serverRequest) {
-        return userManagerService
-                .getUserAccountDetails()
+        return userAccount(serverRequest)
                 .flatMap(userAccountDTO -> pipelinePersistence
                         .getPipelineFull(serverRequest.pathVariable("pipelineId"), userAccountDTO.accountId()));
     }

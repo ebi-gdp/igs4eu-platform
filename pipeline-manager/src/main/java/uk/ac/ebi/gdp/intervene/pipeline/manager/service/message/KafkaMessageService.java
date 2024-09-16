@@ -30,12 +30,12 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 public class KafkaMessageService implements MessageService {
     private final Logger LOGGER = LoggerFactory.getLogger(KafkaMessageService.class);
     private final KafkaTemplate<String, TriggerPipelineEvent> triggerPipelineEventKT;
-    private final String startTopicName;
+    private final String launchPipelineTopicName;
 
     public KafkaMessageService(final KafkaTemplate<String, TriggerPipelineEvent> triggerPipelineEventKT,
-                               final String startTopicName) {
+                               final String launchPipelineTopicName) {
         this.triggerPipelineEventKT = triggerPipelineEventKT;
-        this.startTopicName = startTopicName;
+        this.launchPipelineTopicName = launchPipelineTopicName;
     }
 
     /**
@@ -43,9 +43,10 @@ public class KafkaMessageService implements MessageService {
      *
      * {@inheritDoc}
      */
-    public Mono<Void> sendMessage(final String key, final TriggerPipelineEvent message) {
-        triggerPipelineEventKT.send(startTopicName, key, message);
-        LOGGER.info("Message has been sent, Key: {}, topic: {}", key, startTopicName);
+    public Mono<Void> sendMessage(final String key,
+                                  final TriggerPipelineEvent message) {
+        triggerPipelineEventKT.send(launchPipelineTopicName, key, message);
+        LOGGER.info("Message has been sent, Key: {}, topic: {}", key, launchPipelineTopicName);
         return Mono.empty();
     }
 }

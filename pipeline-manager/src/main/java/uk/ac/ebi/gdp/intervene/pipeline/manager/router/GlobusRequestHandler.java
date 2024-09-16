@@ -18,7 +18,6 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -32,11 +31,12 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.GlobusUserDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusUserDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
 import java.nio.file.Path;
 
 import static java.nio.file.Paths.get;
+import static java.util.UUID.randomUUID;
+import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
@@ -44,23 +44,21 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
 import static reactor.core.publisher.Mono.defer;
 import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.UserAccountUtil.userAccount;
 
 /**
  * Request handler for Globus related operations.
  */
 public class GlobusRequestHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GlobusRequestHandler.class);
+    private static final Logger LOGGER = getLogger(GlobusRequestHandler.class);
     private final GlobusManagerService globusManagerService;
-    private final UserManagerService userManagerService;
     private final GlobusUserDetailsMapper globusUserDetailsMapper;
     private final FileValidations<IGlobusFileDetailsWrapper> fileValidations;
 
-    public GlobusRequestHandler(final UserManagerService userManagerService,
-                                final GlobusManagerService globusManagerService,
+    public GlobusRequestHandler(final GlobusManagerService globusManagerService,
                                 final GlobusUserDetailsMapper globusUserDetailsMapper,
                                 final FileValidations<IGlobusFileDetailsWrapper> fileValidations) {
         this.globusManagerService = globusManagerService;
-        this.userManagerService = userManagerService;
         this.globusUserDetailsMapper = globusUserDetailsMapper;
         this.fileValidations = fileValidations;
     }
@@ -79,7 +77,7 @@ public class GlobusRequestHandler {
                 .flatMap(username -> globusManagerService
                         .getUserDetails(username)
                         .flatMap(globusUserDetails -> mappingFound(globusUserDetails, username))
-                        .switchIfEmpty(defer(() -> createMapping(username))));
+                        .switchIfEmpty(defer(() -> createMapping(username, serverRequest))));
     }
 
     private Mono<ServerResponse> mappingFound(final GlobusUserDetails globusUserDetails,
@@ -89,10 +87,10 @@ public class GlobusRequestHandler {
                 .doOnNext(serverResponse -> LOGGER.info("Globus mapping found for {}", username));
     }
 
-    private Mono<ServerResponse> createMapping(final String username) {
+    private Mono<ServerResponse> createMapping(final String username,
+                                               final ServerRequest serverRequest) {
         LOGGER.info("Globus mapping not found for {}, mapping is being created!", username);
-        return userManagerService
-                .getUserAccountDetails()
+        return userAccount(serverRequest)
                 .flatMap(userAccountDTO -> globusManagerService
                         .getUserDetails(username, userAccountDTO.accountId()))
                 .flatMap(globusManagerService::save)
@@ -115,11 +113,15 @@ public class GlobusRequestHandler {
                 .bodyToMono(CreateDirDTO.class)
                 .flatMap(createDirDTO -> {
                     LOGGER.info("Creating directory on Globus guest collection");
-                    final Path directoryName = get(createDirDTO.datasetName());
+                    final Path directoryName = get(buildUniqueFolderName(createDirDTO.datasetName()));
                     return createDirectory(directoryName, createDirDTO.globusUsername())
                             .flatMap(globusDetailsDTO -> createOrUpdateGlobusRecord(
                                     globusDetailsDTO, createDirDTO.globusUsername(), directoryName));
                 });
+    }
+
+    private String buildUniqueFolderName(final String datasetName) {
+        return datasetName.concat("-").concat(randomUUID().toString().substring(0, 8));
     }
 
     private Mono<GlobusDetailsDTO> createDirectory(final Path directoryName,

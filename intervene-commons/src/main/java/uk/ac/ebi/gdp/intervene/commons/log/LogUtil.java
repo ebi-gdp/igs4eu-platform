@@ -18,33 +18,41 @@
 package uk.ac.ebi.gdp.intervene.commons.log;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.server.HandlerFilterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import reactor.core.publisher.Mono;
+import reactor.util.context.Context;
 
-import java.util.UUID;
+import static java.util.UUID.randomUUID;
+import static reactor.core.publisher.Mono.deferContextual;
 
-public interface LogUtil {
-    Logger LOGGER = LoggerFactory.getLogger(LogUtil.class);
-    String REQUEST_ID_HEADER = "Request-Id";
+/**
+ * Log util to provide necessary filters to create, log & propagate co-relation request/tracking id.
+ */
+public abstract class LogUtil {
+    public static final String REQUEST_ID_HEADER = "Request-Id";
 
-    static HandlerFilterFunction<ServerResponse, ServerResponse> buildUniqueRequestId(final Logger logger) {
+    /**
+     * Creates new Unique Request Id.
+     *
+     * @param logger {@link Logger} instance.
+     */
+    public static HandlerFilterFunction<ServerResponse, ServerResponse> buildUniqueRequestId(final Logger logger) {
         return (request, next) -> next
                 .handle(request)
-                .contextWrite(contextView -> {
-                    final String uniqueRequestId = UUID.randomUUID().toString();
-                    logger.info("Request-Id generated for this request: {}", uniqueRequestId);
-                    return contextView.put(REQUEST_ID_HEADER, uniqueRequestId);
-                });
+                .contextWrite(contextView -> buildContextView(contextView, logger));
     }
 
-    static ExchangeFilterFunction propagateRequestId(final Logger logger) {
-        return (request, next) -> Mono.deferContextual(contextView -> {
-            final String valueFromContext = contextView.get("Request-Id");
+    /**
+     * Propagates Request Id.
+     *
+     * @param logger {@link Logger} instance.
+     */
+    public static ExchangeFilterFunction propagateRequestId(final Logger logger) {
+        return (request, next) -> deferContextual(contextView -> {
+            final String valueFromContext = contextView.get(REQUEST_ID_HEADER);
             logger.debug("Request-Id retrieved: {}", valueFromContext);
             // Continue with the request
             return next.exchange(ClientRequest.from(request)
@@ -53,15 +61,42 @@ public interface LogUtil {
         });
     }
 
-    static HandlerFilterFunction<ServerResponse, ServerResponse> logRequestIdHeader(final Logger logger) {
+    /**
+     * Logs Request Id.
+     *
+     * @param logger {@link Logger} instance.
+     */
+    public static HandlerFilterFunction<ServerResponse, ServerResponse> logRequestIdHeader(final Logger logger) {
         return (request, next) -> {
-            final HttpHeaders headers = request.headers().asHttpHeaders();
+            final HttpHeaders headers = request
+                    .headers()
+                    .asHttpHeaders();
             if (headers.containsKey(REQUEST_ID_HEADER)) {
-                logger.info("Request-Id header: {}", headers.get(REQUEST_ID_HEADER).get(0));
+                final String requestId = headers.get(REQUEST_ID_HEADER).get(0);
+                logger.info("Request-Id header: {}", requestId);
+                return next
+                        .handle(request)
+                        .contextWrite(contextView -> writeRequestId(contextView, logger, requestId));
             } else {
-                logger.warn("Request-Id header not found!");
+                logger.warn("Request-Id header not found! Generating new");
+                return next
+                        .handle(request)
+                        .contextWrite(contextView -> buildContextView(contextView, logger));
             }
-            return next.handle(request);
         };
+    }
+
+    private static Context buildContextView(final Context contextView,
+                                            final Logger logger) {
+        final String uniqueRequestId = randomUUID().toString();
+        logger.info("Request-Id generated for this request: {}", uniqueRequestId);
+        return contextView.put(REQUEST_ID_HEADER, uniqueRequestId);
+    }
+
+    private static Context writeRequestId(final Context contextView,
+                                          final Logger logger,
+                                          final String requestId) {
+        logger.info("Request-Id retrieved & added to context: {}", requestId);
+        return contextView.put(REQUEST_ID_HEADER, requestId);
     }
 }

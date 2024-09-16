@@ -18,25 +18,29 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.config.kafka;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.listener.PipelineEventListener;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineHandler;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineStatusHandler;
+
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.config.PipelineManagerConfig.PIPELINE_REQUEST_MODE;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.KAFKA;
 
 /**
  * Inherits default {@link DefaultKafkaConfig} & declare beans
  */
-/*Temporarily turned off*/
-//@EnableKafka
-//@Configuration
+@ConditionalOnProperty(value = PIPELINE_REQUEST_MODE, havingValue = KAFKA)
+@EnableKafka
+@Configuration
 public class KafkaConfig extends DefaultKafkaConfig {
-
     public KafkaConfig(final KafkaProperties kafkaProperties,
                        @Value("${kafka.group.instance-id}") final String groupInstanceId,
                        @Value("${kafka.listener.max.poll.interval.ms}") final int maxPollIntervalMs,
@@ -60,8 +64,7 @@ public class KafkaConfig extends DefaultKafkaConfig {
     }
 
     @Bean
-    public PipelineEventListener pipelineEventListener(final PipelineHandler pipelineHandler,
-                                                       final IPipelinePersistence pipelinePersistence) {
-        return new PipelineEventListener(pipelineHandler, pipelinePersistence);
+    public PipelineEventListener pipelineEventListener(final PipelineStatusHandler pipelineStatusHandler) {
+        return new PipelineEventListener(pipelineStatusHandler);
     }
 }

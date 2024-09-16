@@ -30,6 +30,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
+import org.springframework.web.util.pattern.PathPatternParser;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 import static reactor.core.publisher.Mono.error;
@@ -72,9 +73,10 @@ public class GenericOAuth2SecurityConfig {
      */
     protected SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http,
                                                                   final String patternPath) {
+        PathPatternParser parser = new PathPatternParser();
         http.csrf((ServerHttpSecurity.CsrfSpec::disable));
         http
-                .securityMatcher(new PathPatternParserServerWebExchangeMatcher(patternPath))
+                .securityMatcher(new PathPatternParserServerWebExchangeMatcher(parser.parse(patternPath)))
                 .authorizeExchange((exchanges) -> exchanges
                         .anyExchange()
                         .authenticated())

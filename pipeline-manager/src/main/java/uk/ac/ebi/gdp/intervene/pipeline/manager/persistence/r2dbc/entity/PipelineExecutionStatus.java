@@ -24,6 +24,7 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
@@ -35,23 +36,15 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus.PENDING;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus.STARTED;
 
+@Table("pipeline_execution_status")
 public class PipelineExecutionStatus implements Persistable<String> {
     @Id
     private String pipelineId;
-
     private PipelineStatus status;
-
     private String traceName;
-
     private byte traceExit;
-
-    @Transient
-    private PipelineDetails pipelineDetails;
-
     private LocalDateTime submittedOn;
-
     private LocalDateTime startedOn;
-
     private LocalDateTime endedOn;
 
     @CreatedBy
@@ -65,6 +58,9 @@ public class PipelineExecutionStatus implements Persistable<String> {
 
     @LastModifiedDate
     private LocalDateTime updatedOn;
+
+    @Transient
+    private PipelineDetails pipelineDetails;
 
     @Transient
     private boolean isNew;
@@ -116,6 +112,94 @@ public class PipelineExecutionStatus implements Persistable<String> {
         this.pipelineDetails = pipelineDetails;
     }
 
+    /**
+     * Creates new pipeline status.
+     *
+     * @param pipelineId pipeline id.
+     *
+     * @return new pipeline status {@link PipelineExecutionStatus}.
+     */
+    public static PipelineExecutionStatus create(final String pipelineId) {
+        return new PipelineExecutionStatus(pipelineId);
+    }
+
+    /**
+     * Load pipeline execution status record.
+     *
+     * @param pipelineId pipeline id.
+     * @param pipelineStatus pipeline status.
+     * @param traceName trace name.
+     * @param traceExit trace exit.
+     * @param submittedOn submitted on timestamp.
+     * @param startedOn started on timestamp.
+     * @param endedOn ended on timestamp.
+     * @param createdBy created by user id.
+     * @param createdOn created on timestamp
+     * @param updatedBy updated by user id.
+     * @param updatedOn updated on timestamp.
+     *
+     * @return Loaded {@link PipelineExecutionStatus} instance.
+     */
+    public static PipelineExecutionStatus load(final String pipelineId,
+                                               final PipelineStatus pipelineStatus,
+                                               final String traceName,
+                                               final byte traceExit,
+                                               final LocalDateTime submittedOn,
+                                               final LocalDateTime startedOn,
+                                               final LocalDateTime endedOn,
+                                               final String createdBy,
+                                               final LocalDateTime createdOn,
+                                               final String updatedBy,
+                                               final LocalDateTime updatedOn) {
+        return new PipelineExecutionStatus(pipelineId, pipelineStatus, traceName, traceExit,
+                submittedOn, startedOn, endedOn, createdBy, createdOn, updatedBy, updatedOn);
+    }
+
+    /**
+     * Load pipeline execution status record.
+     *
+     * @param pipelineId pipeline id.
+     * @param pipelineStatus pipeline status.
+     * @param traceName trace name.
+     * @param traceExit trace exit.
+     * @param submittedOn submitted on timestamp.
+     * @param startedOn started on timestamp.
+     * @param endedOn ended on timestamp.
+     * @param createdBy created by user id.
+     * @param createdOn created on timestamp
+     * @param updatedBy updated by user id.
+     * @param updatedOn updated on timestamp.
+     * @param pipelineDetails {@link PipelineDetails}.
+     *
+     * @return Loaded instance of {@link PipelineExecutionStatus}.
+     */
+    public static PipelineExecutionStatus load(final String pipelineId,
+                                               final PipelineStatus pipelineStatus,
+                                               final String traceName,
+                                               final byte traceExit,
+                                               final LocalDateTime submittedOn,
+                                               final LocalDateTime startedOn,
+                                               final LocalDateTime endedOn,
+                                               final String createdBy,
+                                               final LocalDateTime createdOn,
+                                               final String updatedBy,
+                                               final LocalDateTime updatedOn,
+                                               final PipelineDetails pipelineDetails) {
+        return new PipelineExecutionStatus(pipelineId, pipelineStatus, traceName, traceExit,
+                submittedOn, startedOn, endedOn, createdBy, createdOn, updatedBy, updatedOn,
+                pipelineDetails);
+    }
+
+    @Override
+    public String getId() {
+        return pipelineId;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew || !hasText(pipelineId);
+    }
+
     public PipelineStatus getStatus() {
         return status;
     }
@@ -158,52 +242,6 @@ public class PipelineExecutionStatus implements Persistable<String> {
 
     public PipelineDetails getPipelineDetails() {
         return pipelineDetails;
-    }
-
-    @Override
-    public String getId() {
-        return pipelineId;
-    }
-
-    @Override
-    public boolean isNew() {
-        return isNew || !hasText(pipelineId);
-    }
-
-    public static PipelineExecutionStatus create(final String pipelineId) {
-        return new PipelineExecutionStatus(pipelineId);
-    }
-
-    public static PipelineExecutionStatus load(final String pipelineId,
-                                               final PipelineStatus pipelineStatus,
-                                               final String traceName,
-                                               final byte traceExit,
-                                               final LocalDateTime submittedOn,
-                                               final LocalDateTime startedOn,
-                                               final LocalDateTime endedOn,
-                                               final String createdBy,
-                                               final LocalDateTime createdOn,
-                                               final String updatedBy,
-                                               final LocalDateTime updatedOn) {
-        return new PipelineExecutionStatus(pipelineId, pipelineStatus, traceName, traceExit,
-                submittedOn, startedOn, endedOn, createdBy, createdOn, updatedBy, updatedOn);
-    }
-
-    public static PipelineExecutionStatus load(final String pipelineId,
-                                               final PipelineStatus pipelineStatus,
-                                               final String traceName,
-                                               final byte traceExit,
-                                               final LocalDateTime submittedOn,
-                                               final LocalDateTime startedOn,
-                                               final LocalDateTime endedOn,
-                                               final String createdBy,
-                                               final LocalDateTime createdOn,
-                                               final String updatedBy,
-                                               final LocalDateTime updatedOn,
-                                               final PipelineDetails pipelineDetails) {
-        return new PipelineExecutionStatus(pipelineId, pipelineStatus, traceName, traceExit,
-                submittedOn, startedOn, endedOn, createdBy, createdOn, updatedBy, updatedOn,
-                pipelineDetails);
     }
 
     public void pending() {

@@ -20,10 +20,9 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.config;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.spi.ConnectionFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.ReactiveAuditorAware;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
@@ -33,6 +32,7 @@ import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import uk.ac.ebi.gdp.intervene.commons.datasource.DatasourceConfigProperties;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
@@ -61,44 +61,29 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.P
 @EnableR2dbcRepositories(basePackages = {"uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository"})
 public class R2DBConfig extends AbstractR2dbcConfiguration {
 
-    @Value("${datasource.pipeline-manager.host}")
-    private String dbHost;
-
-    @Value("${datasource.pipeline-manager.port}")
-    private int port;
-
-    @Value("${datasource.pipeline-manager.username}")
-    private String dbUsername;
-
-    @Value("${datasource.pipeline-manager.password}")
-    private String password;
-
-    @Value("${datasource.pipeline-manager.database}")
-    private String database;
-
-    @Value("${datasource.pipeline-manager.schema}")
-    private String schema;
-
-    @Value("${datasource.pipeline-manager.ssl-mode}")
-    private String sslMode;
-
-    @Primary
     @Override
     @Bean
     public ConnectionFactory connectionFactory() {
+        final DatasourceConfigProperties datasourceConfigProperties = datasourceConfigProperties();
         return new PostgresqlConnectionFactory(
                 PostgresqlConnectionConfiguration.builder()
-                        .host(dbHost)
-                        .port(port)
-                        .username(dbUsername)
-                        .password(password)
-                        .database(database)
-                        .schema(schema)
-                        .sslMode(fromValue(sslMode))
+                        .host(datasourceConfigProperties.getHost())
+                        .port(datasourceConfigProperties.getPort())
+                        .username(datasourceConfigProperties.getUsername())
+                        .password(datasourceConfigProperties.getPassword())
+                        .database(datasourceConfigProperties.getDatabase())
+                        .schema(datasourceConfigProperties.getSchema())
+                        .sslMode(fromValue(datasourceConfigProperties.getSslMode()))
                         .codecRegistrar(builder().withEnum("pipeline_status", PipelineStatus.class).build())
                         .codecRegistrar(builder().withEnum("fileset_type", FilesetType.class).build())
                         .codecRegistrar(builder().withEnum("genome_build", GenomeBuild.class).build())
                         .build());
+    }
+
+    @Bean
+    @ConfigurationProperties("datasource.pipeline-manager")
+    public DatasourceConfigProperties datasourceConfigProperties() {
+        return new DatasourceConfigProperties();
     }
 
     @Bean("r2dbcDatabaseClient")

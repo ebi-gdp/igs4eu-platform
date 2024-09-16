@@ -28,6 +28,9 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Base64.getDecoder;
+import static java.util.Base64.getEncoder;
 import static org.springframework.util.StringUtils.hasText;
 
 @Table("dataset_cryptography_details")
@@ -83,18 +86,42 @@ public class DatasetCryptographyDetails implements Persistable<String> {
         this.updatedOn = updatedOn;
     }
 
+    /**
+     * Creates new dataset cryptography details.
+     *
+     * @param datasetId dataset id.
+     * @param publicKey public key.
+     * @param secretId secret id.
+     * @param secretIdVersion secret id version.
+     *
+     * @return new {@link DatasetCryptographyDetails} instance.
+     */
     public static DatasetCryptographyDetails create(final String datasetId,
                                                     final String publicKey,
                                                     final String secretId,
                                                     final String secretIdVersion) {
         return new DatasetCryptographyDetails(
                 datasetId,
-                publicKey,
+                getEncoder().encodeToString(publicKey.getBytes(UTF_8)),
                 secretId,
                 secretIdVersion,
                 true);
     }
 
+    /**
+     * Load dataset cryptography details.
+     *
+     * @param datasetId dataset id.
+     * @param publicKey public key.
+     * @param secretId secret id.
+     * @param secretIdVersion secret id version.
+     * @param createdBy created by user id.
+     * @param createdOn created on timestamp
+     * @param updatedBy updated by user id.
+     * @param updatedOn updated on timestamp.
+     *
+     * @return {@link DatasetCryptographyDetails}.
+     */
     public static DatasetCryptographyDetails load(final String datasetId,
                                                   final String publicKey,
                                                   final String secretId,
@@ -105,7 +132,9 @@ public class DatasetCryptographyDetails implements Persistable<String> {
                                                   final LocalDateTime updatedOn) {
         return new DatasetCryptographyDetails(
                 datasetId,
-                publicKey,
+                /*Added decoder here to protect retrieving data via DB client. Spring data lib. doesn't support
+                  @PostLoad, @PrePersist etc. annotations. If JPA repo. used to retrieve data then change placeholder*/
+                new String(getDecoder().decode(publicKey)),
                 secretId,
                 secretIdVersion,
                 createdBy,

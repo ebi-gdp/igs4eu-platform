@@ -36,15 +36,10 @@ import static org.springframework.util.StringUtils.hasText;
 public class DatasetDetails implements Persistable<String> {
     @Id
     private String datasetId;
-
     private String datasetName;
-
     private GenomeBuild genomeBuild;
-
     private String filesetId;
-
     private FilesetType filesetType;
-
     private LocalDateTime expiresAt;
 
     @CreatedBy
@@ -146,70 +141,6 @@ public class DatasetDetails implements Persistable<String> {
                 expiresAt, createdBy, updatedBy);
         this.filesetId = filesetId;
         isNew = true;
-    }
-
-    public String getDatasetId() {
-        return datasetId;
-    }
-
-    public String getDatasetName() {
-        return datasetName;
-    }
-
-    public GenomeBuild getGenomeBuild() {
-        return genomeBuild;
-    }
-
-    public String getFilesetId() {
-        return filesetId;
-    }
-
-    public FilesetType getFilesetType() {
-        return filesetType;
-    }
-
-    public LocalDateTime getExpiresAt() {
-        return expiresAt;
-    }
-
-    public String getCreatedBy() {
-        return createdBy;
-    }
-
-    public LocalDateTime getCreatedOn() {
-        return createdOn;
-    }
-
-    public String getUpdatedBy() {
-        return updatedBy;
-    }
-
-    public LocalDateTime getUpdatedOn() {
-        return updatedOn;
-    }
-
-    public DatasetCryptographyDetails getDatasetCryptographyDetails() {
-        return datasetCryptographyDetails;
-    }
-
-    public GlobusDetails getGlobusDetails() {
-        return globusDetails;
-    }
-
-    public void updateDataset(final GenomeBuild genomeBuild,
-                              final String datasetName) {
-        this.genomeBuild = genomeBuild;
-        this.datasetName = datasetName;
-    }
-
-    @Override
-    public String getId() {
-        return datasetId;
-    }
-
-    @Override
-    public boolean isNew() {
-        return isNew || !hasText(datasetId);
     }
 
     /**
@@ -317,5 +248,69 @@ public class DatasetDetails implements Persistable<String> {
         datasetDetails.datasetId = datasetId;
         datasetDetails.datasetName = datasetName;
         return datasetDetails;
+    }
+
+    public String getDatasetId() {
+        return datasetId;
+    }
+
+    public String getDatasetName() {
+        return datasetName;
+    }
+
+    public GenomeBuild getGenomeBuild() {
+        return genomeBuild;
+    }
+
+    public String getFilesetId() {
+        return filesetId;
+    }
+
+    public FilesetType getFilesetType() {
+        return filesetType;
+    }
+
+    public LocalDateTime getExpiresAt() {
+        return expiresAt;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public LocalDateTime getCreatedOn() {
+        return createdOn;
+    }
+
+    public String getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public LocalDateTime getUpdatedOn() {
+        return updatedOn;
+    }
+
+    public DatasetCryptographyDetails getDatasetCryptographyDetails() {
+        return datasetCryptographyDetails;
+    }
+
+    public GlobusDetails getGlobusDetails() {
+        return globusDetails;
+    }
+
+    public void updateDataset(final GenomeBuild genomeBuild,
+                              final String datasetName) {
+        this.genomeBuild = genomeBuild;
+        this.datasetName = datasetName;
+    }
+
+    @Override
+    public String getId() {
+        return datasetId;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew || !hasText(datasetId);
     }
 }

@@ -85,6 +85,46 @@ public class GlobusUserDetails implements Persistable<String> {
         this.updatedOn = updatedOn;
     }
 
+    /**
+     * Creates new globus user details.
+     *
+     * @param username globus username.
+     * @param userUID user UID.
+     * @param interveneUserId intervene user id.
+     *
+     * @return new globus user details {@link GlobusUserDetails}.
+     */
+    public static GlobusUserDetails create(final String username,
+                                           final String userUID,
+                                           final String interveneUserId) {
+        return new GlobusUserDetails(username, userUID,
+                interveneUserId, true);
+    }
+
+    /**
+     * Load globus user details.
+     *
+     * @param username globus username.
+     * @param userUID user UID.
+     * @param interveneUserId intervene user id.
+     * @param createdBy created by user id.
+     * @param createdOn created on timestamp
+     * @param updatedBy updated by user id.
+     * @param updatedOn updated on timestamp.
+     *
+     * @return {@link GlobusUserDetails}.
+     */
+    public static GlobusUserDetails load(final String username,
+                                         final String userUID,
+                                         final String interveneUserId,
+                                         final String createdBy,
+                                         final LocalDateTime createdOn,
+                                         final String updatedBy,
+                                         final LocalDateTime updatedOn) {
+        return new GlobusUserDetails(username, userUID, interveneUserId,
+                createdBy, createdOn, updatedBy, updatedOn, false);
+    }
+
     public String getUsername() {
         return username;
     }
@@ -133,23 +173,5 @@ public class GlobusUserDetails implements Persistable<String> {
     @Override
     public boolean isNew() {
         return isNew || !hasText(username);
-    }
-
-    public static GlobusUserDetails create(final String username,
-                                           final String userUID,
-                                           final String interveneUserId) {
-        return new GlobusUserDetails(username, userUID,
-                interveneUserId, true);
-    }
-
-    public static GlobusUserDetails load(final String username,
-                                         final String userUID,
-                                         final String interveneUserId,
-                                         final String createdBy,
-                                         final LocalDateTime createdOn,
-                                         final String updatedBy,
-                                         final LocalDateTime updatedOn) {
-        return new GlobusUserDetails(username, userUID, interveneUserId,
-                createdBy, createdOn, updatedBy, updatedOn, false);
     }
 }

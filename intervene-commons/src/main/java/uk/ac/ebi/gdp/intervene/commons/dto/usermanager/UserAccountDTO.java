@@ -20,5 +20,6 @@ package uk.ac.ebi.gdp.intervene.commons.dto.usermanager;
 public record UserAccountDTO(String accountId,
                              String givenName,
                              String familyName,
-                             String emailId) {
+                             String emailId,
+                             String consentType) {
 }

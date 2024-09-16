@@ -21,11 +21,13 @@ import io.r2dbc.spi.Row;
 import uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccount;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccountStatus;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserDPAConsentType;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountStatus;
 
 import java.util.function.BiFunction;
 
+import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserDPAConsentType.NOT_GIVEN;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.query.QueryUtil.getLocalDateTime;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.query.QueryUtil.getString;
 
@@ -35,12 +37,14 @@ import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.
 public interface AuthUserAccountEntityMapper {
     static BiFunction<Row, Object, AuthUserAccount> fullMap() {
         return (row, object) -> {
+            final String consentType = getString("consent_type", row);
             final UserAccount userAccount = UserAccount.load(
                     getString("user_id", row),
                     getString("given_name", row),
                     getString("family_name", row),
                     getString("email_id", row),
                     UserAccountStatus.valueOf(getString("status", row)),
+                    UserDPAConsentType.valueOf("".equals(consentType) ? NOT_GIVEN.name() : consentType),
                     getString("created_by", row),
                     getLocalDateTime("created_on", row),
                     getString("updated_by", row),

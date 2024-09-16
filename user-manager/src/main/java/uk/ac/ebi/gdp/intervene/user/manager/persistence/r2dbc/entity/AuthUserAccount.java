@@ -17,8 +17,10 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
@@ -35,34 +37,29 @@ import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.Auth
 public class AuthUserAccount implements Persistable<String> {
 
     @Id
-    @Column("auth_user_id")
     private String authUserId;
 
-    @Column("user_id")
     private String userId;
 
     @Column("auth_provider")
     private AuthProviderType authProviderType;
 
-    @Column("status")
     private AuthUserAccountStatus status;
 
-    @Transient
-    private UserAccount userAccount;
-
-    @Column("created_by")
+    @CreatedBy
     private String createdBy;
 
     @CreatedDate
-    @Column("created_on")
     private LocalDateTime createdOn;
 
-    @Column("updated_by")
+    @LastModifiedBy
     private String updatedBy;
 
     @LastModifiedDate
-    @Column("updated_on")
     private LocalDateTime updatedOn;
+
+    @Transient
+    private UserAccount userAccount;
 
     @Transient
     private boolean isNew;

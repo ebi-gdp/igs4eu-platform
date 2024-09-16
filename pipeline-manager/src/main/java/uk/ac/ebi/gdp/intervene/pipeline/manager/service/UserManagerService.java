@@ -19,6 +19,8 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
 
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
+import uk.ac.ebi.gdp.intervene.commons.dpa.DefaultUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.UserAccountDTO;
 
 import java.net.URI;
@@ -28,10 +30,8 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 /**
  * User manger service, defines methods to interact with User Manager module.
  */
-public class UserManagerService {
-    private final WebClient userManagerWebClient;
+public class UserManagerService extends DefaultUserManagerService implements IUserManagerService {
     private final String basicAuth;
-    private final URI userAccountURI;
 
     /**
      * Constructs a {@code UserManagerService} instance.
@@ -43,26 +43,10 @@ public class UserManagerService {
      * @param userAccountURI the URI of the user account endpoint
      */
     public UserManagerService(final WebClient userManagerWebClient,
-                              final String basicAuth,
-                              final URI userAccountURI) {
-        this.userManagerWebClient = userManagerWebClient;
+                              final URI userAccountURI,
+                              final String basicAuth) {
+        super(userManagerWebClient, userAccountURI);
         this.basicAuth = basicAuth;
-        this.userAccountURI = userAccountURI;
-    }
-
-    /**
-     * Returns user account details based on access token.
-     *
-     * @return User account details represented by {@link UserAccountDTO}
-     */
-    public Mono<UserAccountDTO> getUserAccountDetails() {
-        return userManagerWebClient
-                .get()
-                .uri(uriBuilder -> uriBuilder
-                        .path(userAccountURI.getPath())
-                        .build())
-                .retrieve()
-                .bodyToMono(UserAccountDTO.class);
     }
 
     /**
