@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2022 EMBL - European Bioinformatics Institute
+ * Copyright 2024 EMBL - European Bioinformatics Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,23 +19,21 @@ package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity;
 
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
-import static org.springframework.util.StringUtils.hasText;
-
-@Table("user_account_details")
-public class UserAccountDetails implements Persistable<String> {
-
-    @Id
+@Table("user_dpa_consent_audit_logs")
+public class UserDPAConsentAuditLog implements Persistable<String> {
     private String userId;
+    private String consentId;
+
+    @Column("consent_type")
+    private UserDPAConsentType userDPAConsentType;
 
     @CreatedBy
     private String createdBy;
@@ -49,23 +47,39 @@ public class UserAccountDetails implements Persistable<String> {
     @LastModifiedDate
     private LocalDateTime updatedOn;
 
-    @Transient
-    private boolean isNew;
-
-    protected UserAccountDetails() {
+    protected UserDPAConsentAuditLog() {
     }
 
-    private UserAccountDetails(final String userId,
-                               final String createdBy,
-                               final String updatedBy) {
+    public UserDPAConsentAuditLog(final String userId,
+                                  final String consentId,
+                                  final UserDPAConsentType userDPAConsentType) {
         this.userId = userId;
-        this.createdBy = createdBy;
-        this.updatedBy = updatedBy;
-        this.isNew = true;
+        this.consentId = consentId;
+        this.userDPAConsentType = userDPAConsentType;
     }
 
     public String getUserId() {
         return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getConsentId() {
+        return consentId;
+    }
+
+    public void setConsentId(String consentId) {
+        this.consentId = consentId;
+    }
+
+    public UserDPAConsentType getConsentType() {
+        return userDPAConsentType;
+    }
+
+    public void setConsentType(UserDPAConsentType userDPAConsentType) {
+        this.userDPAConsentType = userDPAConsentType;
     }
 
     public String getCreatedBy() {
@@ -86,27 +100,11 @@ public class UserAccountDetails implements Persistable<String> {
 
     @Override
     public String getId() {
-        return userId;
+        return userId + "-" + consentId;
     }
 
     @Override
     public boolean isNew() {
-        return isNew || !hasText(userId);
-    }
-
-    /**
-     * Static method to create new user account details.
-     *
-     * @param userId user id
-     * @param createdBy user id who creates an account
-     *
-     * @return new {@link UserAccountDetails}
-     */
-    public static UserAccountDetails create(final String userId,
-                                            final String createdBy) {
-        return new UserAccountDetails(
-                userId,
-                createdBy,
-                createdBy);
+        return true;
     }
 }

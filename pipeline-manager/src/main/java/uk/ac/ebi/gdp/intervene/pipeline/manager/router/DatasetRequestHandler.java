@@ -18,7 +18,6 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -36,12 +35,12 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Dataset
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetCryptographyDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.KeyHandlerService;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
+import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
@@ -51,27 +50,25 @@ import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild.valueOf;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType.GLOBUS;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.UserAccountUtil.userAccount;
 
 /**
  * Request handler for Dataset related operations.
  */
 public class DatasetRequestHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DatasetRequestHandler.class);
+    private static final Logger LOGGER = getLogger(DatasetRequestHandler.class);
     private final DatasetDetailsRepository datasetDetailsRepository;
     private final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository;
     private final DatasetMapper datasetMapper;
-    private final UserManagerService userManagerService;
     private final KeyHandlerService keyHandlerService;
 
     public DatasetRequestHandler(final DatasetDetailsRepository datasetDetailsRepository,
                                  final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository,
                                  final DatasetMapper datasetMapper,
-                                 final UserManagerService userManagerService,
                                  final KeyHandlerService keyHandlerService) {
         this.datasetDetailsRepository = datasetDetailsRepository;
         this.datasetCryptographyDetailsRepository = datasetCryptographyDetailsRepository;
         this.datasetMapper = datasetMapper;
-        this.userManagerService = userManagerService;
         this.keyHandlerService = keyHandlerService;
     }
 
@@ -86,14 +83,13 @@ public class DatasetRequestHandler {
     public Mono<ServerResponse> createOrUpdateDatasetDetails(final ServerRequest serverRequest) {
         return serverRequest
                 .bodyToMono(DatasetDetailsDTO.class)
-                .flatMap(datasetDetailsDTO -> userManagerService
-                        .getUserAccountDetails()
+                .flatMap(datasetDetailsDTO -> userAccount(serverRequest)
                         .flatMap(userAccountDTO -> datasetDetailsRepository
                                 .findByDatasetIdAndCreatedBy(datasetDetailsDTO.getDatasetId(), userAccountDTO.accountId())
                                 .flatMap(datasetDetails -> updateDataset(datasetDetails,
                                         valueOf(datasetDetailsDTO.getGenomeBuild().toUpperCase()),
                                         datasetDetailsDTO.getDatasetName()))
-                                .switchIfEmpty(buildDatasetWithKeys(datasetDetailsDTO, userAccountDTO.accountId()))));
+                                .switchIfEmpty(buildDatasetWithKeys(datasetDetailsDTO))));
     }
 
     private Mono<ServerResponse> updateDataset(final DatasetDetails datasetDetails,
@@ -108,11 +104,10 @@ public class DatasetRequestHandler {
                 .doOnNext(serverResponse -> LOGGER.info("Dataset details have been updated"));
     }
 
-    private Mono<ServerResponse> buildDatasetWithKeys(final DatasetDetailsDTO datasetDetailsDTO,
-                                                      final String accountId) {
+    private Mono<ServerResponse> buildDatasetWithKeys(final DatasetDetailsDTO datasetDetailsDTO) {
         return defer(() -> keyHandlerService
                 .generateKeys()
-                .flatMap(datasetCryptographyDetailsDTO -> createDataset(datasetDetailsDTO, accountId,
+                .flatMap(datasetCryptographyDetailsDTO -> createDataset(datasetDetailsDTO,
                         datasetCryptographyDetailsDTO.getExpiresAt())
                         .flatMap(datasetId -> createDatasetCryptography(datasetId,
                                 datasetCryptographyDetailsDTO.getPublicKey(),
@@ -124,9 +119,8 @@ public class DatasetRequestHandler {
     }
 
     private Mono<String> createDataset(final DatasetDetailsDTO datasetDetailsDTO,
-                                       final String accountId,
                                        final LocalDateTime expiresAt) {
-        return buildDataset(datasetDetailsDTO, accountId, expiresAt)
+        return buildDataset(datasetDetailsDTO, expiresAt)
                 .doOnNext(datasetDetails -> LOGGER.info("Dataset details are being created"))
                 .flatMap(datasetDetailsRepository::save)
                 .map(DatasetDetails::getDatasetId)
@@ -134,14 +128,12 @@ public class DatasetRequestHandler {
     }
 
     private Mono<DatasetDetails> buildDataset(final DatasetDetailsDTO datasetDetailsDTO,
-                                              final String userId,
                                               final LocalDateTime expiresAt) {
         return datasetDetailsRepository
                 .getNextDatasetId()
                 .map(nextDatasetId -> datasetMapper.toModel(datasetDetailsDTO,
                         nextDatasetId,
                         GLOBUS,
-                        userId,
                         expiresAt));
     }
 
@@ -166,8 +158,7 @@ public class DatasetRequestHandler {
      */
     public Mono<ServerResponse> getDatasetDetails(final ServerRequest serverRequest) {
         final String datasetId = serverRequest.pathVariable("datasetId");
-        return userManagerService
-                .getUserAccountDetails()
+        return userAccount(serverRequest)
                 .doOnNext(userAccountDTO -> LOGGER.info("Retrieving dataset details: {} for the user: {}", datasetId, userAccountDTO.accountId()))
                 .flatMap(userAccountDTO -> datasetDetailsRepository
                         .findByDatasetIdAndCreatedBy(datasetId,
@@ -187,8 +178,7 @@ public class DatasetRequestHandler {
      * @return Paginated list of datasets represented by {@link PaginationDTO}
      */
     public Mono<ServerResponse> getDatasets(final ServerRequest serverRequest) {
-        return userManagerService
-                .getUserAccountDetails()
+        return userAccount(serverRequest)
                 .doOnNext(userAccountDTO -> LOGGER.info("Retrieving all datasets"))
                 .flatMap(userAccountDTO -> datasetDetailsRepository
                         .countAllByCreatedBy(userAccountDTO.accountId())

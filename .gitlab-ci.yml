@@ -10,6 +10,7 @@ variables:
   KEY_HANDLER_MODULE: 'key-handler'
   GENERIC_DOCKER_FILE: 'docker/Dockerfile'
   KEY_HANDLER_DOCKER_FILE: 'docker/key-handler/Dockerfile'
+  TARGET_PLATFORM: 'linux/amd64'
 
 cache:
   key: $CACHE_KEY
@@ -50,6 +51,7 @@ stages:
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/${DOCKER_FILE}"
       --build-arg "MODULE_NAME=${MODULE}"
+      --build-arg "TARGET_PLATFORM=${TARGET_PLATFORM}"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${CI_COMMIT_TAG}-dev"
   only:
     - /^\d+\.\d+\.\d+$/

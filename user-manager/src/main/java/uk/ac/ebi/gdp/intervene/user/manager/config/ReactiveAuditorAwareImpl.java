@@ -15,14 +15,14 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.config;
+package uk.ac.ebi.gdp.intervene.user.manager.config;
 
 import org.springframework.data.domain.ReactiveAuditorAware;
 import org.springframework.security.core.userdetails.User;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
-import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.UserAccountDTO;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.IUserAccountPersistenceService;
 
+import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.currentUserId;
 import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.isPrincipalOfTypeUser;
 import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvider.user;
 
@@ -31,10 +31,10 @@ import static uk.ac.ebi.gdp.intervene.commons.security.SecurityContextDataProvid
  * populates current auditor
  */
 public class ReactiveAuditorAwareImpl implements ReactiveAuditorAware<String> {
-    private final IUserManagerService userManagerService;
+    private final IUserAccountPersistenceService userAccountPersistenceService;
 
-    public ReactiveAuditorAwareImpl(final IUserManagerService userManagerService) {
-        this.userManagerService = userManagerService;
+    public ReactiveAuditorAwareImpl(final IUserAccountPersistenceService userAccountPersistenceService) {
+        this.userAccountPersistenceService = userAccountPersistenceService;
     }
 
     /**
@@ -50,9 +50,12 @@ public class ReactiveAuditorAwareImpl implements ReactiveAuditorAware<String> {
                         return user()
                                 .map(User::getUsername);
                     } else {
-                        return userManagerService
-                                .getUserAccountDetails()
-                                .map(UserAccountDTO::accountId);
+                        return currentUserId()
+                                .flatMap(userId -> userAccountPersistenceService
+                                        .getUserAccountByAuthUserAccountId(userId)
+                                        .map(authUserAccount -> authUserAccount
+                                                .getUserAccount()
+                                                .getUserId()));
                     }
                 });
     }

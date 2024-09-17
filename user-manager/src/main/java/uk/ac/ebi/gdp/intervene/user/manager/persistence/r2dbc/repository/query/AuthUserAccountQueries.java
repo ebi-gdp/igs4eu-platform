@@ -35,6 +35,15 @@ public interface AuthUserAccountQueries {
                                   " u.created_on," +
                                   " u.updated_by," +
                                   " u.updated_on," +
+                                  " (SELECT " +
+                                  "   consent_type " +
+                                  "  FROM " +
+                                  "   user_dpa_consent_audit_logs c " +
+                                  "  WHERE " +
+                                  "   c.user_id = a.user_id " +
+                                  "  ORDER BY " +
+                                  "   c.updated_on DESC " +
+                                  "  LIMIT 1) AS consent_type," +
                                   " a.auth_user_id," +
                                   " a.auth_provider," +
                                   " a.status as auth_user_status," +

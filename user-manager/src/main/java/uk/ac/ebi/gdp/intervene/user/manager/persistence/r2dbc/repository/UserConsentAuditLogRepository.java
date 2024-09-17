@@ -15,12 +15,12 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.constant;
+package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository;
 
-/**
- * Define constants related to platforms being used.
- */
-public interface PlatformType {
-    String EBI_EMBASSY = "EBI_EMBASSY", CSC = "CSC", GCP = "GCP";
-    String HTTP = "HTTP", S3 = "S3", KAFKA = "KAFKA";
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserDPAConsentAuditLog;
+
+public interface UserConsentAuditLogRepository extends R2dbcRepository<UserDPAConsentAuditLog, String> {
+    Mono<UserDPAConsentAuditLog> findFirstByUserIdOrderByUpdatedOnDesc(String userId);
 }

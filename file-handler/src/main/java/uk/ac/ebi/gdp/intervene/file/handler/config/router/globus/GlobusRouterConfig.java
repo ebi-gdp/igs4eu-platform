@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.collection.IFileOperationService;
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.AuthService;
 
@@ -39,9 +40,11 @@ public class GlobusRouterConfig {
 
     @Bean
     public RouterFunction<ServerResponse> globusRoutes(final GlobusRequestHandler globusRequestHandler,
-                                                       final GlobusUserRequestHandler globusUserRequestHandler) {
+                                                       final GlobusUserRequestHandler globusUserRequestHandler,
+                                                       final DPAConsentCheck dpaConsentCheck) {
         return route()
                 .filter(logRequestIdHeader(LOGGER))
+                .filter(dpaConsentCheck.hasUserGivenConsent())
                 .path("/globus", gb -> gb
                         .path("/guest-collection", gcb -> gcb
                                 .POST(globusRequestHandler::createDirectoryOnGuestCollection)

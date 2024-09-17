@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2022 EMBL - European Bioinformatics Institute
+ * Copyright 2024 EMBL - European Bioinformatics Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,18 +24,20 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
-import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
 import static org.springframework.util.StringUtils.hasText;
 
-@Table("user_account_details")
-public class UserAccountDetails implements Persistable<String> {
-
+@Table("user_dpa_consent_details")
+public class UserDPAConsentDetails implements Persistable<String> {
     @Id
-    private String userId;
+    private String consentId;
+
+    private String consentText;
+
+    private String version;
 
     @CreatedBy
     private String createdBy;
@@ -52,20 +54,16 @@ public class UserAccountDetails implements Persistable<String> {
     @Transient
     private boolean isNew;
 
-    protected UserAccountDetails() {
+    public String getConsentId() {
+        return consentId;
     }
 
-    private UserAccountDetails(final String userId,
-                               final String createdBy,
-                               final String updatedBy) {
-        this.userId = userId;
-        this.createdBy = createdBy;
-        this.updatedBy = updatedBy;
-        this.isNew = true;
+    public String getConsentText() {
+        return consentText;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getVersion() {
+        return version;
     }
 
     public String getCreatedBy() {
@@ -86,27 +84,11 @@ public class UserAccountDetails implements Persistable<String> {
 
     @Override
     public String getId() {
-        return userId;
+        return consentId;
     }
 
     @Override
     public boolean isNew() {
-        return isNew || !hasText(userId);
-    }
-
-    /**
-     * Static method to create new user account details.
-     *
-     * @param userId user id
-     * @param createdBy user id who creates an account
-     *
-     * @return new {@link UserAccountDetails}
-     */
-    public static UserAccountDetails create(final String userId,
-                                            final String createdBy) {
-        return new UserAccountDetails(
-                userId,
-                createdBy,
-                createdBy);
+        return isNew || !hasText(consentId);
     }
 }

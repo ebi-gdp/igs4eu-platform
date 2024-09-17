@@ -17,51 +17,45 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity;
 
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
-import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
 import static org.springframework.util.StringUtils.hasText;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountStatus.ACTIVE;
+import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserDPAConsentType.GIVEN;
 
 @Table("user_account")
 public class UserAccount implements Persistable<String> {
 
     @Id
-    @Column("user_id")
     private String userId;
-
-    @Column("given_name")
     private String givenName;
-
-    @Column("family_name")
     private String familyName;
-
-    @Column("email_id")
     private String emailId;
-
-    @Column("status")
     private UserAccountStatus status;
 
-    @Column("created_by")
+    @CreatedBy
     private String createdBy;
 
     @CreatedDate
-    @Column("created_on")
     private LocalDateTime createdOn;
 
-    @Column("updated_by")
+    @LastModifiedBy
     private String updatedBy;
 
     @LastModifiedDate
-    @Column("updated_on")
     private LocalDateTime updatedOn;
+
+    @Transient
+    private UserDPAConsentType userDPAConsentType;
 
     @Transient
     private boolean isNew;
@@ -74,6 +68,7 @@ public class UserAccount implements Persistable<String> {
                         final String lastName,
                         final String emailId,
                         final UserAccountStatus userAccountStatus,
+                        final UserDPAConsentType userDPAConsentType,
                         final String createdBy,
                         final String updatedBy,
                         final boolean isNew) {
@@ -82,6 +77,7 @@ public class UserAccount implements Persistable<String> {
         this.familyName = lastName;
         this.emailId = emailId;
         this.status = userAccountStatus;
+        this.userDPAConsentType = userDPAConsentType;
         this.createdBy = createdBy;
         this.updatedBy = updatedBy;
         this.isNew = isNew;
@@ -92,13 +88,72 @@ public class UserAccount implements Persistable<String> {
                         final String lastName,
                         final String emailId,
                         final UserAccountStatus userAccountStatus,
+                        final UserDPAConsentType userDPAConsentType,
                         final String createdBy,
                         final LocalDateTime createdOn,
                         final String updatedBy,
                         final LocalDateTime updatedOn) {
-        this(userId, firstName, lastName, emailId, userAccountStatus, createdBy, updatedBy, false);
+        this(userId, firstName, lastName, emailId, userAccountStatus, userDPAConsentType,
+                createdBy, updatedBy, false);
         this.createdOn = createdOn;
         this.updatedOn = updatedOn;
+    }
+
+    /**
+     * Static method to create new user account.
+     *
+     * @param userId user id
+     * @param firstName firstname
+     * @param lastName lastname
+     * @param emailId email id
+     * @param createdBy user id who creates an account
+     *
+     * @return new user account {@link UserAccount}
+     */
+    public static UserAccount create(final String userId,
+                                     final String firstName,
+                                     final String lastName,
+                                     final String emailId,
+                                     final String createdBy) {
+        return new UserAccount(
+                userId,
+                firstName,
+                lastName,
+                emailId,
+                ACTIVE,
+                GIVEN,
+                createdBy,
+                createdBy,
+                true
+        );
+    }
+
+    /**
+     * Static method to load existing user account.
+     *
+     * @param userId user id
+     * @param firstName firstname
+     * @param lastName lastname
+     * @param emailId email id
+     * @param userAccountStatus account status {@link UserAccountStatus}
+     * @param userDPAConsentType {@link UserDPAConsentType}
+     * @param createdBy user id
+     * @param createdOn object creation timestamp
+     * @param updatedBy user id
+     * @param updatedOn object update timestamp
+     */
+    public static UserAccount load(final String userId,
+                                   final String firstName,
+                                   final String lastName,
+                                   final String emailId,
+                                   final UserAccountStatus userAccountStatus,
+                                   final UserDPAConsentType userDPAConsentType,
+                                   final String createdBy,
+                                   final LocalDateTime createdOn,
+                                   final String updatedBy,
+                                   final LocalDateTime updatedOn) {
+        return new UserAccount(userId, firstName, lastName, emailId, userAccountStatus,
+                userDPAConsentType, createdBy, createdOn, updatedBy, updatedOn);
     }
 
     public String getUserId() {
@@ -137,6 +192,10 @@ public class UserAccount implements Persistable<String> {
         return updatedOn;
     }
 
+    public UserDPAConsentType getConsentType() {
+        return userDPAConsentType;
+    }
+
     @Override
     public String getId() {
         return userId;
@@ -145,59 +204,5 @@ public class UserAccount implements Persistable<String> {
     @Override
     public boolean isNew() {
         return isNew || !hasText(userId);
-    }
-
-    /**
-     * Static method to create new user account.
-     *
-     * @param userId user id
-     * @param firstName firstname
-     * @param lastName lastname
-     * @param emailId email id
-     * @param createdBy user id who creates an account
-     *
-     * @return new user account {@link UserAccount}
-     */
-    public static UserAccount create(final String userId,
-                                     final String firstName,
-                                     final String lastName,
-                                     final String emailId,
-                                     final String createdBy) {
-        return new UserAccount(
-                userId,
-                firstName,
-                lastName,
-                emailId,
-                ACTIVE,
-                createdBy,
-                createdBy,
-                true
-        );
-    }
-
-    /**
-     * Static method to load existing user account.
-     *
-     * @param userId user id
-     * @param firstName firstname
-     * @param lastName lastname
-     * @param emailId email id
-     * @param userAccountStatus account status {@link UserAccountStatus}
-     * @param createdBy user id
-     * @param createdOn object creation timestamp
-     * @param updatedBy user id
-     * @param updatedOn object update timestamp
-     */
-    public static UserAccount load(final String userId,
-                                   final String firstName,
-                                   final String lastName,
-                                   final String emailId,
-                                   final UserAccountStatus userAccountStatus,
-                                   final String createdBy,
-                                   final LocalDateTime createdOn,
-                                   final String updatedBy,
-                                   final LocalDateTime updatedOn) {
-        return new UserAccount(userId, firstName, lastName, emailId,
-                userAccountStatus, createdBy, createdOn, updatedBy, updatedOn);
     }
 }

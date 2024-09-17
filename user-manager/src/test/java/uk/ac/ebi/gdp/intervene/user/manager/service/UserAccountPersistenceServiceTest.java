@@ -84,8 +84,7 @@ public class UserAccountPersistenceServiceTest {
                 .create(userAccountPersistenceService.createAccount(authUser1AccountId, userInfo))
                 .consumeNextWith(userAccount -> assertThat(userAccount)
                         .usingComparator(userAccountComparator())
-                        .isEqualTo(getUser1AccountDetails())
-                )
+                        .isEqualTo(getUser1AccountDetails()))
                 .verifyComplete();
     }
 
@@ -101,7 +100,6 @@ public class UserAccountPersistenceServiceTest {
 
     }
 
-    //@Disabled
     @Test
     public void whenGetUserAccountByAuthUserAccountIdWithValidData_thenUserAccountDetailsReturned() {
         StepVerifier
@@ -190,8 +188,8 @@ public class UserAccountPersistenceServiceTest {
         protected List<Object> getCustomConverters() {
             return List.of(
                     new EnumConverter.AuthProviderWritingConverter(),
-                    new EnumConverter.AuthUserAccountStatusTypeConverter(),
-                    new EnumConverter.UserAccountStatusTypeConverter()
+                    new EnumConverter.AuthUserAccountStatusWritingTypeConverter(),
+                    new EnumConverter.UserAccountStatusTypeWritingConverter()
             );
         }
 

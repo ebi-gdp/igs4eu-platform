@@ -21,6 +21,7 @@ import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.r2dbc.convert.EnumWriteSupport;
 import uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.AuthUserAccountStatus;
+import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserDPAConsentType;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountStatus;
 
 /**
@@ -29,14 +30,18 @@ import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccount
 public interface EnumConverter {
 
     @WritingConverter
-    class AuthUserAccountStatusTypeConverter extends EnumWriteSupport<AuthUserAccountStatus> {
+    class AuthUserAccountStatusWritingTypeConverter extends EnumWriteSupport<AuthUserAccountStatus> {
     }
 
     @WritingConverter
-    class UserAccountStatusTypeConverter extends EnumWriteSupport<UserAccountStatus> {
+    class UserAccountStatusTypeWritingConverter extends EnumWriteSupport<UserAccountStatus> {
     }
 
     @WritingConverter
     class AuthProviderWritingConverter extends EnumWriteSupport<AuthProviderType> {
+    }
+
+    @WritingConverter
+    class ConsentTypeWritingConverter extends EnumWriteSupport<UserDPAConsentType> {
     }
 }

@@ -15,12 +15,14 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.constant;
+package uk.ac.ebi.gdp.intervene.commons.dpa;
+
+import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.UserAccountDTO;
 
 /**
- * Define constants related to platforms being used.
+ * User manager service interface. Provide default implementation.
  */
-public interface PlatformType {
-    String EBI_EMBASSY = "EBI_EMBASSY", CSC = "CSC", GCP = "GCP";
-    String HTTP = "HTTP", S3 = "S3", KAFKA = "KAFKA";
+public interface IUserManagerService {
+    Mono<UserAccountDTO> getUserAccountDetails();
 }

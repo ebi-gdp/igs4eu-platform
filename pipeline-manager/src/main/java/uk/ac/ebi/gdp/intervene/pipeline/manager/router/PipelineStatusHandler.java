@@ -18,7 +18,7 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -30,22 +30,23 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePer
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
+import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 
 /**
  * CSC pipeline handler for EBI & CSC integration hybrid model.
  */
-public class PipelineHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PipelineHandler.class);
+public class PipelineStatusHandler {
+    private static final Logger LOGGER = getLogger(PipelineStatusHandler.class);
     private final UserManagerService userManagerService;
     private final IPipelinePersistence pipelinePersistence;
     private final IEmailSender emailService;
     private final String platformURL;
 
-    public PipelineHandler(final UserManagerService userManagerService,
-                           final IPipelinePersistence pipelinePersistence,
-                           final IEmailSender emailService,
-                           final String platformURL) {
+    public PipelineStatusHandler(final UserManagerService userManagerService,
+                                 final IPipelinePersistence pipelinePersistence,
+                                 final IEmailSender emailService,
+                                 final String platformURL) {
         this.userManagerService = userManagerService;
         this.pipelinePersistence = pipelinePersistence;
         this.emailService = emailService;
@@ -59,16 +60,30 @@ public class PipelineHandler {
      *
      * @return pipeline status represented by {@link PipelineStatusDTO}
      */
+    @Transactional(rollbackFor = Exception.class)
     public Mono<ServerResponse> updatePipelineStatus(final ServerRequest serverRequest) {
         final String pipelineId = serverRequest.pathVariable("pipelineId");
         return serverRequest
                 .bodyToMono(PipelineStatusDTO.class)
-                .doOnNext(pipelineStatusDTO -> LOGGER.info("Pipeline status is being updated to status: {} for Pipeline Id: {}", pipelineStatusDTO.getStatus(), pipelineId))
-                .flatMap(pipelineStatusDTO -> pipelinePersistence
-                        .updatePipelineStatus(pipelineId, pipelineStatusDTO))
-                .flatMap(pipelineExecutionStatus -> handlePipelineOutcome(pipelineExecutionStatus.getStatus(), pipelineExecutionStatus))
+                .flatMap(pipelineStatusDTO -> updatePipelineStatus(pipelineId, pipelineStatusDTO))
                 .then(Mono.defer(() -> ok().build()))
                 .doOnSuccess(pipelineStatusDTO -> LOGGER.info("Pipeline status has been updated for Pipeline Id: {}", pipelineId));
+    }
+
+    /**
+     * Update pipeline status.
+     *
+     * @param pipelineId pipeline id
+     * @param pipelineStatusDTO {@link PipelineStatusDTO}
+     *
+     * @return {@link Void}
+     */
+    public Mono<Void> updatePipelineStatus(final String pipelineId,
+                                           final PipelineStatusDTO pipelineStatusDTO) {
+        LOGGER.info("Pipeline status is being updated to status: {} for Pipeline Id: {}", pipelineStatusDTO.getStatus(), pipelineId);
+        return pipelinePersistence
+                .updatePipelineStatus(pipelineId, pipelineStatusDTO)
+                .flatMap(pipelineExecutionStatus -> handlePipelineOutcome(pipelineExecutionStatus.getStatus(), pipelineExecutionStatus));
     }
 
     private Mono<Void> handlePipelineOutcome(final PipelineStatus pipelineStatus,
@@ -118,8 +133,7 @@ public class PipelineHandler {
                                         pipelineId) +
                                 "<br><br>Please find download link to the result files" +
                                 "<br><br><a href=" + platformURL.formatted(pipelineId) + ">Download files</a>" +
-                                "<br/><br/>INTERVENE Team")
-                );
+                                "<br/><br/>INTERVENE Team"));
     }
 
     private Mono<IEmailSender.EmailData> buildErrorEmailData(final String pipelineId,
@@ -135,8 +149,7 @@ public class PipelineHandler {
                                 .formatted(userAccountDTO.givenName(),
                                         userAccountDTO.familyName(),
                                         pipelineId,
-                                        errorMessage(traceName, traceExit)
-                                )));
+                                        errorMessage(traceName, traceExit))));
     }
 
     private String errorMessage(final String traceName,

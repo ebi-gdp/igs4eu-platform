@@ -18,16 +18,20 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
 import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
 import static org.springframework.util.StringUtils.hasText;
 
+@Table("pipeline_result")
 public class PipelineResult implements Persistable<String> {
     @Id
     @Column("pipeline_id")
@@ -39,13 +43,13 @@ public class PipelineResult implements Persistable<String> {
     @CreatedBy
     private String createdBy;
 
-    @Column
+    @CreatedDate
     private LocalDateTime createdOn;
 
     @LastModifiedBy
     private String updatedBy;
 
-    @Column
+    @LastModifiedDate
     private LocalDateTime updatedOn;
 
     @Transient
@@ -59,6 +63,21 @@ public class PipelineResult implements Persistable<String> {
         this.pipelineId = pipelineId;
         this.fileDownloadPath = fileDownloadPath;
         this.isNew = true;
+    }
+
+    /**
+     * Creates new pipeline result.
+     *
+     * @param pipelineId pipeline id.
+     * @param fileDownloadPath file download path.
+     *
+     * @return new pipeline result {@link PipelineResult}.
+     */
+    public static PipelineResult create(final String pipelineId,
+                                        final String fileDownloadPath) {
+        return new PipelineResult(
+                pipelineId,
+                fileDownloadPath);
     }
 
     public String getPipelineId() {
@@ -81,32 +100,16 @@ public class PipelineResult implements Persistable<String> {
         return createdBy;
     }
 
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
-    }
-
     public LocalDateTime getCreatedOn() {
         return createdOn;
-    }
-
-    public void setCreatedOn(LocalDateTime createdOn) {
-        this.createdOn = createdOn;
     }
 
     public String getUpdatedBy() {
         return updatedBy;
     }
 
-    public void setUpdatedBy(String updatedBy) {
-        this.updatedBy = updatedBy;
-    }
-
     public LocalDateTime getUpdatedOn() {
         return updatedOn;
-    }
-
-    public void setUpdatedOn(LocalDateTime updatedOn) {
-        this.updatedOn = updatedOn;
     }
 
     @Override
@@ -117,20 +120,5 @@ public class PipelineResult implements Persistable<String> {
     @Override
     public boolean isNew() {
         return isNew || !hasText(pipelineId);
-    }
-
-    /**
-     * Static method to create new pipeline result.
-     *
-     * @param pipelineId pipeline id
-     * @param fileDownloadPath file download path
-     *
-     * @return new pipeline result {@link PipelineResult}
-     */
-    public static PipelineResult create(final String pipelineId,
-                                        final String fileDownloadPath) {
-        return new PipelineResult(
-                pipelineId,
-                fileDownloadPath);
     }
 }

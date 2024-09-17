@@ -15,12 +15,8 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.constant;
+package uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity;
 
-/**
- * Define constants related to platforms being used.
- */
-public interface PlatformType {
-    String EBI_EMBASSY = "EBI_EMBASSY", CSC = "CSC", GCP = "GCP";
-    String HTTP = "HTTP", S3 = "S3", KAFKA = "KAFKA";
+public enum UserDPAConsentType {
+    NOT_GIVEN, GIVEN, REVOKED
 }

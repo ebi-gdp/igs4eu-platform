@@ -18,7 +18,6 @@
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -28,36 +27,34 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.S3ObjectDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.ICloudStorage;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
 import java.util.Optional;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
+import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.UserAccountUtil.userAccount;
 
 /**
  * Request handler for Pipeline related operations.
  */
 public class PipelineResultHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PipelineResultHandler.class);
+    private static final Logger LOGGER = getLogger(PipelineResultHandler.class);
     private final IPipelinePersistence pipelinePersistence;
-    private final UserManagerService userManagerService;
     private final ICloudStorage cloudStorage;
     private final String bucketNameFormat;
     private final String bucketFilePrefix;
 
     public PipelineResultHandler(final IPipelinePersistence pipelinePersistence,
-                                 final UserManagerService userManagerService,
                                  final ICloudStorage cloudStorage,
                                  final String bucketNameFormat,
                                  final String bucketFilePrefix) {
         this.pipelinePersistence = pipelinePersistence;
-        this.userManagerService = userManagerService;
         this.cloudStorage = cloudStorage;
         this.bucketNameFormat = bucketNameFormat;
         this.bucketFilePrefix = bucketFilePrefix;
@@ -73,8 +70,7 @@ public class PipelineResultHandler {
      */
     public Mono<ServerResponse> listResultFiles(final ServerRequest serverRequest) {
         LOGGER.info("Listing result files");
-        return userManagerService
-                .getUserAccountDetails()
+        return userAccount(serverRequest)
                 .flatMap(userAccountDTO -> getPipelineResult(serverRequest, userAccountDTO.accountId()))
                 .doOnNext(pipelineResult -> LOGGER.info("Retrieved pipeline result"))
                 .flatMap(pipelineResult -> pipelinePersistence
@@ -118,8 +114,7 @@ public class PipelineResultHandler {
         final String path = serverRequest
                 .queryParam("path")
                 .orElseThrow(() -> badRequest("Query param 'Path' is missing!"));
-        return userManagerService
-                .getUserAccountDetails()
+        return userAccount(serverRequest)
                 .flatMap(userAccountDTO -> pipelinePersistence
                         .getPipeline(serverRequest.pathVariable("pipelineId"), userAccountDTO.accountId())
                         .doOnNext(ignorePipelineDetails -> LOGGER.info("Retrieved pipeline details")))

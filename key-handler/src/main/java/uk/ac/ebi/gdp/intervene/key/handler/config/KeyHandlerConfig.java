@@ -17,11 +17,18 @@
  */
 package uk.ac.ebi.gdp.intervene.key.handler.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
+import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
+import uk.ac.ebi.gdp.intervene.commons.dpa.DefaultUserManagerService;
+import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.dto.constant.GCPRegion;
+import uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil;
 import uk.ac.ebi.gdp.intervene.key.handler.cryptography.Crypt4ghKeygen;
 import uk.ac.ebi.gdp.intervene.key.handler.router.KeyRequestHandler;
 import uk.ac.ebi.gdp.intervene.key.handler.secret.ISecretManager;
@@ -29,6 +36,7 @@ import uk.ac.ebi.gdp.intervene.key.handler.secret.SecretConfig;
 import uk.ac.ebi.gdp.intervene.key.handler.secret.gcp.GCPSecretManager;
 import uk.ac.ebi.gdp.intervene.key.handler.service.Crypt4ghKeyGenerator;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -37,6 +45,7 @@ import java.util.List;
  */
 @Configuration
 public class KeyHandlerConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeyHandlerConfig.class);
 
     /**
      * Creates a SecretConfig bean with properties prefixed with "gcp.secret-manager.config".
@@ -112,5 +121,41 @@ public class KeyHandlerConfig {
                 secretManager,
                 keysBasePath,
                 privateKeyPassword.toCharArray());
+    }
+
+    /**
+     * Creates {@link DPAConsentCheck} bean for checking user consent status on DPA.
+     *
+     * @param userManagerService the {@link DefaultUserManagerService} default implementation.
+     *
+     * @return {@link DPAConsentCheck} instance.
+     */
+    @Bean
+    public DPAConsentCheck dpaConsentCheck(final IUserManagerService userManagerService) {
+        return new DPAConsentCheck(userManagerService);
+    }
+
+    /**
+     * User manager service default bean.
+     *
+     * @param userManagerWebClient {@link WebClient} to interact with User manager service.
+     * @param userAccountURI user account URI.
+     *
+     * @return {@link DefaultUserManagerService} default user manager service.
+     */
+    @Bean
+    public IUserManagerService userManagerService(final WebClient userManagerWebClient,
+                                                  @Value("${intervene.user-manager.user-account.uri}") final URI userAccountURI) {
+        return new DefaultUserManagerService(userManagerWebClient, userAccountURI);
+    }
+
+    /**
+     * @param baseURL base URL of User manager service.
+     *
+     * @return {@link WebClient} to interact with User manager service.
+     */
+    @Bean
+    public WebClient webClient(@Value("${intervene.user-manager.base-url}") final String baseURL) {
+        return WebClientUtil.webClient(baseURL, LOGGER);
     }
 }

@@ -24,7 +24,6 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
-import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.nio.file.Path;
@@ -36,27 +35,20 @@ import static org.springframework.util.StringUtils.hasText;
 public class GlobusDetails implements Persistable<String> {
     @Id
     private String filesetId;
-
     private String globusUsername;
-
     private String guestCollectionId;
-
     private String dirPathOnGuestCollection;
 
     @CreatedBy
-    @Column
     private String createdBy;
 
     @CreatedDate
-    @Column
     private LocalDateTime createdOn;
 
     @LastModifiedBy
-    @Column
     private String updatedBy;
 
     @LastModifiedDate
-    @Column
     private LocalDateTime updatedOn;
 
     @Transient
@@ -96,6 +88,16 @@ public class GlobusDetails implements Persistable<String> {
         this.updatedOn = updatedOn;
     }
 
+    /**
+     * Creates new globus details.
+     *
+     * @param filesetId fileset id.
+     * @param globusUsername globus username.
+     * @param guestCollectionId guest collection id.
+     * @param dirPathOnGuestCollection dir path on guest collection.
+     *
+     * @return new globus details {@link GlobusDetails}.
+     */
     public static GlobusDetails create(final String filesetId,
                                        final String globusUsername,
                                        final String guestCollectionId,
@@ -109,6 +111,20 @@ public class GlobusDetails implements Persistable<String> {
         );
     }
 
+    /**
+     * Load globus details.
+     *
+     * @param filesetId fileset id.
+     * @param globusUsername globus username.
+     * @param guestCollectionId guest collection id.
+     * @param dirPathOnGuestCollection dir path on guest collection.
+     * @param createdBy created by user id.
+     * @param createdOn created on timestamp
+     * @param updatedBy updated by user id.
+     * @param updatedOn updated on timestamp.
+     *
+     * @return {@link GlobusDetails}.
+     */
     public static GlobusDetails load(final String filesetId,
                                      final String globusUsername,
                                      final String guestCollectionId,

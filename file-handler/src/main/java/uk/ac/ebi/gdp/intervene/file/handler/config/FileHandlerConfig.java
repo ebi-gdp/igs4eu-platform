@@ -17,6 +17,8 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -25,8 +27,14 @@ import org.springframework.context.annotation.Import;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.ac.ebi.gdp.file.handler.core.properties.WebClientProperties;
+import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
+import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
+import uk.ac.ebi.gdp.intervene.commons.dpa.DefaultUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
+import uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil;
 import uk.ac.ebi.gdp.intervene.file.handler.service.ega.EGAFileService;
+
+import java.net.URI;
 
 /**
  * Bean config for file handler service.
@@ -40,6 +48,7 @@ import uk.ac.ebi.gdp.intervene.file.handler.service.ega.EGAFileService;
 @Import(ReactiveExceptionHandler.class)
 @Configuration
 public class FileHandlerConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileHandlerConfig.class);
 
     @Bean
     public EGAFileService egaFileService(@Qualifier("egaWebClient") final WebClient webClient,
@@ -54,5 +63,28 @@ public class FileHandlerConfig {
                 webClientProperties.getPipeSize(),
                 IV
         );
+    }
+
+    /**
+     * Creates {@link DPAConsentCheck} bean for checking user consent status on DPA.
+     *
+     * @param userManagerService the {@link DefaultUserManagerService} default implementation.
+     *
+     * @return {@link DPAConsentCheck} instance.
+     */
+    @Bean
+    public DPAConsentCheck dpaConsentCheck(final IUserManagerService userManagerService) {
+        return new DPAConsentCheck(userManagerService);
+    }
+
+    @Bean
+    public IUserManagerService userManagerService(@Qualifier("userManagerWebClient") final WebClient userManagerWebClient,
+                                                  @Value("${intervene.user-manager.user-account.uri}") final URI userAccountURI) {
+        return new DefaultUserManagerService(userManagerWebClient, userAccountURI);
+    }
+
+    @Bean("userManagerWebClient")
+    public WebClient webClient(@Value("${intervene.user-manager.base-url}") final String baseURL) {
+        return WebClientUtil.webClient(baseURL, LOGGER);
     }
 }
