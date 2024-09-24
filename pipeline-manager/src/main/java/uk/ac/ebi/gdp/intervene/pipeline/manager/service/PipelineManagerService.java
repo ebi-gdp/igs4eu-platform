@@ -24,6 +24,7 @@ import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperD
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineParam;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.message.SecretKeyDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.MessageService;
@@ -217,9 +218,16 @@ public class PipelineManagerService {
                 new GuestCollectionDirResDTO(
                         pipelineDetails.getDatasetDetails().getGlobusDetails().getGlobusUsername()
                                 + pipelineDetails.getDatasetDetails().getGlobusDetails().getDirPathOnGuestCollection(),
-                        files
-                )
-        );
+                        files),
+                new SecretKeyDetails(pipelineDetails
+                        .getDatasetDetails()
+                        .getDatasetCryptographyDetails()
+                        .getSecretId(),
+                        Path.of(pipelineDetails
+                                        .getDatasetDetails()
+                                        .getDatasetCryptographyDetails()
+                                        .getSecretIdVersion())
+                                .getFileName().toString()));
     }
 
     private PipelineParam buildPipelineParam(final String pipelineId,
