@@ -19,6 +19,7 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.ma
 
 import io.r2dbc.spi.Row;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetCryptographyDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails;
@@ -44,8 +45,7 @@ public interface PipelineDetailsEntityMapper {
                     getString("gu_created_by", row),
                     getLocalDateTime("gu_created_on", row),
                     getString("gu_updated_by", row),
-                    getLocalDateTime("gu_updated_on", row)
-            );
+                    getLocalDateTime("gu_updated_on", row));
             final GlobusDetails globusDetails = GlobusDetails.load(
                     getString("fileset_id", row),
                     getString("globus_username", row),
@@ -56,18 +56,27 @@ public interface PipelineDetailsEntityMapper {
                     getString("globus_updated_by", row),
                     getLocalDateTime("globus_updated_on", row));
             globusDetails.setGlobusUserDetails(globusUserDetails);
+            final DatasetCryptographyDetails cryptographyDetails = DatasetCryptographyDetails.load(
+                    getString("dataset_id", row),
+                    getString("public_key", row),
+                    getString("secret_id", row),
+                    getString("secret_id_version", row),
+                    getString("cryptography_created_by", row),
+                    getLocalDateTime("cryptography_created_on", row),
+                    getString("cryptography_updated_by", row),
+                    getLocalDateTime("cryptography_updated_on", row));
             final DatasetDetails datasetDetails = DatasetDetails.load(
                     getString("dataset_id", row),
                     getString("dataset_name", row),
                     GenomeBuild.valueOf(getString("genome_build", row)),
                     FilesetType.valueOf(getString("fileset_type", row)),
                     getLocalDateTime("expires_at", row),
+                    cryptographyDetails,
                     globusDetails,
                     getString("dataset_created_by", row),
                     getLocalDateTime("dataset_created_on", row),
                     getString("dataset_updated_by", row),
-                    getLocalDateTime("dataset_updated_on", row)
-            );
+                    getLocalDateTime("dataset_updated_on", row));
             final PipelineExecutionStatus pipelineExecutionStatus = getPipelineExecutionStatus(row);
             return getPipelineDetails(row, pipelineExecutionStatus, datasetDetails);
         };

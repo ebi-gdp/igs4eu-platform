@@ -20,5 +20,6 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.message;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO;
 
 public record TriggerPipelineEvent(PipelineParam pipelineParam,
-                                   GuestCollectionDirResDTO globusDetails) {
+                                   GuestCollectionDirResDTO globusDetails,
+                                   SecretKeyDetails secretKeyDetails) {
 }

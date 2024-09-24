@@ -88,6 +88,14 @@ public interface PipelineQueries {
                                           " d.created_on as dataset_created_on," +
                                           " d.updated_by as dataset_updated_by," +
                                           " d.updated_on as dataset_updated_on," +
+                                          " c.dataset_id," +
+                                          " c.public_key," +
+                                          " c.secret_id," +
+                                          " c.secret_id_version," +
+                                          " c.created_by as cryptography_created_by," +
+                                          " c.created_on as cryptography_created_on," +
+                                          " c.updated_by as cryptography_updated_by," +
+                                          " c.updated_on as cryptography_updated_on," +
                                           " g.globus_username," +
                                           " g.guest_collection_id," +
                                           " g.dir_path_on_guest_collection," +
@@ -108,6 +116,9 @@ public interface PipelineQueries {
                                           "INNER JOIN" +
                                           " dataset_details d" +
                                           " ON p.dataset_id = d.dataset_id " +
+                                          "INNER JOIN" +
+                                          " dataset_cryptography_details c" +
+                                          " ON c.dataset_id = d.dataset_id " +
                                           "INNER JOIN" +
                                           " globus_guest_collection_files_details g" +
                                           " ON d.fileset_id = g.fileset_id " +
