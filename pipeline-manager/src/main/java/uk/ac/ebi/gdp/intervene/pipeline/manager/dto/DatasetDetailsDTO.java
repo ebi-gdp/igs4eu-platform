@@ -3,6 +3,10 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 
 import java.time.LocalDateTime;
@@ -11,11 +15,24 @@ import java.time.LocalDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DatasetDetailsDTO {
     private String datasetId;
+
+    @Size(max = 512, message = "Dataset name can't be more than 512 characters!")
+    @NotEmpty
     private String datasetName;
+
+    @NotNull
     private GenomeBuild genomeBuild;
+
     private LocalDateTime expiresAt;
+
+    @Size(max = 15, message = "Fileset Id can't be more than 15 characters!")
+    @NotEmpty
     private String filesetId;
+
+    @Size(max = 256, message = "Public Key can't be more than 256 characters!")
     private String publicKey;
+
+    @Valid
     private GlobusDetailsDTO globusDetails;
 
     public DatasetDetailsDTO() {

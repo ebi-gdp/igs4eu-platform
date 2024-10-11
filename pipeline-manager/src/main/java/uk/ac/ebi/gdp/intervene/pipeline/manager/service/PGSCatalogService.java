@@ -19,7 +19,7 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
 
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PGSTraitWrapper;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PGSTraitWrapperDTO;
 
 import java.net.URI;
 
@@ -49,9 +49,9 @@ public class PGSCatalogService {
      *
      * @param searchTerm string to search for
      *
-     * @return Search result represented by {@link PGSTraitWrapper}
+     * @return Search result represented by {@link PGSTraitWrapperDTO}
      */
-    public Mono<PGSTraitWrapper> searchPGSIdsByTraits(final String searchTerm) {
+    public Mono<PGSTraitWrapperDTO> searchPGSIdsByTraits(final String searchTerm) {
         return webClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
@@ -61,6 +61,6 @@ public class PGSCatalogService {
                         .queryParam("include_children=", 0)
                         .build())
                 .retrieve()
-                .bodyToMono(PGSTraitWrapper.class);
+                .bodyToMono(PGSTraitWrapperDTO.class);
     }
 }

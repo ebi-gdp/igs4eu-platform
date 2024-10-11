@@ -26,6 +26,9 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.CreateDirDTOValidator;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.DatasetDetailsDTOValidator;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.ScoreIdsDTOValidator;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.DatasetMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.GlobusUserDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
@@ -59,8 +62,7 @@ public class PipelineManagerRouterConfig {
                 .filter(buildUniqueRequestId(LOGGER))
                 .filter(dpaConsentCheck.hasUserGivenConsent())
                 .path("/pipeline", pb -> pb
-                        .POST("/globus/dir-guest-collection", globusRequestHandler::createDirectoryOnGuestCollection)
-                        .GET("/recent/top", pipelineRequestHandler::getPipelineRecent)//TODO: rename path
+                        .GET("/recent/top", pipelineRequestHandler::getPipelineRecent)
                         .GET("/success/result", pipelineResultHandler::listResultFiles)
                         .POST("/pgs-ids/validate", pipelineRequestHandler::validatePGSIds)
                         .GET("/pgs-ids-catalog-traits", pipelineRequestHandler::searchPGSIdsByTraits)
@@ -80,6 +82,7 @@ public class PipelineManagerRouterConfig {
                         .POST(datasetRequestHandler::createOrUpdateDatasetDetails))
                 .path("/globus", gb -> gb
                         .POST("/user", globusRequestHandler::mapGlobusUserId)
+                        .POST("/dir-guest-collection", globusRequestHandler::createDirectoryOnGuestCollection)
                         .GET("/files/validate", globusRequestHandler::validateFiles))
                 .build();
     }
@@ -100,7 +103,8 @@ public class PipelineManagerRouterConfig {
                                                          final StringRedisTemplate redisTemplate,
                                                          final PGSCatalogService pgsCatalogService,
                                                          @Value("${redis.pgs-ids.key-prefix}") final String redisPgsIdsKeyPrefix,
-                                                         @Value("${redis.pud-data.key-prefix}") final String redisPubDataKeyPrefix) {
+                                                         @Value("${redis.pud-data.key-prefix}") final String redisPubDataKeyPrefix,
+                                                         final ScoreIdsDTOValidator scoreIdsDTOValidator) {
         return new PipelineRequestHandler(
                 pipelineManagerService,
                 pipelinePersistence,
@@ -108,7 +112,8 @@ public class PipelineManagerRouterConfig {
                 redisTemplate,
                 pgsCatalogService,
                 redisPgsIdsKeyPrefix,
-                redisPubDataKeyPrefix);
+                redisPubDataKeyPrefix,
+                scoreIdsDTOValidator);
     }
 
     @Bean
@@ -127,22 +132,26 @@ public class PipelineManagerRouterConfig {
     public DatasetRequestHandler datasetRequestHandler(final DatasetDetailsRepository datasetDetailsRepository,
                                                        final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository,
                                                        final DatasetMapper datasetMapper,
-                                                       final KeyHandlerService keyHandlerService) {
+                                                       final KeyHandlerService keyHandlerService,
+                                                       final DatasetDetailsDTOValidator datasetDetailsDTOValidator) {
         return new DatasetRequestHandler(
                 datasetDetailsRepository,
                 datasetCryptographyDetailsRepository,
                 datasetMapper,
-                keyHandlerService);
+                keyHandlerService,
+                datasetDetailsDTOValidator);
     }
 
     @Bean
     public GlobusRequestHandler globusUserRequestHandler(final GlobusManagerService globusManagerService,
                                                          final GlobusUserDetailsMapper globusUserDetailsMapper,
-                                                         final FileValidations<IGlobusFileDetailsWrapper> fileValidations) {
+                                                         final FileValidations<IGlobusFileDetailsWrapper> fileValidations,
+                                                         final CreateDirDTOValidator createDirDTOValidator) {
         return new GlobusRequestHandler(
                 globusManagerService,
                 globusUserDetailsMapper,
-                fileValidations);
+                fileValidations,
+                createDirDTOValidator);
     }
 
     @Bean

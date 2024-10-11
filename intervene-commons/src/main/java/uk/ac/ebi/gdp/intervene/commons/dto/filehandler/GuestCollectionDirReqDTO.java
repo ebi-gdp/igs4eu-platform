@@ -19,12 +19,22 @@ package uk.ac.ebi.gdp.intervene.commons.dto.filehandler;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GuestCollectionDirReqDTO {
+    @Size(max = 4092, message = "Directory name can't be more than 4092 characters!")
+    @NotEmpty
     private String directoryName;
+
+    @Size(max = 512, message = "Globus user id can't be more than 512 characters!")
+    @NotEmpty
     private String globusUserUID;
+
+    @Size(max = 512, message = "Email id can't be more than 512 characters!")
+    @NotEmpty
     private String notifyEmail;
 
     private GuestCollectionDirReqDTO() {

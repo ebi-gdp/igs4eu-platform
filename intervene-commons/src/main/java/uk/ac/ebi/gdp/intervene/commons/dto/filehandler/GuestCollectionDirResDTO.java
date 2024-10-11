@@ -19,6 +19,8 @@ package uk.ac.ebi.gdp.intervene.commons.dto.filehandler;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 
 import java.util.Set;
 
@@ -27,7 +29,12 @@ import static java.util.Set.copyOf;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GuestCollectionDirResDTO {
+    @Size(max = 1024, message = "Guest collection Id can't be more than 1024 characters!")
+    @NotEmpty
     private String guestCollectionId;
+
+    @Size(max = 4092, message = "Directory path on guest collection can't be more than 4092 characters!")
+    @NotEmpty
     private String dirPathOnGuestCollection;
     private Set<FileDetails> files;
 

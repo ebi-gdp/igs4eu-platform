@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import static org.springframework.util.StringUtils.hasText;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserAccountStatus.ACTIVE;
 import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserDPAConsentType.GIVEN;
+import static uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.entity.UserDPAConsentType.NOT_GIVEN;
 
 @Table("user_account")
 public class UserAccount implements Persistable<String> {
@@ -121,7 +122,7 @@ public class UserAccount implements Persistable<String> {
                 lastName,
                 emailId,
                 ACTIVE,
-                GIVEN,
+                NOT_GIVEN,
                 createdBy,
                 createdBy,
                 true

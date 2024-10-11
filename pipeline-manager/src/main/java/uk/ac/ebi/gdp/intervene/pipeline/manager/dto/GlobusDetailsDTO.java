@@ -19,13 +19,23 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GlobusDetailsDTO extends GuestCollectionDirResDTO {
+    @Size(max = 512, message = "Username can't be more than 512 characters!")
+    @NotEmpty
     private String username;
+
+    @Size(max = 50, message = "User Account Id can't be more than 50 characters!")
+    @NotEmpty
     private String userAccountUID;
+
+    @Size(max = 15, message = "Fileset Id can't be more than 15 characters!")
+    @NotEmpty
     private String filesetId;
 
     private GlobusDetailsDTO() {

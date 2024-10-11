@@ -25,8 +25,8 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
 import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.GlobusUserDetailsDTO;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.CreateDirDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.GlobusDetailsDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.CreateDirDTOValidator;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.GlobusUserDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusUserDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
@@ -54,13 +54,16 @@ public class GlobusRequestHandler {
     private final GlobusManagerService globusManagerService;
     private final GlobusUserDetailsMapper globusUserDetailsMapper;
     private final FileValidations<IGlobusFileDetailsWrapper> fileValidations;
+    private final CreateDirDTOValidator createDirDTOValidator;
 
     public GlobusRequestHandler(final GlobusManagerService globusManagerService,
                                 final GlobusUserDetailsMapper globusUserDetailsMapper,
-                                final FileValidations<IGlobusFileDetailsWrapper> fileValidations) {
+                                final FileValidations<IGlobusFileDetailsWrapper> fileValidations,
+                                final CreateDirDTOValidator createDirDTOValidator) {
         this.globusManagerService = globusManagerService;
         this.globusUserDetailsMapper = globusUserDetailsMapper;
         this.fileValidations = fileValidations;
+        this.createDirDTOValidator = createDirDTOValidator;
     }
 
     /**
@@ -109,8 +112,8 @@ public class GlobusRequestHandler {
      * @see HttpStatus
      */
     public Mono<ServerResponse> createDirectoryOnGuestCollection(final ServerRequest serverRequest) {
-        return serverRequest
-                .bodyToMono(CreateDirDTO.class)
+        return createDirDTOValidator
+                .handleRequest(serverRequest)
                 .flatMap(createDirDTO -> {
                     LOGGER.info("Creating directory on Globus guest collection");
                     final Path directoryName = get(buildUniqueFolderName(createDirDTO.datasetName()));

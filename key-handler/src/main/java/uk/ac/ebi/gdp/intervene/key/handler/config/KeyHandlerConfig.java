@@ -23,11 +23,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
 import uk.ac.ebi.gdp.intervene.commons.dpa.DefaultUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.dto.constant.GCPRegion;
+import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
 import uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil;
 import uk.ac.ebi.gdp.intervene.key.handler.cryptography.Crypt4ghKeygen;
 import uk.ac.ebi.gdp.intervene.key.handler.router.KeyRequestHandler;
@@ -43,6 +45,7 @@ import java.util.List;
 /**
  * Configuration class for setting up beans related to key handling and GCP Secret Manager.
  */
+@Import(ReactiveExceptionHandler.class)
 @Configuration
 public class KeyHandlerConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyHandlerConfig.class);
