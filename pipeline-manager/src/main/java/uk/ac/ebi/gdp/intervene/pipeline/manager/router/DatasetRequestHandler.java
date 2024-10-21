@@ -27,8 +27,9 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetDetailsDTO;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetResponseDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PaginationDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.DatasetDetailsDTOValidator;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.DatasetMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetCryptographyDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
@@ -61,15 +62,18 @@ public class DatasetRequestHandler {
     private final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository;
     private final DatasetMapper datasetMapper;
     private final KeyHandlerService keyHandlerService;
+    private final DatasetDetailsDTOValidator datasetDetailsDTOValidator;
 
     public DatasetRequestHandler(final DatasetDetailsRepository datasetDetailsRepository,
                                  final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository,
                                  final DatasetMapper datasetMapper,
-                                 final KeyHandlerService keyHandlerService) {
+                                 final KeyHandlerService keyHandlerService,
+                                 final DatasetDetailsDTOValidator datasetDetailsDTOValidator) {
         this.datasetDetailsRepository = datasetDetailsRepository;
         this.datasetCryptographyDetailsRepository = datasetCryptographyDetailsRepository;
         this.datasetMapper = datasetMapper;
         this.keyHandlerService = keyHandlerService;
+        this.datasetDetailsDTOValidator = datasetDetailsDTOValidator;
     }
 
     /**
@@ -81,8 +85,8 @@ public class DatasetRequestHandler {
      */
     @Transactional
     public Mono<ServerResponse> createOrUpdateDatasetDetails(final ServerRequest serverRequest) {
-        return serverRequest
-                .bodyToMono(DatasetDetailsDTO.class)
+        return datasetDetailsDTOValidator
+                .handleRequest(serverRequest)
                 .flatMap(datasetDetailsDTO -> userAccount(serverRequest)
                         .flatMap(userAccountDTO -> datasetDetailsRepository
                                 .findByDatasetIdAndCreatedBy(datasetDetailsDTO.getDatasetId(), userAccountDTO.accountId())
@@ -100,7 +104,7 @@ public class DatasetRequestHandler {
         return datasetDetailsRepository
                 .save(datasetDetails)
                 .flatMap(persistedDatasetDetails -> status(OK)
-                        .bodyValue(new DatasetResponseDTO(persistedDatasetDetails.getDatasetId())))
+                        .bodyValue(new DatasetDTO(persistedDatasetDetails.getDatasetId())))
                 .doOnNext(serverResponse -> LOGGER.info("Dataset details have been updated"));
     }
 
@@ -113,9 +117,9 @@ public class DatasetRequestHandler {
                                 datasetCryptographyDetailsDTO.getPublicKey(),
                                 datasetCryptographyDetailsDTO.getSecretId(),
                                 datasetCryptographyDetailsDTO.getSecretIdVersion())))
-                .map(datasetCryptographyDetails -> new DatasetResponseDTO(datasetCryptographyDetails.getDatasetId()))
-                .flatMap(datasetResponseDTO -> status(CREATED)
-                        .bodyValue(datasetResponseDTO)));
+                .map(datasetCryptographyDetails -> new DatasetDTO(datasetCryptographyDetails.getDatasetId()))
+                .flatMap(datasetDTO -> status(CREATED)
+                        .bodyValue(datasetDTO)));
     }
 
     private Mono<String> createDataset(final DatasetDetailsDTO datasetDetailsDTO,

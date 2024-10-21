@@ -37,12 +37,16 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.oauth2.server.resource.web.reactive.function.client.ServerBearerExchangeFilterFunction;
+import org.springframework.validation.Validator;
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
 import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
 import uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.CreateDirDTOValidator;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.DatasetDetailsDTOValidator;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.ScoreIdsDTOValidator;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusUserRepository;
@@ -492,5 +496,44 @@ public class PipelineManagerConfig {
     @Bean
     public DPAConsentCheck dpaConsentCheck(final IUserManagerService userManagerService) {
         return new DPAConsentCheck(userManagerService);
+    }
+
+    /**
+     * Defines a {@code DatasetDetailsDTOValidator} bean that provides validation
+     * for the {@code DatasetDetailsDTO} object using the provided {@code Validator}.
+     *
+     * @param validator the Spring Validator used to validate the {@code DatasetDetailsDTO}
+     *
+     * @return a {@code DatasetDetailsDTOValidator} instance
+     */
+    @Bean
+    public DatasetDetailsDTOValidator datasetDetailsDTOValidationHandler(final Validator validator) {
+        return new DatasetDetailsDTOValidator(validator);
+    }
+
+    /**
+     * Defines a {@code CreateDirDTOValidator} bean that provides validation
+     * for the {@code CreateDirDTO} object using the provided {@code Validator}.
+     *
+     * @param validator the Spring Validator used to validate the {@code CreateDirDTO}
+     *
+     * @return a {@code CreateDirDTOValidator} instance
+     */
+    @Bean
+    public CreateDirDTOValidator createDirDTOValidator(final Validator validator) {
+        return new CreateDirDTOValidator(validator);
+    }
+
+    /**
+     * Defines a {@code ScoreIdsDTOValidator} bean that provides validation
+     * for the {@code ScoreIdsDTO} object using the provided {@code Validator}.
+     *
+     * @param validator the Spring Validator used to validate the {@code ScoreIdsDTO}
+     *
+     * @return a {@code ScoreIdsDTOValidator} instance
+     */
+    @Bean
+    public ScoreIdsDTOValidator scoreIdsDTOValidator(final Validator validator) {
+        return new ScoreIdsDTOValidator(validator);
     }
 }

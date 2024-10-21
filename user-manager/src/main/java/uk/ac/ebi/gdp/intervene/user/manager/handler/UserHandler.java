@@ -110,7 +110,7 @@ public class UserHandler {
                                 .flatMap(userInfo -> userAccountPersistenceService.createAccount(authUserAccountId, userInfo)))
                         .cast(UserAccount.class)
                         .flatMap(userAccount -> status(CREATED)
-                                .bodyValue(userAccountMapper.toDTO((userAccount))))
+                                .bodyValue(userAccountMapper.toDTO(userAccount)))
                         .doOnNext(serverResponse -> LOGGER.info("User account has been created!")));
     }
 }

@@ -26,11 +26,12 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.exception.ClientException;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PGSTraitWrapper;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PGSTraitWrapperDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PaginationDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineDetailsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PublicationDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.ScoreIdsDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.ScoreIdsDTOValidator;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
@@ -40,11 +41,13 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.http.HttpStatus.ACCEPTED;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.web.reactive.function.server.ServerResponse.badRequest;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
@@ -66,6 +69,7 @@ public class PipelineRequestHandler {
     private final PGSCatalogService pgsCatalogService;
     private final String redisPgsIdsKeyPrefix;
     private final String redisPubDataKeyPrefix;
+    private final ScoreIdsDTOValidator scoreIdsDTOValidator;
 
     public PipelineRequestHandler(final PipelineManagerService pipelineManagerService,
                                   final IPipelinePersistence pipelinePersistence,
@@ -73,7 +77,8 @@ public class PipelineRequestHandler {
                                   final StringRedisTemplate redisTemplate,
                                   final PGSCatalogService pgsCatalogService,
                                   final String redisPgsIdsKeyPrefix,
-                                  final String redisPubDataKeyPrefix) {
+                                  final String redisPubDataKeyPrefix,
+                                  final ScoreIdsDTOValidator scoreIdsDTOValidator) {
         this.pipelineManagerService = pipelineManagerService;
         this.pipelinePersistence = pipelinePersistence;
         this.pipelineDetailsMapper = pipelineDetailsMapper;
@@ -81,6 +86,7 @@ public class PipelineRequestHandler {
         this.pgsCatalogService = pgsCatalogService;
         this.redisPgsIdsKeyPrefix = redisPgsIdsKeyPrefix;
         this.redisPubDataKeyPrefix = redisPubDataKeyPrefix;
+        this.scoreIdsDTOValidator = scoreIdsDTOValidator;
     }
 
     /**
@@ -191,6 +197,7 @@ public class PipelineRequestHandler {
                             .getPipeline(pipelineId,
                                     userAccount.accountId());
                 })
+                .switchIfEmpty(error(resourceNotFound("Pipeline details not found! %s".formatted(pipelineId))))
                 .flatMap(pipelineDetails -> serverRequest
                         .bodyToMono(String.class)
                         .map(datasetId -> {
@@ -214,8 +221,8 @@ public class PipelineRequestHandler {
     public Mono<ServerResponse> executePipelineForPgsIds(final ServerRequest serverRequest) {
         LOGGER.info("Executing pipeline for PGS Ids");
         return getPipelineDetails(serverRequest)
-                .flatMap(pipelineDetails -> serverRequest
-                        .bodyToMono(ScoreIdsDTO.class)
+                .flatMap(pipelineDetails -> scoreIdsDTOValidator
+                        .handleRequest(serverRequest)
                         .flatMap(scoreIds -> pipelineManagerService
                                 .triggerGeneticScoringPipelineWithPgsIds(
                                         pipelineDetails,
@@ -236,8 +243,8 @@ public class PipelineRequestHandler {
     public Mono<ServerResponse> executePipelineForTraitIds(final ServerRequest serverRequest) {
         LOGGER.info("Executing pipeline for Trait Ids");
         return getPipelineDetails(serverRequest)
-                .flatMap(pipelineDetails -> serverRequest
-                        .bodyToMono(ScoreIdsDTO.class)
+                .flatMap(pipelineDetails -> scoreIdsDTOValidator
+                        .handleRequest(serverRequest)
                         .flatMap(scoreIds -> pipelineManagerService
                                 .triggerGeneticScoringPipelineWithTraitIds(
                                         pipelineDetails,
@@ -258,8 +265,8 @@ public class PipelineRequestHandler {
     public Mono<ServerResponse> executePipelineForPublicationIds(final ServerRequest serverRequest) {
         LOGGER.info("Executing pipeline for Publication Ids");
         return getPipelineDetails(serverRequest)
-                .flatMap(pipelineDetails -> serverRequest
-                        .bodyToMono(ScoreIdsDTO.class)
+                .flatMap(pipelineDetails -> scoreIdsDTOValidator
+                        .handleRequest(serverRequest)
                         .flatMap(scoreIds -> pipelineManagerService
                                 .triggerGeneticScoringPipelineWithPublicationIds(
                                         pipelineDetails,
@@ -270,9 +277,11 @@ public class PipelineRequestHandler {
     }
 
     private Mono<PipelineDetails> getPipelineDetails(final ServerRequest serverRequest) {
+        final String pipelineId = serverRequest.pathVariable("pipelineId");
         return userAccount(serverRequest)
                 .flatMap(userAccountDTO -> pipelinePersistence
-                        .getPipelineFull(serverRequest.pathVariable("pipelineId"), userAccountDTO.accountId()));
+                        .getPipelineFull(pipelineId, userAccountDTO.accountId())
+                        .switchIfEmpty(error(resourceNotFound("Pipeline details not found! %s".formatted(pipelineId)))));
     }
 
     private Mono<ServerResponse> updatePipelineExecutionStatus(final PipelineDetails pipelineDetails) {
@@ -313,7 +322,7 @@ public class PipelineRequestHandler {
      *
      * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}
      *
-     * @return PGS trait according to search term, represented by {@link PGSTraitWrapper} Or http status 404(NotFound)
+     * @return PGS trait according to search term, represented by {@link PGSTraitWrapperDTO} Or http status 404(NotFound)
      * @see HttpStatus
      */
     public Mono<ServerResponse> searchPGSIdsByTraits(final ServerRequest serverRequest) {
@@ -323,9 +332,9 @@ public class PipelineRequestHandler {
                 .orElseThrow(() -> ClientException.badRequest("Query parameter 'searchTerm' has an issue!"));
         return pgsCatalogService
                 .searchPGSIdsByTraits(searchTerm)
-                .filter(pgsTraitWrapper -> !pgsTraitWrapper.results().isEmpty())
-                .flatMap(pgsTraitWrapper -> ok()
-                        .bodyValue(pgsTraitWrapper))
+                .filter(pgsTraitWrapperDTO -> !pgsTraitWrapperDTO.results().isEmpty())
+                .flatMap(pgsTraitWrapperDTO -> ok()
+                        .bodyValue(pgsTraitWrapperDTO))
                 .doOnNext(serverResponse -> LOGGER.info("Searched Trait Ids from PGS Catalog API"))
                 .switchIfEmpty(error(resourceNotFound("Traits not found!")));
     }
@@ -343,14 +352,24 @@ public class PipelineRequestHandler {
                 .queryParam("searchTerm")
                 .orElseThrow(() -> ClientException.badRequest("Query parameter 'searchTerm' has an issue!"));
         LOGGER.debug("Search term for publication data: {}", searchTerm);
-        return ok()
-                .bodyValue(redisTemplate
-                        .keys(redisPubDataKeyPrefix + "*" + searchTerm + "*")
-                        .parallelStream()
-                        .map(this::searchForPublicationBySearchTerm)
-                        .filter(Objects::nonNull)
-                        .collect(toSet()))
-                .doOnNext(serverResponse -> LOGGER.info("Searched for Publication data from Redis"));
+
+        if (searchTerm.isEmpty() || searchPublications(searchTerm).isEmpty()) {
+            return status(NOT_FOUND)
+                    .bodyValue("Traits not found!");
+        } else {
+            return ok()
+                    .bodyValue(searchPublications(searchTerm))
+                    .doOnNext(serverResponse -> LOGGER.info("Searched for Publication data from Redis"));
+        }
+    }
+
+    private Set<PublicationDTO> searchPublications(final String searchTerm) {
+        return redisTemplate
+                .keys(redisPubDataKeyPrefix + "*" + searchTerm + "*")
+                .parallelStream()
+                .map(this::searchForPublicationBySearchTerm)
+                .filter(Objects::nonNull)
+                .collect(toSet());
     }
 
     private PublicationDTO searchForPublicationBySearchTerm(final String key) {
@@ -358,6 +377,7 @@ public class PipelineRequestHandler {
                 .opsForValue()
                 .get(key);
         LOGGER.debug("Value: {} retrieved for search term: {} publication data", jsonValue, key);
+
         try {
             final JsonNode jsonNode = getJsonObjectMapper()
                     .readTree(jsonValue);
@@ -366,6 +386,7 @@ public class PipelineRequestHandler {
                     jsonNode.get("pgpId").asText(),
                     jsonNode.get("pgsIdsCount").asInt());
         } catch (JsonProcessingException e) {
+            LOGGER.error(e.getMessage(), e);
             return null;
         }
     }

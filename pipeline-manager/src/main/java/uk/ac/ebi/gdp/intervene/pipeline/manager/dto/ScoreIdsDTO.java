@@ -17,9 +17,12 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
+import jakarta.validation.constraints.NotEmpty;
+
 import java.util.Set;
 
 public class ScoreIdsDTO {
+    @NotEmpty(message = "Score Ids can't be empty!")
     private Set<String> scoreIds;
 
     private ScoreIdsDTO() {

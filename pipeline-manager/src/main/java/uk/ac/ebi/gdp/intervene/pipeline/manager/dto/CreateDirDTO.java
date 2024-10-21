@@ -17,6 +17,13 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
-public record CreateDirDTO(String globusUsername,
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+
+public record CreateDirDTO(@NotEmpty
+                           @Size(max = 512, message = "Globus username can't be more than 512 characters!")
+                           String globusUsername,
+                           @NotEmpty
+                           @Size(max = 512, message = "Dataset name can't be more than 512 characters!")
                            String datasetName) {
 }

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2022 EMBL - European Bioinformatics Institute
+ * Copyright 2023 EMBL - European Bioinformatics Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,7 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
-import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO;
+import java.util.Collection;
 
-public record PipelineExecutionDTO(String genomeBuild,
-                                   String sampleSetName,
-                                   String polygenicScoreIds,
-                                   GuestCollectionDirResDTO globusDetails) {
+public record PGSTraitWrapperDTO(Collection<PGSTraitDTO> results) {
 }
