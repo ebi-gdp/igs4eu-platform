@@ -21,6 +21,7 @@ import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.r2dbc.convert.EnumWriteSupport;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetStatusType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 
 public interface EnumConverter {
@@ -35,5 +36,9 @@ public interface EnumConverter {
 
     @WritingConverter
     class FilesetTypeConverter extends EnumWriteSupport<FilesetType> {
+    }
+
+    @WritingConverter
+    class DatasetStatusTypeConverter extends EnumWriteSupport<DatasetStatusType> {
     }
 }

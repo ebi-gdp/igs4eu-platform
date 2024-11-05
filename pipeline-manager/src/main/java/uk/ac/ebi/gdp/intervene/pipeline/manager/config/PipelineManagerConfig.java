@@ -312,7 +312,8 @@ public class PipelineManagerConfig {
      * @param fileHandlerWebClient the {@link WebClient} instance used for making web requests to the Globus file handler.
      * @param globusUserURI the URI for retrieving Globus user details.
      * @param globusDirListFilesURI the URI for listing files in a Globus directory.
-     * @param globusCreatDirURI the URI for creating directories in Globus.
+     * @param globusCreateDirURI the URI for creating directories in Globus.
+     * @param globusDeleteDirURI the URI for deleting directories in Globus.
      *
      * @return a {@link GlobusFileHandlerService} instance configured with the provided parameters.
      */
@@ -320,12 +321,14 @@ public class PipelineManagerConfig {
     public GlobusFileHandlerService fileHandlerService(@Qualifier("fileHandlerWebClient") final WebClient fileHandlerWebClient,
                                                        @Value("${intervene.file-handler.globus.user-details.uri}") final URI globusUserURI,
                                                        @Value("${intervene.file-handler.globus.list-files-dir.uri}") final URI globusDirListFilesURI,
-                                                       @Value("${intervene.file-handler.globus.create-dir.uri}") final URI globusCreatDirURI) {
+                                                       @Value("${intervene.file-handler.globus.create-dir.uri}") final URI globusCreateDirURI,
+                                                       @Value("${intervene.file-handler.globus.delete-dir.uri}") final URI globusDeleteDirURI) {
         return new GlobusFileHandlerService(
                 fileHandlerWebClient,
                 globusUserURI,
                 globusDirListFilesURI,
-                globusCreatDirURI
+                globusCreateDirURI,
+                globusDeleteDirURI
         );
     }
 

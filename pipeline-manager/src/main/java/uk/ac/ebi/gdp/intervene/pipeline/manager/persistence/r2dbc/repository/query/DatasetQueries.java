@@ -25,6 +25,7 @@ public interface DatasetQueries {
                                                " d.genome_build," +
                                                " d.fileset_type," +
                                                " d.expires_at," +
+                                               " d.is_deleted," +
                                                " d.created_by," +
                                                " d.created_on," +
                                                " d.updated_by," +
@@ -32,6 +33,7 @@ public interface DatasetQueries {
                                                " c.public_key," +
                                                " c.secret_id," +
                                                " c.secret_id_version," +
+                                               " c.is_deleted as c_is_deleted," +
                                                " c.created_by," +
                                                " c.created_on," +
                                                " c.updated_by," +
@@ -40,6 +42,7 @@ public interface DatasetQueries {
                                                " f.globus_username," +
                                                " f.guest_collection_id," +
                                                " f.dir_path_on_guest_collection," +
+                                               " f.status," +
                                                " f.created_by as gc_created_by," +
                                                " f.created_on as gc_created_on," +
                                                " f.updated_by as gc_updated_by," +

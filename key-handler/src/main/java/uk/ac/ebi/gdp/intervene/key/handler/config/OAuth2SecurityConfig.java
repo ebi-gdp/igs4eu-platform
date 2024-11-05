@@ -37,6 +37,8 @@ import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 @Configuration
 @EnableWebFluxSecurity
 public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
+    public static final String URI_INCLUDE_UNDER_BASIC_AUTH = "/key/{secretId}/version/{versionId}";
+
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(final ServerHttpSecurity http,
                                                             @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") final String jwkSetURI) {
@@ -46,7 +48,7 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
     @Order(HIGHEST_PRECEDENCE)
     @Bean
     public SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http) {
-        return super.securityFilterChainBasicAuth(http, "/key/{secretId}/version/{versionId}");
+        return super.securityFilterChainBasicAuth(http, URI_INCLUDE_UNDER_BASIC_AUTH);
     }
 
     @Bean

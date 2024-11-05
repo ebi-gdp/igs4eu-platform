@@ -178,4 +178,16 @@ public class GCPSecretManager implements ISecretManager {
             return just(inputStream);
         }
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Mono<Void> deleteSecret(final String secretId) throws IOException {
+        // Initialize client that will be used to send requests.
+        try (final SecretManagerServiceClient smsClient = create()) {
+            smsClient.deleteSecret(secretId);
+        }
+        return Mono.empty();
+    }
 }

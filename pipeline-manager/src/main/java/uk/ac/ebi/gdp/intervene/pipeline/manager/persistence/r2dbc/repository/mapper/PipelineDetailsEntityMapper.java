@@ -23,6 +23,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Dataset
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetStatusType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusUserDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
@@ -32,6 +33,7 @@ import java.nio.file.Paths;
 import java.util.function.BiFunction;
 
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails.load;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getBoolean;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getLocalDateTime;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getString;
 
@@ -51,6 +53,7 @@ public interface PipelineDetailsEntityMapper {
                     getString("globus_username", row),
                     getString("guest_collection_id", row),
                     Paths.get(getString("dir_path_on_guest_collection", row)),
+                    DatasetStatusType.valueOf(getString("g_status", row)),
                     getString("globus_created_by", row),
                     getLocalDateTime("globus_created_on", row),
                     getString("globus_updated_by", row),
@@ -61,6 +64,7 @@ public interface PipelineDetailsEntityMapper {
                     getString("public_key", row),
                     getString("secret_id", row),
                     getString("secret_id_version", row),
+                    getBoolean("c_is_deleted", row),
                     getString("cryptography_created_by", row),
                     getLocalDateTime("cryptography_created_on", row),
                     getString("cryptography_updated_by", row),
@@ -71,6 +75,7 @@ public interface PipelineDetailsEntityMapper {
                     GenomeBuild.valueOf(getString("genome_build", row)),
                     FilesetType.valueOf(getString("fileset_type", row)),
                     getLocalDateTime("expires_at", row),
+                    getBoolean("is_deleted", row),
                     cryptographyDetails,
                     globusDetails,
                     getString("dataset_created_by", row),
@@ -91,6 +96,7 @@ public interface PipelineDetailsEntityMapper {
                     GenomeBuild.valueOf(getString("genome_build", row)),
                     FilesetType.valueOf(getString("fileset_type", row)),
                     getLocalDateTime("expires_at", row),
+                    getBoolean("is_deleted", row),
                     getString("dataset_created_by", row),
                     getLocalDateTime("dataset_created_on", row),
                     getString("dataset_updated_by", row),

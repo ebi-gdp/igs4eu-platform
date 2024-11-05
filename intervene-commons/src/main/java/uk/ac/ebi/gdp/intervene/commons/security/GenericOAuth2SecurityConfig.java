@@ -32,6 +32,7 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.util.pattern.PathPatternParser;
 
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.security.config.Customizer.withDefaults;
 import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
@@ -76,7 +77,7 @@ public class GenericOAuth2SecurityConfig {
         PathPatternParser parser = new PathPatternParser();
         http.csrf((ServerHttpSecurity.CsrfSpec::disable));
         http
-                .securityMatcher(new PathPatternParserServerWebExchangeMatcher(parser.parse(patternPath)))
+                .securityMatcher(new PathPatternParserServerWebExchangeMatcher(parser.parse(patternPath), GET))
                 .authorizeExchange((exchanges) -> exchanges
                         .anyExchange()
                         .authenticated())

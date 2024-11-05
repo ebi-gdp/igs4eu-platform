@@ -41,6 +41,7 @@ public class DatasetDetails implements Persistable<String> {
     private String filesetId;
     private FilesetType filesetType;
     private LocalDateTime expiresAt;
+    private boolean isDeleted;
 
     @CreatedBy
     private String createdBy;
@@ -71,6 +72,7 @@ public class DatasetDetails implements Persistable<String> {
                            final GenomeBuild genomeBuild,
                            final FilesetType filesetType,
                            final LocalDateTime expiresAt,
+                           final boolean isDeleted,
                            final String createdBy,
                            final String updatedBy) {
         this.datasetId = datasetId;
@@ -78,6 +80,7 @@ public class DatasetDetails implements Persistable<String> {
         this.genomeBuild = genomeBuild;
         this.filesetType = filesetType;
         this.expiresAt = expiresAt;
+        this.isDeleted = isDeleted;
         this.createdBy = createdBy;
         this.updatedBy = updatedBy;
     }
@@ -87,12 +90,13 @@ public class DatasetDetails implements Persistable<String> {
                            final GenomeBuild genomeBuild,
                            final FilesetType filesetType,
                            final LocalDateTime expiresAt,
+                           final boolean isDeleted,
                            final String createdBy,
                            final LocalDateTime createdOn,
                            final String updatedBy,
                            final LocalDateTime updatedOn) {
         this(datasetId, datasetName, genomeBuild, filesetType,
-                expiresAt, createdBy, updatedBy);
+                expiresAt, isDeleted, createdBy, updatedBy);
         this.createdOn = createdOn;
         this.updatedOn = updatedOn;
     }
@@ -102,6 +106,7 @@ public class DatasetDetails implements Persistable<String> {
                            final GenomeBuild genomeBuild,
                            final FilesetType filesetType,
                            final LocalDateTime expiresAt,
+                           final boolean isDeleted,
                            final DatasetCryptographyDetails datasetCryptographyDetails,
                            final GlobusDetails globusDetails,
                            final String createdBy,
@@ -109,7 +114,7 @@ public class DatasetDetails implements Persistable<String> {
                            final String updatedBy,
                            final LocalDateTime updatedOn) {
         this(datasetId, datasetName, genomeBuild, filesetType, expiresAt,
-                createdBy, createdOn, updatedBy, updatedOn);
+                isDeleted, createdBy, createdOn, updatedBy, updatedOn);
         this.datasetCryptographyDetails = datasetCryptographyDetails;
         this.globusDetails = globusDetails;
         this.filesetId = globusDetails.getFilesetId();
@@ -138,7 +143,7 @@ public class DatasetDetails implements Persistable<String> {
                           final String createdBy,
                           final String updatedBy) {
         this(datasetId, datasetName, genomeBuild, filesetType,
-                expiresAt, createdBy, updatedBy);
+                expiresAt, false, createdBy, updatedBy);
         this.filesetId = filesetId;
         isNew = true;
     }
@@ -151,6 +156,7 @@ public class DatasetDetails implements Persistable<String> {
      * @param genomeBuild {@link GenomeBuild}
      * @param filesetType {@link FilesetType}
      * @param expiresAt dataset expiry timestamp {@link LocalDateTime}
+     * @param isDeleted whether dataset is deleted or not
      * @param createdBy user id
      * @param createdOn {@link LocalDateTime}
      * @param updatedBy user id
@@ -163,12 +169,13 @@ public class DatasetDetails implements Persistable<String> {
                                       final GenomeBuild genomeBuild,
                                       final FilesetType filesetType,
                                       final LocalDateTime expiresAt,
+                                      final boolean isDeleted,
                                       final String createdBy,
                                       final LocalDateTime createdOn,
                                       final String updatedBy,
                                       final LocalDateTime updatedOn) {
-        return new DatasetDetails(datasetId, datasetName, genomeBuild,
-                filesetType, expiresAt, createdBy, createdOn, updatedBy, updatedOn);
+        return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType,
+                expiresAt, isDeleted, createdBy, createdOn, updatedBy, updatedOn);
     }
 
     /**
@@ -179,6 +186,7 @@ public class DatasetDetails implements Persistable<String> {
      * @param genomeBuild {@link GenomeBuild}
      * @param filesetType {@link FilesetType}
      * @param expiresAt dataset expiry timestamp {@link LocalDateTime}
+     * @param isDeleted whether dataset is deleted or not
      * @param globusDetails {@link GlobusDetails}
      * @param createdBy user id
      * @param createdOn {@link LocalDateTime}
@@ -192,13 +200,14 @@ public class DatasetDetails implements Persistable<String> {
                                       final GenomeBuild genomeBuild,
                                       final FilesetType filesetType,
                                       final LocalDateTime expiresAt,
+                                      final boolean isDeleted,
                                       final GlobusDetails globusDetails,
                                       final String createdBy,
                                       final LocalDateTime createdOn,
                                       final String updatedBy,
                                       final LocalDateTime updatedOn) {
         return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType, expiresAt,
-                null, globusDetails, createdBy, createdOn, updatedBy, updatedOn);
+                isDeleted, null, globusDetails, createdBy, createdOn, updatedBy, updatedOn);
     }
 
     /**
@@ -209,6 +218,7 @@ public class DatasetDetails implements Persistable<String> {
      * @param genomeBuild {@link GenomeBuild}
      * @param filesetType {@link FilesetType}
      * @param expiresAt dataset expiry timestamp {@link LocalDateTime}
+     * @param isDeleted whether dataset is deleted or not
      * @param datasetCryptographyDetails {@link DatasetCryptographyDetails}
      * @param globusDetails {@link GlobusDetails}
      * @param createdBy user id
@@ -223,13 +233,14 @@ public class DatasetDetails implements Persistable<String> {
                                       final GenomeBuild genomeBuild,
                                       final FilesetType filesetType,
                                       final LocalDateTime expiresAt,
+                                      final boolean isDeleted,
                                       final DatasetCryptographyDetails datasetCryptographyDetails,
                                       final GlobusDetails globusDetails,
                                       final String createdBy,
                                       final LocalDateTime createdOn,
                                       final String updatedBy,
                                       final LocalDateTime updatedOn) {
-        return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType, expiresAt,
+        return new DatasetDetails(datasetId, datasetName, genomeBuild, filesetType, expiresAt, isDeleted,
                 datasetCryptographyDetails, globusDetails, createdBy, createdOn, updatedBy, updatedOn);
     }
 
@@ -274,6 +285,10 @@ public class DatasetDetails implements Persistable<String> {
         return expiresAt;
     }
 
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
     public String getCreatedBy() {
         return createdBy;
     }
@@ -312,5 +327,9 @@ public class DatasetDetails implements Persistable<String> {
     @Override
     public boolean isNew() {
         return isNew || !hasText(datasetId);
+    }
+
+    public void deleted() {
+        this.isDeleted = true;
     }
 }

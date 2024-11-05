@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import uk.ac.ebi.gdp.intervene.commons.datasource.DatasourceConfigProperties;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetStatusType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
@@ -45,6 +46,7 @@ import static io.r2dbc.postgresql.codec.EnumCodec.builder;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.FilesetTypeConverter;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.GenomeBuildConverter;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.PipelineStatusTypeConverter;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.DatasetStatusTypeConverter;
 
 /**
  * Reactive database config.
@@ -77,6 +79,7 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
                         .codecRegistrar(builder().withEnum("pipeline_status", PipelineStatus.class).build())
                         .codecRegistrar(builder().withEnum("fileset_type", FilesetType.class).build())
                         .codecRegistrar(builder().withEnum("genome_build", GenomeBuild.class).build())
+                        .codecRegistrar(builder().withEnum("dataset_status_type", DatasetStatusType.class).build())
                         .build());
     }
 
@@ -106,7 +109,8 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
                 getStoreConversions(),
                 List.of(new PipelineStatusTypeConverter(),
                         new GenomeBuildConverter(),
-                        new FilesetTypeConverter())
+                        new FilesetTypeConverter(),
+                        new DatasetStatusTypeConverter())
         );
     }
 

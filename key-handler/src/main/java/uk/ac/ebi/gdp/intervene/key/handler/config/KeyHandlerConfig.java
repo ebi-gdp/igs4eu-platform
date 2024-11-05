@@ -119,11 +119,13 @@ public class KeyHandlerConfig {
     public KeyRequestHandler keyRequestHandler(final Crypt4ghKeyGenerator crypt4ghKeyGenerator,
                                                final ISecretManager secretManager,
                                                @Value("${crypt4gh.keys.base-path}") final Path keysBasePath,
-                                               @Value("${crypt4gh.private-key.password}") final String privateKeyPassword) {
+                                               @Value("${crypt4gh.private-key.password}") final String privateKeyPassword,
+                                               @Value("${gcp.secret.path-prefix}") final Path secretPathPrefix) {
         return new KeyRequestHandler(crypt4ghKeyGenerator,
                 secretManager,
                 keysBasePath,
-                privateKeyPassword.toCharArray());
+                privateKeyPassword.toCharArray(),
+                secretPathPrefix);
     }
 
     /**

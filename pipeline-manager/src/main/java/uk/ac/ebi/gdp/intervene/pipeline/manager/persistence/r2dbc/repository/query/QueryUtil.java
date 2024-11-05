@@ -35,6 +35,11 @@ public interface QueryUtil {
                 row.get(fieldName, String.class) : "";
     }
 
+    static boolean getBoolean(final String fieldName,
+                              final Row row) {
+        return row.get(fieldName) != null && Boolean.TRUE.equals(row.get(fieldName, Boolean.class));
+    }
+
     static LocalDateTime getLocalDateTime(final String fieldName,
                                           final Row row) {
         return row.get(fieldName) != null ?

@@ -19,6 +19,8 @@ package uk.ac.ebi.gdp.intervene.file.handler.service.globus.collection;
 
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO;
+import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.DeleteDirResponseDTO;
+import uk.ac.ebi.gdp.intervene.file.handler.dto.globus.SubmissionIdDTO;
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.PermissionType;
 
 import java.nio.file.Path;
@@ -29,16 +31,20 @@ import java.nio.file.Path;
  */
 public interface IFileOperationService {
     /**
-     * @param dirPath path of the dir to be created on Globus
+     * Creates directory under Globus guest collection.
      *
-     * @return path
+     * @param dirPath path of the dir to be created on Globus.
+     *
+     * @return path.
      */
     Mono<String> createDirectory(Path dirPath);
 
     /**
-     * @param dirPath directory path for the files to search for
+     * Lists files under specified directory.
      *
-     * @return GlobusFileDetailsWrapperDTO file details
+     * @param dirPath directory path for the files to search for.
+     *
+     * @return GlobusFileDetailsWrapperDTO file details.
      */
     Mono<GlobusFileDetailsWrapperDTO> listFiles(Path dirPath);
 
@@ -54,4 +60,20 @@ public interface IFileOperationService {
                                           PermissionType permissionType,
                                           String notifyEmail,
                                           Path dirPath);
+
+    /**
+     * Returns new submission id every time it gets called.
+     *
+     * @return Submission id details represented by {@link SubmissionIdDTO}.
+     */
+    Mono<SubmissionIdDTO> getSubmissionId();
+
+    /**
+     * @param submissionId submission id.
+     * @param dirPathToDelete dir path to be deleted on globus guest collection.
+     *
+     * @return Deleted directory details represented by {@link DeleteDirResponseDTO}.
+     */
+    Mono<DeleteDirResponseDTO> deleteDirectoryOnGuestCollection(String submissionId,
+                                                                Path dirPathToDelete);
 }

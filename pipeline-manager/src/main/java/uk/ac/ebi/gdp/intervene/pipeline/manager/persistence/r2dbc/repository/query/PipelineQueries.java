@@ -45,6 +45,7 @@ public interface PipelineQueries {
                              " d.genome_build, " +
                              " d.fileset_type," +
                              " d.expires_at," +
+                             " d.is_deleted," +
                              " d.created_by as dataset_created_by," +
                              " d.created_on as dataset_created_on," +
                              " d.updated_by as dataset_updated_by," +
@@ -84,6 +85,7 @@ public interface PipelineQueries {
                                           " d.fileset_id," +
                                           " d.fileset_type," +
                                           " d.expires_at," +
+                                          " d.is_deleted," +
                                           " d.created_by as dataset_created_by," +
                                           " d.created_on as dataset_created_on," +
                                           " d.updated_by as dataset_updated_by," +
@@ -92,6 +94,7 @@ public interface PipelineQueries {
                                           " c.public_key," +
                                           " c.secret_id," +
                                           " c.secret_id_version," +
+                                          " c.is_deleted as c_is_deleted," +
                                           " c.created_by as cryptography_created_by," +
                                           " c.created_on as cryptography_created_on," +
                                           " c.updated_by as cryptography_updated_by," +
@@ -99,6 +102,7 @@ public interface PipelineQueries {
                                           " g.globus_username," +
                                           " g.guest_collection_id," +
                                           " g.dir_path_on_guest_collection," +
+                                          " g.status as g_status," +
                                           " g.created_by as globus_created_by," +
                                           " g.created_on as globus_created_on," +
                                           " g.updated_by as globus_updated_by," +

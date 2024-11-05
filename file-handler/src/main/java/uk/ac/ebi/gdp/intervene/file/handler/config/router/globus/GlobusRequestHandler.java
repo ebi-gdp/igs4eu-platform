@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.DeleteDirResponseDTO;
+import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirReqDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO;
 import uk.ac.ebi.gdp.intervene.commons.exception.ClientException;
@@ -116,19 +118,17 @@ public class GlobusRequestHandler {
      *
      * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}.
      *
-     * @return GlobusFileDetailsWrapperDTO
+     * @return list of files represented by {@link GlobusFileDetailsWrapperDTO}.
      */
     public Mono<ServerResponse> listFilesOnGuestCollectionDirectory(final ServerRequest serverRequest) {
         LOGGER.info("Listing files on Guest collection");
-        return serverRequest
-                .queryParam("path")
-                .map(path -> fileOperationService
+        return getPath(serverRequest)
+                .flatMap(path -> fileOperationService
                         .listFiles(get(path))
                         .doOnNext(ignoreResponse -> LOGGER.info("Retrieved files at {}", path))
                         .flatMap(globusFileDetailsWrapperDTO -> ok()
                                 .bodyValue(globusFileDetailsWrapperDTO))
-                        .doOnNext(serverResponse -> LOGGER.info("Successfully listed files at {}", path)))
-                .orElse(error(badRequest("Query param 'path' is missing or empty!")));
+                        .doOnNext(serverResponse -> LOGGER.info("Successfully listed files at {}", path)));
     }
 
     private Mono<String> grantDirectoryPermission(final String principalId,
@@ -139,5 +139,30 @@ public class GlobusRequestHandler {
                 READ_WRITE,
                 notifyEmail,
                 path);
+    }
+
+    /**
+     * Deletes directory on Guest collection.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}.
+     *
+     * @return deleted dir details represented by {@link DeleteDirResponseDTO}.
+     */
+    public Mono<ServerResponse> deleteDirectoryOnGuestCollection(final ServerRequest serverRequest) {
+        return getPath(serverRequest)
+                .flatMap(path -> fileOperationService
+                        .getSubmissionId()
+                        .flatMap(submissionIdDTO -> fileOperationService
+                                .deleteDirectoryOnGuestCollection(
+                                        submissionIdDTO.submissionId(),
+                                        Path.of(path)))
+                        .flatMap(deleteDirResponseDTO -> ok().bodyValue(deleteDirResponseDTO)));
+    }
+
+    private Mono<String> getPath(final ServerRequest serverRequest) {
+        return serverRequest
+                .queryParam("path")
+                .map(Mono::just)
+                .orElse(error(badRequest("Query param 'path' is missing or empty!")));
     }
 }

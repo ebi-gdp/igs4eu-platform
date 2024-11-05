@@ -32,6 +32,8 @@ public class DatasetDetailsDTO {
     @Size(max = 256, message = "Public Key can't be more than 256 characters!")
     private String publicKey;
 
+    private boolean isDeleted;
+
     @Valid
     private GlobusDetailsDTO globusDetails;
 
@@ -89,6 +91,14 @@ public class DatasetDetailsDTO {
 
     public void setPublicKey(String publicKey) {
         this.publicKey = publicKey;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
     }
 
     public GlobusDetailsDTO getGlobusDetails() {
