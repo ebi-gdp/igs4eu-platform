@@ -19,16 +19,22 @@ package uk.ac.ebi.gdp.intervene.file.handler.service.globus.collection;
 
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.DeleteDirResponseDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO;
+import uk.ac.ebi.gdp.intervene.file.handler.dto.globus.DeleteDirRequestDTO;
+import uk.ac.ebi.gdp.intervene.file.handler.dto.globus.SubmissionIdDTO;
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.PermissionType;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static uk.ac.ebi.gdp.intervene.file.handler.dto.globus.EndpointDTO.Access;
 import static uk.ac.ebi.gdp.intervene.file.handler.dto.globus.EndpointDTO.Mkdir;
 import static uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.DataType.ACCESS;
+import static uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.DataType.DELETE;
 import static uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.DataType.MKDIR;
 import static uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.PrincipalType.IDENTITY;
 
@@ -37,23 +43,35 @@ import static uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.Princ
  */
 public class FileOperationService implements IFileOperationService {
     private final WebClient webClient;
+    private final String collectionEndpointId;
     private final Path guestCollectionHomePath;
     private final URI mkDirEndpointURI;
     private final URI dirAccessURI;
     private final URI listFilesURI;
+    private final URI submissionIdURI;
+    private final URI deleteDirURI;
 
     public FileOperationService(final WebClient webClient,
+                                final String collectionEndpointId,
                                 final Path guestCollectionHomePath,
                                 final URI mkDirEndpointURI,
                                 final URI dirAccessURI,
-                                final URI listFilesURI) {
+                                final URI listFilesURI,
+                                final URI submissionIdURI,
+                                final URI deleteDirURI) {
         this.webClient = webClient;
+        this.collectionEndpointId = collectionEndpointId;
         this.guestCollectionHomePath = guestCollectionHomePath;
         this.mkDirEndpointURI = mkDirEndpointURI;
         this.dirAccessURI = dirAccessURI;
         this.listFilesURI = listFilesURI;
+        this.submissionIdURI = submissionIdURI;
+        this.deleteDirURI = deleteDirURI;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<String> createDirectory(final Path dirPath) {
         return webClient
@@ -66,6 +84,9 @@ public class FileOperationService implements IFileOperationService {
                 .bodyToMono(String.class);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<GlobusFileDetailsWrapperDTO> listFiles(final Path dirPath) {
         return webClient
@@ -79,6 +100,9 @@ public class FileOperationService implements IFileOperationService {
                 .bodyToMono(GlobusFileDetailsWrapperDTO.class);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<String> grantDirectoryPermission(final String principal,
                                                  final PermissionType permissionType,
@@ -98,6 +122,26 @@ public class FileOperationService implements IFileOperationService {
                 .bodyToMono(String.class);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Mono<DeleteDirResponseDTO> deleteDirectoryOnGuestCollection(final String submissionId,
+                                                                       final Path dirPathToDelete) {
+        return webClient
+                .post()
+                .uri(deleteDirURI.getPath())
+                .contentType(APPLICATION_JSON)
+                .accept(APPLICATION_JSON)
+                .bodyValue(buildDeleteDirRequestBody(
+                        submissionId,
+                        collectionEndpointId,
+                        dirPathToDelete.toString()
+                ))
+                .retrieve()
+                .bodyToMono(DeleteDirResponseDTO.class);
+    }
+
     private Access buildAccessRequestBody(final String principal,
                                           final PermissionType permissionType,
                                           final String notifyEmail,
@@ -110,5 +154,32 @@ public class FileOperationService implements IFileOperationService {
                 permissionType,
                 notifyEmail
         );
+    }
+
+    private DeleteDirRequestDTO buildDeleteDirRequestBody(final String submissionId,
+                                                          final String collectionEndpointId,
+                                                          final String dirPathToDelete) {
+        final String completeDirPathToDelete = Paths.get(guestCollectionHomePath.toString(),
+                dirPathToDelete).toString();
+        return new DeleteDirRequestDTO(
+                DELETE.getDataType(),
+                submissionId,
+                true,
+                collectionEndpointId,
+                List.of(new DeleteDirRequestDTO.Data(completeDirPathToDelete))
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Mono<SubmissionIdDTO> getSubmissionId() {
+        return webClient
+                .get()
+                .uri(submissionIdURI.getPath())
+                .accept(APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(SubmissionIdDTO.class);
     }
 }

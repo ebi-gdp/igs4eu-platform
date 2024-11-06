@@ -37,14 +37,17 @@ public class GlobusDetailsDTO extends GuestCollectionDirResDTO {
     @Size(max = 15, message = "Fileset Id can't be more than 15 characters!")
     @NotEmpty
     private String filesetId;
+    private String status;
 
     private GlobusDetailsDTO() {
     }
 
     public GlobusDetailsDTO(final String username,
-                            final String userAccountUID) {
+                            final String userAccountUID,
+                            final String status) {
         this.username = username;
         this.userAccountUID = userAccountUID;
+        this.status = status;
     }
 
     public String getUsername() {
@@ -57,6 +60,10 @@ public class GlobusDetailsDTO extends GuestCollectionDirResDTO {
 
     public String getFilesetId() {
         return filesetId;
+    }
+
+    public String getStatus() {
+        return status;
     }
 
     public void setFilesetId(String filesetId) {

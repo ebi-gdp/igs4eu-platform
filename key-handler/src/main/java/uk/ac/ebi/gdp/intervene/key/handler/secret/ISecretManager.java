@@ -52,5 +52,14 @@ public interface ISecretManager {
      */
     Mono<InputStream> downloadSecret(String secretId,
                                      String secretVersion) throws IOException;
+
+    /**
+     * Deletes a secret from the secret manager.
+     *
+     * @param secretId the identifier of the secret to be deleted.
+     *
+     * @throws IOException if an I/O error occurs during the secret delete process.
+     */
+    Mono<Void> deleteSecret(String secretId) throws IOException;
 }
 

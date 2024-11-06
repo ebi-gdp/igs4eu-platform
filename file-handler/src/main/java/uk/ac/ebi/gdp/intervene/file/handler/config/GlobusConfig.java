@@ -60,16 +60,22 @@ public class GlobusConfig {
 
     @Bean
     public IFileOperationService fileOperationService(@Qualifier("globusWebClient") final WebClient webClient,
+                                                      @Value("${globus.managed-collection.endpoint-id}") final String collectionEndpointId,
                                                       @Value("${globus.guest-collection.home-path}") final String guestCollectionHomePath,
                                                       @Value("${globus.endpoint.mkdir.uri}") final URI mkDirEndpointURI,
                                                       @Value("${globus.endpoint.access.uri}") final URI dirAccessURI,
-                                                      @Value("${globus.endpoint.list-files.uri}") final URI listFilesURI) {
+                                                      @Value("${globus.endpoint.list-files.uri}") final URI listFilesURI,
+                                                      @Value("${globus.endpoint.submission-id.uri}") final URI submissionIdURI,
+                                                      @Value("${globus.endpoint.delete-dir.uri}") final URI deleteDirURI) {
         return new FileOperationService(
                 webClient,
+                collectionEndpointId,
                 get(guestCollectionHomePath),
                 mkDirEndpointURI,
                 dirAccessURI,
-                listFilesURI
+                listFilesURI,
+                submissionIdURI,
+                deleteDirURI
         );
     }
 }

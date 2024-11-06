@@ -19,6 +19,7 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
 
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.DeleteDirResponseDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusUserIdentityDetailsWrapperDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirReqDTO;
@@ -37,7 +38,8 @@ public class GlobusFileHandlerService {
     private final WebClient fileHandlerWebClient;
     private final URI globusUserURI;
     private final URI globusListDirFilesURI;
-    private final URI globusCreatDirURI;
+    private final URI globusCreateDirURI;
+    private final URI globusDeleteDirURI;
 
     /**
      * Constructs a {@code GlobusFileHandlerService} instance.
@@ -47,16 +49,18 @@ public class GlobusFileHandlerService {
      * @param fileHandlerWebClient the WebClient used for making HTTP requests to Globus services.
      * @param globusUserURI the URI for accessing Globus user-related operations.
      * @param globusListDirFilesURI the URI for listing files in a Globus directory.
-     * @param globusCreatDirURI the URI for creating a directory in Globus.
+     * @param globusCreateDirURI the URI for creating a directory in Globus.
      */
     public GlobusFileHandlerService(final WebClient fileHandlerWebClient,
                                     final URI globusUserURI,
                                     final URI globusListDirFilesURI,
-                                    final URI globusCreatDirURI) {
+                                    final URI globusCreateDirURI,
+                                    final URI globusDeleteDirURI) {
         this.fileHandlerWebClient = fileHandlerWebClient;
         this.globusUserURI = globusUserURI;
         this.globusListDirFilesURI = globusListDirFilesURI;
-        this.globusCreatDirURI = globusCreatDirURI;
+        this.globusCreateDirURI = globusCreateDirURI;
+        this.globusDeleteDirURI = globusDeleteDirURI;
     }
 
     /**
@@ -98,20 +102,37 @@ public class GlobusFileHandlerService {
     /**
      * Creates directory on Guest collection.
      *
-     * @param guestCollectionDirReqDTO request data
+     * @param guestCollectionDirReqDTO request data.
      *
-     * @return Dir details represented by {@link GlobusDetailsDTO}
+     * @return Dir details represented by {@link GlobusDetailsDTO}.
      */
     public Mono<GlobusDetailsDTO> createDirectoryOnGuestCollection(final GuestCollectionDirReqDTO guestCollectionDirReqDTO) {
         return fileHandlerWebClient
                 .post()
                 .uri(uriBuilder -> uriBuilder
-                        .path(globusCreatDirURI.getPath())
+                        .path(globusCreateDirURI.getPath())
                         .build())
                 .contentType(APPLICATION_JSON)
                 .accept(APPLICATION_JSON)
                 .bodyValue(guestCollectionDirReqDTO)
                 .retrieve()
                 .bodyToMono(GlobusDetailsDTO.class);
+    }
+
+    /**
+     * @param path directory path to be deleted on Globus guest collection.
+     *
+     * @return Directory deleted details represented {@link DeleteDirResponseDTO}.
+     */
+    public Mono<DeleteDirResponseDTO> deleteDirectoryOnGuestCollection(final String path) {
+        return fileHandlerWebClient
+                .delete()
+                .uri(uriBuilder -> uriBuilder
+                        .path(globusDeleteDirURI.getPath())
+                        .queryParam("path", path)
+                        .build())
+                .accept(APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(DeleteDirResponseDTO.class);
     }
 }

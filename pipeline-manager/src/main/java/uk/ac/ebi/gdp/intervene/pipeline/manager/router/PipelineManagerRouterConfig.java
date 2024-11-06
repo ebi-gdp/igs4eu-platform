@@ -34,8 +34,10 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.GlobusUserDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetCryptographyDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetDetailsRepository;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.ICloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.KeyHandlerService;
@@ -48,6 +50,9 @@ import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.buildUniqueRequestId;
 
+/**
+ * Defines router config beans.
+ */
 @Configuration
 public class PipelineManagerRouterConfig {
     private final Logger LOGGER = getLogger(PipelineManagerRouterConfig.class);
@@ -78,6 +83,7 @@ public class PipelineManagerRouterConfig {
                         .GET(pipelineRequestHandler::getPipelines))
                 .path("/dataset", db -> db
                         .GET("/{datasetId}", datasetRequestHandler::getDatasetDetails)
+                        .DELETE("/{datasetId}", datasetRequestHandler::deleteDataset)
                         .GET(datasetRequestHandler::getDatasets)
                         .POST(datasetRequestHandler::createOrUpdateDatasetDetails))
                 .path("/globus", gb -> gb
@@ -130,15 +136,19 @@ public class PipelineManagerRouterConfig {
 
     @Bean
     public DatasetRequestHandler datasetRequestHandler(final DatasetDetailsRepository datasetDetailsRepository,
+                                                       final GlobusDetailsRepository globusDetailsRepository,
                                                        final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository,
                                                        final DatasetMapper datasetMapper,
                                                        final KeyHandlerService keyHandlerService,
+                                                       final GlobusFileHandlerService globusFileHandlerService,
                                                        final DatasetDetailsDTOValidator datasetDetailsDTOValidator) {
         return new DatasetRequestHandler(
                 datasetDetailsRepository,
+                globusDetailsRepository,
                 datasetCryptographyDetailsRepository,
                 datasetMapper,
                 keyHandlerService,
+                globusFileHandlerService,
                 datasetDetailsDTOValidator);
     }
 

@@ -48,7 +48,8 @@ public class GlobusRouterConfig {
                 .path("/globus", gb -> gb
                         .path("/guest-collection", gcb -> gcb
                                 .POST(globusRequestHandler::createDirectoryOnGuestCollection)
-                                .GET(globusRequestHandler::listFilesOnGuestCollectionDirectory))
+                                .GET(globusRequestHandler::listFilesOnGuestCollectionDirectory)
+                                .DELETE(globusRequestHandler::deleteDirectoryOnGuestCollection))
                         .path("/user", gub -> gub
                                 .GET(globusUserRequestHandler::getUserIdDetails)))
                 .build();

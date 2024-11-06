@@ -160,7 +160,12 @@ public class PipelineManagerService {
             return buildVcfMap(globusFileName);
         } else {
             return globusFileDetailsStream
-                    .collect(toMap(globusFileDetails -> getPropertyName(globusFileDetails.getFileName()), GlobusFileDetails::getFileName));
+                    .collect(toMap(globusFileDetails -> getPropertyName(globusFileDetails.getFileName()),
+                            (globusFileDetails) -> globusFileDetails
+                                    .getFileName()
+                                    .substring(0, globusFileDetails
+                                            .getFileName()
+                                            .lastIndexOf("."))));
         }
     }
 

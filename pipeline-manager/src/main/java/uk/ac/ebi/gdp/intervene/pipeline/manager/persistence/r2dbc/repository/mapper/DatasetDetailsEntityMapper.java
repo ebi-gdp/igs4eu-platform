@@ -21,12 +21,14 @@ import io.r2dbc.spi.Row;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetCryptographyDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetStatusType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails;
 
 import java.nio.file.Path;
 import java.util.function.BiFunction;
 
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getBoolean;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getLocalDateTime;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getString;
 
@@ -38,6 +40,7 @@ public interface DatasetDetailsEntityMapper {
                     getString("public_key", row),
                     getString("secret_id", row),
                     getString("secret_id_version", row),
+                    getBoolean("c_is_deleted", row),
                     getString("created_by", row),
                     getLocalDateTime("created_on", row),
                     getString("updated_by", row),
@@ -47,6 +50,7 @@ public interface DatasetDetailsEntityMapper {
                     getString("globus_username", row),
                     getString("guest_collection_id", row),
                     Path.of(getString("dir_path_on_guest_collection", row)),
+                    DatasetStatusType.valueOf(getString("status", row)),
                     getString("created_by", row),
                     getLocalDateTime("created_on", row),
                     getString("updated_by", row),
@@ -57,6 +61,7 @@ public interface DatasetDetailsEntityMapper {
                     GenomeBuild.valueOf(getString("genome_build", row)),
                     FilesetType.valueOf(getString("fileset_type", row)),
                     getLocalDateTime("expires_at", row),
+                    getBoolean("is_deleted", row),
                     datasetCryptographyDetails,
                     globusDetails,
                     getString("gc_created_by", row),

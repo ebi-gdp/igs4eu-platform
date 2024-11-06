@@ -26,17 +26,21 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetDetailsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetDetailsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PaginationDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.DatasetDetailsDTOValidator;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.DatasetMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetCryptographyDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetCryptographyDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetDetailsRepository;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusDetailsRepository;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.KeyHandlerService;
 
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -59,20 +63,26 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.UserAccountUtil.us
 public class DatasetRequestHandler {
     private static final Logger LOGGER = getLogger(DatasetRequestHandler.class);
     private final DatasetDetailsRepository datasetDetailsRepository;
+    private final GlobusDetailsRepository globusDetailsRepository;
     private final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository;
     private final DatasetMapper datasetMapper;
     private final KeyHandlerService keyHandlerService;
+    private final GlobusFileHandlerService globusFileHandlerService;
     private final DatasetDetailsDTOValidator datasetDetailsDTOValidator;
 
     public DatasetRequestHandler(final DatasetDetailsRepository datasetDetailsRepository,
+                                 final GlobusDetailsRepository globusDetailsRepository,
                                  final DatasetCryptographyDetailsRepository datasetCryptographyDetailsRepository,
                                  final DatasetMapper datasetMapper,
                                  final KeyHandlerService keyHandlerService,
+                                 final GlobusFileHandlerService globusFileHandlerService,
                                  final DatasetDetailsDTOValidator datasetDetailsDTOValidator) {
         this.datasetDetailsRepository = datasetDetailsRepository;
+        this.globusDetailsRepository = globusDetailsRepository;
         this.datasetCryptographyDetailsRepository = datasetCryptographyDetailsRepository;
         this.datasetMapper = datasetMapper;
         this.keyHandlerService = keyHandlerService;
+        this.globusFileHandlerService = globusFileHandlerService;
         this.datasetDetailsDTOValidator = datasetDetailsDTOValidator;
     }
 
@@ -161,17 +171,9 @@ public class DatasetRequestHandler {
      * @see HttpStatus
      */
     public Mono<ServerResponse> getDatasetDetails(final ServerRequest serverRequest) {
-        final String datasetId = serverRequest.pathVariable("datasetId");
-        return userAccount(serverRequest)
-                .doOnNext(userAccountDTO -> LOGGER.info("Retrieving dataset details: {} for the user: {}", datasetId, userAccountDTO.accountId()))
-                .flatMap(userAccountDTO -> datasetDetailsRepository
-                        .findByDatasetIdAndCreatedBy(datasetId,
-                                userAccountDTO.accountId())
-                        .flatMap(datasetDetails -> {
-                            LOGGER.info("Retrieved dataset details: {} for the user: {}", datasetId, userAccountDTO.accountId());
-                            return ok().bodyValue(datasetMapper.toDTO(datasetDetails));
-                        })
-                        .switchIfEmpty(error(resourceNotFound("Dataset Id %s not found!".formatted(datasetId)))));
+        return doGetDatasetDetails(serverRequest)
+                .flatMap(datasetDetails -> ok()
+                        .bodyValue(datasetMapper.toDTO(datasetDetails)));
     }
 
     /**
@@ -208,5 +210,59 @@ public class DatasetRequestHandler {
                 .parallelStream()
                 .map(datasetMapper::toDTO)
                 .collect(toList());
+    }
+
+    /**
+     * Delete dataset for user.
+     *
+     * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}.
+     *
+     * @return {@code HttpStatus}
+     */
+    @Transactional
+    public Mono<ServerResponse> deleteDataset(final ServerRequest serverRequest) {
+        return doGetDatasetDetails(serverRequest)
+                .flatMap(datasetDetails -> {
+                    final GlobusDetails globusDetails = datasetDetails.getGlobusDetails();
+                    globusDetails.deleted();
+                    return globusDetailsRepository
+                            .save(globusDetails)
+                            .thenReturn(datasetDetails);
+                })
+                .flatMap(datasetDetails -> {
+                    datasetDetails.deleted();
+                    return datasetDetailsRepository.save(datasetDetails);
+                })
+                .flatMap(datasetDetails -> datasetCryptographyDetailsRepository
+                        .findById(datasetDetails.getDatasetCryptographyDetails().getDatasetId())
+                        .flatMap(datasetCryptographyDetails -> keyHandlerService
+                                .deleteKey(datasetDetails.getDatasetCryptographyDetails().getSecretId())
+                                .thenReturn(datasetCryptographyDetails))
+                        .doOnSuccess(DatasetCryptographyDetails::deleted)
+                        .flatMap(datasetCryptographyDetailsRepository::save)
+                        .thenReturn(datasetDetails))
+                .flatMap(datasetDetails -> {
+                    final String dirPathToDelete = Paths.get(datasetDetails.getGlobusDetails().getGlobusUsername()
+                                    , datasetDetails.getGlobusDetails().getDirPathOnGuestCollection())
+                            .toString();
+                    return globusFileHandlerService
+                            .deleteDirectoryOnGuestCollection(dirPathToDelete)
+                            .thenReturn(datasetDetails);
+                })
+                .flatMap(datasetDetails -> ok()
+                        .bodyValue(datasetMapper.toDTO(datasetDetails)));
+    }
+
+    private Mono<DatasetDetails> doGetDatasetDetails(final ServerRequest serverRequest) {
+        final String datasetId = serverRequest.pathVariable("datasetId");
+        return userAccount(serverRequest)
+                .doOnNext(userAccountDTO -> LOGGER.info("Retrieving dataset details: {} for the user: {}", datasetId, userAccountDTO.accountId()))
+                .flatMap(userAccountDTO -> datasetDetailsRepository
+                        .findByDatasetIdAndCreatedBy(datasetId,
+                                userAccountDTO.accountId())
+                        .doOnNext(datasetDetails -> {
+                            LOGGER.info("Retrieved dataset details: {} for the user: {}", datasetId, userAccountDTO.accountId());
+                        })
+                        .switchIfEmpty(error(resourceNotFound("Dataset Id %s not found!".formatted(datasetId)))));
     }
 }

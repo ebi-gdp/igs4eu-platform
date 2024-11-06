@@ -54,6 +54,11 @@ public class KafkaConfig extends DefaultKafkaConfig {
     }
 
     @Bean
+    public KafkaTemplate<String, String> retryableTopicKafkaTemplate() {
+        return new KafkaTemplate<>(defaultProducerFactory());
+    }
+
+    @Bean
     public ProducerFactory<String, TriggerPipelineEvent> producerFactory() {
         return defaultProducerFactory();
     }

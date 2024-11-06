@@ -39,6 +39,7 @@ import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 public class KeyHandlerRouterConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyHandlerRouterConfig.class);
     private static final Path keys = get("/key");
+    private static final String KEYS_URI = "{keyId}/version/{versionId}";
 
     /**
      * Defines a RouterFunction bean that routes HTTP requests.
@@ -55,12 +56,12 @@ public class KeyHandlerRouterConfig {
                 .filter(logRequestIdHeader(LOGGER))
                 .filter(dpaConsentCheck.hasUserGivenConsent())
                 .POST(keys.toString(), serverRequest -> keyHandler.generateKeys())
+                .DELETE(keys.toString(), keyHandler::deleteSecret)
                 .build();
     }
 
     /**
-     * Defines a RouterFunction to access secret keys. This route should be protected under
-     * basic auth.
+     * Defines a RouterFunction to access secret keys.
      *
      * @param keyHandler {@link KeyRequestHandler}
      *
@@ -71,7 +72,7 @@ public class KeyHandlerRouterConfig {
         return route()
                 .filter(buildUniqueRequestId(LOGGER))
                 //Make sure this path is secured under basic auth
-                .GET(keys.resolve("{keyId}/version/{versionId}").toString(), keyHandler::retrievePrivateKey)
+                .GET(keys.resolve(KEYS_URI).toString(), keyHandler::retrievePrivateKey)
                 .build();
     }
 }

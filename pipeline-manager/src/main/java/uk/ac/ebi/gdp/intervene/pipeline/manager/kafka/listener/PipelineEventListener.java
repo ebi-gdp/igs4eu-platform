@@ -19,13 +19,20 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.listener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.support.Acknowledgment;
-import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.kafka.support.converter.ConversionException;
+import org.springframework.kafka.support.serializer.DeserializationException;
+import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.messaging.handler.invocation.MethodArgumentResolutionException;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineStatusDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineStatusHandler;
+
+import static org.springframework.kafka.retrytopic.DltStrategy.FAIL_ON_ERROR;
+import static org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC;
 
 /**
  * Kafka event listener to listen pipeline statuses
@@ -38,22 +45,36 @@ public class PipelineEventListener {
         this.pipelineStatusHandler = pipelineStatusHandler;
     }
 
-    @Transactional
+    @RetryableTopic(
+            attempts = "1",
+            kafkaTemplate = "retryableTopicKafkaTemplate",
+            dltStrategy = FAIL_ON_ERROR,
+            exclude = {DeserializationException.class,
+                    MessageConversionException.class,
+                    ConversionException.class,
+                    MethodArgumentResolutionException.class,
+                    NoSuchMethodException.class,
+                    ClassCastException.class})
     @KafkaListener(
             topics = "${kafka.pipeline-status.topic}",
             clientIdPrefix = "${kafka.group.instance-id}",
             groupId = "${kafka.group.instance-id}",
             containerFactory = "kafkaListenerContainerFactory")
-    public void listenPipelineResultQueue(@Header(KafkaHeaders.KEY) String pipelineIdAsKey,
-                                          final PipelineStatusDTO pipelineStatusDTO,
+    public void listenPipelineResultQueue(final PipelineStatusDTO pipelineStatusDTO,
                                           final Acknowledgment acknowledgment) {
-        LOGGER.info("Pipeline status is being updated to : {} for Pipeline Id: {}", pipelineStatusDTO.getStatus(), pipelineIdAsKey);
+        LOGGER.info("Pipeline status is being updated to : {} for Pipeline Id: {}", pipelineStatusDTO.getStatus(), pipelineStatusDTO.getRunName());
         pipelineStatusHandler
-                .updatePipelineStatus(pipelineIdAsKey, pipelineStatusDTO)
+                .updatePipelineStatus(pipelineStatusDTO.getRunName(), pipelineStatusDTO)
                 .doOnSuccess(unused -> {
                     acknowledgment.acknowledge();
-                    LOGGER.info("Pipeline status has been updated for Pipeline Id: {}", pipelineIdAsKey);
+                    LOGGER.info("Pipeline status has been updated for Pipeline Id: {}", pipelineStatusDTO.getRunName());
                 })
                 .block();
+    }
+
+    @DltHandler
+    public void handleDltPipelineStatus(@Header(RECEIVED_TOPIC) String topic,
+                                        final String pipelineStatusDTO) {
+        LOGGER.info("Event on dlt topic={}, payload={}", topic, pipelineStatusDTO);
     }
 }

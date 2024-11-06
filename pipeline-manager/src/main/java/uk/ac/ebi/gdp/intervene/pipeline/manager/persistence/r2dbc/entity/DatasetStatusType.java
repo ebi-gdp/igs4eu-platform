@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2022 EMBL - European Bioinformatics Institute
+ * Copyright 2024 EMBL - European Bioinformatics Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,18 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint;
+package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity;
 
-/**
- * Enum to define Globus acceptable data types.
- */
-public enum DataType {
-    ACCESS("access"), MKDIR("mkdir"), DELETE("delete");
+public enum DatasetStatusType {
+    ACTIVE("active"), DELETED("deleted");
 
-    private final String dataType;
+    private final String status;
 
-    DataType(String dataType) {
-        this.dataType = dataType;
+    DatasetStatusType(final String status) {
+        this.status = status;
     }
 
-    public String getDataType() {
-        return dataType;
+    public String getStatus() {
+        return status;
     }
 }

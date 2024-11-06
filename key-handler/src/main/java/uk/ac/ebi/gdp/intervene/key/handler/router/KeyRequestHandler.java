@@ -46,6 +46,7 @@ import static org.springframework.web.reactive.function.server.ServerResponse.ok
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
 import static reactor.core.publisher.Mono.fromCallable;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
+import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
 import static uk.ac.ebi.gdp.intervene.key.handler.service.IKeyGenerator.KeyGeneratorStatus.SUCCESS;
 
@@ -59,6 +60,7 @@ public class KeyRequestHandler {
     private final Path keysBasePath;
     private final char[] privateKeyPassword;
     private final AESCryptography aesCryptography;
+    private final Path secretPathPrefix;
 
     /**
      * Constructs a new KeyRequestHandler with the specified Crypt4ghKeyGenerator,
@@ -68,15 +70,18 @@ public class KeyRequestHandler {
      * @param secretManager the ISecretManager instance for managing secrets.
      * @param keysBasePath the base path where the keys are stored.
      * @param privateKeyPassword the password for the private key as a character array.
+     * @param secretPathPrefix gcp secret path prefix.
      */
     public KeyRequestHandler(final Crypt4ghKeyGenerator crypt4ghKeyGenerator,
                              final ISecretManager secretManager,
                              final Path keysBasePath,
-                             final char[] privateKeyPassword) {
+                             final char[] privateKeyPassword,
+                             final Path secretPathPrefix) {
         this.crypt4ghKeyGenerator = crypt4ghKeyGenerator;
         this.secretManager = secretManager;
         this.keysBasePath = keysBasePath;
         this.privateKeyPassword = privateKeyPassword;
+        this.secretPathPrefix = secretPathPrefix;
         this.aesCryptography = new AESCryptography.Builder().build();
     }
 
@@ -206,5 +211,24 @@ public class KeyRequestHandler {
                 throw serverException("Error while deleting key: %s. ".formatted(path) + e.getMessage());
             }
         });
+    }
+
+    /**
+     * @param serverRequest the request containing the parameters for deleting the private key.
+     *
+     * @return a Mono emitting the ServerResponse containing http status. e.g. 200 for successful
+     *         request & other http statuses incase any error occurs.
+     */
+    public Mono<ServerResponse> deleteSecret(final ServerRequest serverRequest) {
+        final String secretId = serverRequest.queryParam("secretId")
+                .orElseThrow(() -> badRequest("Query param 'secretId' is missing!"));
+        try {
+            return secretManager
+                    .deleteSecret(secretPathPrefix.resolve(secretId).toString())
+                    .then(ok().build());
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage(), e);
+            throw serverException("Error while deleting encrypted private key: " + e.getMessage());
+        }
     }
 }

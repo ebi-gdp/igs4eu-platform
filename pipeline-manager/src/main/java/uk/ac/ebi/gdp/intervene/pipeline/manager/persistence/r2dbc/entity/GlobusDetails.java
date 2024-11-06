@@ -30,6 +30,8 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 
 import static org.springframework.util.StringUtils.hasText;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetStatusType.ACTIVE;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetStatusType.DELETED;
 
 @Table("globus_guest_collection_files_details")
 public class GlobusDetails implements Persistable<String> {
@@ -38,6 +40,7 @@ public class GlobusDetails implements Persistable<String> {
     private String globusUsername;
     private String guestCollectionId;
     private String dirPathOnGuestCollection;
+    private DatasetStatusType status;
 
     @CreatedBy
     private String createdBy;
@@ -64,11 +67,13 @@ public class GlobusDetails implements Persistable<String> {
                           final String globusUsername,
                           final String guestCollectionId,
                           final String dirPathOnGuestCollection,
+                          final DatasetStatusType status,
                           final boolean isNew) {
         this.filesetId = filesetId;
         this.globusUsername = globusUsername;
         this.guestCollectionId = guestCollectionId;
         this.dirPathOnGuestCollection = dirPathOnGuestCollection;
+        this.status = status;
         this.isNew = isNew;
     }
 
@@ -76,12 +81,13 @@ public class GlobusDetails implements Persistable<String> {
                           final String globusUsername,
                           final String guestCollectionId,
                           final String dirPathOnGuestCollection,
+                          final DatasetStatusType status,
                           final boolean isNew,
                           final String createdBy,
                           final LocalDateTime createdOn,
                           final String updatedBy,
                           final LocalDateTime updatedOn) {
-        this(filesetId, globusUsername, guestCollectionId, dirPathOnGuestCollection, isNew);
+        this(filesetId, globusUsername, guestCollectionId, dirPathOnGuestCollection, status, isNew);
         this.createdBy = createdBy;
         this.createdOn = createdOn;
         this.updatedBy = updatedBy;
@@ -107,6 +113,7 @@ public class GlobusDetails implements Persistable<String> {
                 globusUsername,
                 guestCollectionId,
                 normalizeDirPath(dirPathOnGuestCollection),
+                ACTIVE,
                 true
         );
     }
@@ -118,6 +125,7 @@ public class GlobusDetails implements Persistable<String> {
      * @param globusUsername globus username.
      * @param guestCollectionId guest collection id.
      * @param dirPathOnGuestCollection dir path on guest collection.
+     * @param status status of the files on globus represented by {@link DatasetStatusType}.
      * @param createdBy created by user id.
      * @param createdOn created on timestamp
      * @param updatedBy updated by user id.
@@ -129,6 +137,7 @@ public class GlobusDetails implements Persistable<String> {
                                      final String globusUsername,
                                      final String guestCollectionId,
                                      final Path dirPathOnGuestCollection,
+                                     final DatasetStatusType status,
                                      final String createdBy,
                                      final LocalDateTime createdOn,
                                      final String updatedBy,
@@ -138,6 +147,7 @@ public class GlobusDetails implements Persistable<String> {
                 globusUsername,
                 guestCollectionId,
                 normalizeDirPath(dirPathOnGuestCollection),
+                status,
                 false,
                 createdBy,
                 createdOn,
@@ -164,6 +174,10 @@ public class GlobusDetails implements Persistable<String> {
 
     public String getDirPathOnGuestCollection() {
         return dirPathOnGuestCollection;
+    }
+
+    public DatasetStatusType getStatus() {
+        return status;
     }
 
     public String getCreatedBy() {
@@ -202,5 +216,9 @@ public class GlobusDetails implements Persistable<String> {
     @Override
     public boolean isNew() {
         return isNew || !hasText(filesetId);
+    }
+
+    public void deleted() {
+        this.status = DELETED;
     }
 }

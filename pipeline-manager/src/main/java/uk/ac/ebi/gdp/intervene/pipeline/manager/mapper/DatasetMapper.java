@@ -38,6 +38,7 @@ public interface DatasetMapper {
                            FilesetType filesetType,
                            LocalDateTime expiresAt);
 
+    @Mapping(target = "globusDetails.status", source = "datasetDetails.globusDetails.status")
     @Mapping(target = "globusDetails.username", source = "datasetDetails.globusDetails.globusUsername")
     @Mapping(target = "publicKey", source = "datasetDetails.datasetCryptographyDetails.publicKey")
     DatasetDetailsDTO toDTO(DatasetDetails datasetDetails);

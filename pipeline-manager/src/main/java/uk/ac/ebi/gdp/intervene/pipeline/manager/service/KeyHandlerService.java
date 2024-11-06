@@ -59,4 +59,21 @@ public class KeyHandlerService {
                 .retrieve()
                 .bodyToMono(DatasetCryptographyDetailsDTO.class);
     }
+
+    /**
+     * Delete secret key.
+     *
+     * @return {@code HttpStatus}.
+     */
+    public Mono<Void> deleteKey(final String secretId) {
+        return keyHandlerServiceWebClient
+                .delete()
+                .uri(uriBuilder -> uriBuilder
+                        .path(keyHandlerURI.getPath())
+                        .queryParam("secretId", secretId)
+                        .build())
+                .accept(APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(Void.class);
+    }
 }

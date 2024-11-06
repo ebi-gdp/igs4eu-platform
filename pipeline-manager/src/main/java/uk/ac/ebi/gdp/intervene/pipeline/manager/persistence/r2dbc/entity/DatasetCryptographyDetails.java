@@ -40,6 +40,7 @@ public class DatasetCryptographyDetails implements Persistable<String> {
     private String publicKey;
     private String secretId;
     private String secretIdVersion;
+    private boolean isDeleted;
 
     @CreatedBy
     private String createdBy;
@@ -63,23 +64,26 @@ public class DatasetCryptographyDetails implements Persistable<String> {
                                        final String publicKey,
                                        final String secretId,
                                        final String secretIdVersion,
-                                       final boolean isNew) {
+                                       final boolean isNew,
+                                       final boolean isDeleted) {
         this.datasetId = datasetId;
         this.publicKey = publicKey;
         this.secretId = secretId;
         this.secretIdVersion = secretIdVersion;
         this.isNew = isNew;
+        this.isDeleted = isDeleted;
     }
 
     private DatasetCryptographyDetails(final String datasetId,
                                        final String publicKey,
                                        final String secretId,
                                        final String secretIdVersion,
+                                       final boolean isDeleted,
                                        final String createdBy,
                                        final LocalDateTime createdOn,
                                        final String updatedBy,
                                        final LocalDateTime updatedOn) {
-        this(datasetId, publicKey, secretId, secretIdVersion, false);
+        this(datasetId, publicKey, secretId, secretIdVersion, false, isDeleted);
         this.createdBy = createdBy;
         this.createdOn = createdOn;
         this.updatedBy = updatedBy;
@@ -105,7 +109,8 @@ public class DatasetCryptographyDetails implements Persistable<String> {
                 getEncoder().encodeToString(publicKey.getBytes(UTF_8)),
                 secretId,
                 secretIdVersion,
-                true);
+                true,
+                false);
     }
 
     /**
@@ -115,6 +120,7 @@ public class DatasetCryptographyDetails implements Persistable<String> {
      * @param publicKey public key.
      * @param secretId secret id.
      * @param secretIdVersion secret id version.
+     * @param isDeleted whether dataset cryptography details are deleted or not.
      * @param createdBy created by user id.
      * @param createdOn created on timestamp
      * @param updatedBy updated by user id.
@@ -126,6 +132,7 @@ public class DatasetCryptographyDetails implements Persistable<String> {
                                                   final String publicKey,
                                                   final String secretId,
                                                   final String secretIdVersion,
+                                                  final boolean isDeleted,
                                                   final String createdBy,
                                                   final LocalDateTime createdOn,
                                                   final String updatedBy,
@@ -137,6 +144,7 @@ public class DatasetCryptographyDetails implements Persistable<String> {
                 new String(getDecoder().decode(publicKey)),
                 secretId,
                 secretIdVersion,
+                isDeleted,
                 createdBy,
                 createdOn,
                 updatedBy,
@@ -157,6 +165,10 @@ public class DatasetCryptographyDetails implements Persistable<String> {
 
     public String getSecretIdVersion() {
         return secretIdVersion;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
     }
 
     public String getCreatedBy() {
@@ -183,5 +195,9 @@ public class DatasetCryptographyDetails implements Persistable<String> {
     @Override
     public boolean isNew() {
         return isNew || !hasText(datasetId);
+    }
+
+    public void deleted() {
+        this.isDeleted = true;
     }
 }
