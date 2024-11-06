@@ -23,7 +23,11 @@ import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.kafka.support.converter.ConversionException;
+import org.springframework.kafka.support.serializer.DeserializationException;
+import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.invocation.MethodArgumentResolutionException;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineStatusDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineStatusHandler;
 
@@ -44,7 +48,13 @@ public class PipelineEventListener {
     @RetryableTopic(
             attempts = "1",
             kafkaTemplate = "retryableTopicKafkaTemplate",
-            dltStrategy = FAIL_ON_ERROR)
+            dltStrategy = FAIL_ON_ERROR,
+            exclude = {DeserializationException.class,
+                    MessageConversionException.class,
+                    ConversionException.class,
+                    MethodArgumentResolutionException.class,
+                    NoSuchMethodException.class,
+                    ClassCastException.class})
     @KafkaListener(
             topics = "${kafka.pipeline-status.topic}",
             clientIdPrefix = "${kafka.group.instance-id}",
