@@ -27,6 +27,8 @@ import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.transaction.ReactiveTransactionManager;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.listener.PipelineEventListener;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineStatusHandler;
@@ -69,7 +71,8 @@ public class KafkaConfig extends DefaultKafkaConfig {
     }
 
     @Bean
-    public PipelineEventListener pipelineEventListener(final PipelineStatusHandler pipelineStatusHandler) {
-        return new PipelineEventListener(pipelineStatusHandler);
+    public PipelineEventListener pipelineEventListener(final PipelineStatusHandler pipelineStatusHandler,
+                                                       final TransactionalOperator transactionalOperator) {
+        return new PipelineEventListener(pipelineStatusHandler, transactionalOperator);
     }
 }

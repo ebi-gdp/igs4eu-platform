@@ -28,6 +28,7 @@ import org.springframework.kafka.support.serializer.DeserializationException;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.invocation.MethodArgumentResolutionException;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineStatusDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineStatusHandler;
 
@@ -40,9 +41,12 @@ import static org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC;
 public class PipelineEventListener {
     private final Logger LOGGER = LoggerFactory.getLogger(PipelineEventListener.class);
     private final PipelineStatusHandler pipelineStatusHandler;
+    private final TransactionalOperator transactionalOperator;
 
-    public PipelineEventListener(final PipelineStatusHandler pipelineStatusHandler) {
+    public PipelineEventListener(final PipelineStatusHandler pipelineStatusHandler,
+                                 final TransactionalOperator transactionalOperator) {
         this.pipelineStatusHandler = pipelineStatusHandler;
+        this.transactionalOperator = transactionalOperator;
     }
 
     @RetryableTopic(
@@ -63,13 +67,15 @@ public class PipelineEventListener {
     public void listenPipelineResultQueue(final PipelineStatusDTO pipelineStatusDTO,
                                           final Acknowledgment acknowledgment) {
         LOGGER.info("Pipeline status is being updated to : {} for Pipeline Id: {}", pipelineStatusDTO.getStatus(), pipelineStatusDTO.getRunName());
-        pipelineStatusHandler
-                .updatePipelineStatus(pipelineStatusDTO.getRunName(), pipelineStatusDTO)
-                .doOnSuccess(unused -> {
-                    acknowledgment.acknowledge();
-                    LOGGER.info("Pipeline status has been updated for Pipeline Id: {}", pipelineStatusDTO.getRunName());
-                })
-                .block();
+        transactionalOperator
+                .execute(status ->
+                        pipelineStatusHandler
+                                .updatePipelineStatus(pipelineStatusDTO.getRunName(), pipelineStatusDTO)
+                                .doOnSuccess(unused -> {
+                                    acknowledgment.acknowledge();
+                                    LOGGER.info("Pipeline status has been updated for Pipeline Id: {}", pipelineStatusDTO.getRunName());
+                                }))
+                .subscribe(null, error -> LOGGER.error("Error occurred while updating status for Pipeline Id: {}", pipelineStatusDTO.getRunName(), error));
     }
 
     @DltHandler

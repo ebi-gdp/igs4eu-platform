@@ -52,11 +52,11 @@ public abstract class LogUtil {
      */
     public static ExchangeFilterFunction propagateRequestId(final Logger logger) {
         return (request, next) -> deferContextual(contextView -> {
-            final String valueFromContext = contextView.get(REQUEST_ID_HEADER);
-            logger.debug("Request-Id retrieved: {}", valueFromContext);
+            final String uniqueRequestId = contextView.getOrDefault(REQUEST_ID_HEADER, generateNewUniqueRequestId(logger));
+            logger.debug("Request-Id retrieved: {}", uniqueRequestId);
             // Continue with the request
             return next.exchange(ClientRequest.from(request)
-                    .headers(headers -> headers.add(REQUEST_ID_HEADER, valueFromContext))
+                    .headers(headers -> headers.add(REQUEST_ID_HEADER, uniqueRequestId))
                     .build());
         });
     }
@@ -88,8 +88,7 @@ public abstract class LogUtil {
 
     private static Context buildContextView(final Context contextView,
                                             final Logger logger) {
-        final String uniqueRequestId = randomUUID().toString();
-        logger.info("Request-Id generated for this request: {}", uniqueRequestId);
+        final String uniqueRequestId = generateNewUniqueRequestId(logger);
         return contextView.put(REQUEST_ID_HEADER, uniqueRequestId);
     }
 
@@ -98,5 +97,11 @@ public abstract class LogUtil {
                                           final String requestId) {
         logger.info("Request-Id retrieved & added to context: {}", requestId);
         return contextView.put(REQUEST_ID_HEADER, requestId);
+    }
+
+    private static String generateNewUniqueRequestId(final Logger logger) {
+        final String uniqueRequestId = randomUUID().toString();
+        logger.info("Request-Id generated for this request: {}", uniqueRequestId);
+        return uniqueRequestId;
     }
 }

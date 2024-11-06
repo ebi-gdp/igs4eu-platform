@@ -20,6 +20,7 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.config;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.spi.ConnectionFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,10 +33,11 @@ import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import uk.ac.ebi.gdp.intervene.commons.datasource.DatasourceConfigProperties;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetStatusType;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
@@ -43,10 +45,10 @@ import java.util.List;
 
 import static io.r2dbc.postgresql.client.SSLMode.fromValue;
 import static io.r2dbc.postgresql.codec.EnumCodec.builder;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.DatasetStatusTypeConverter;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.FilesetTypeConverter;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.GenomeBuildConverter;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.PipelineStatusTypeConverter;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.DatasetStatusTypeConverter;
 
 /**
  * Reactive database config.
@@ -117,5 +119,10 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
     @Bean
     public ReactiveAuditorAware<String> auditorAware(final UserManagerService userManagerService) {
         return new ReactiveAuditorAwareImpl(userManagerService);
+    }
+
+    @Bean
+    public TransactionalOperator transactionalOperator(@Qualifier("r2dbcTransactionManager") final ReactiveTransactionManager reactiveTransactionManager) {
+        return TransactionalOperator.create(reactiveTransactionManager);
     }
 }
