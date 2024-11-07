@@ -34,8 +34,8 @@ import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import uk.ac.ebi.gdp.intervene.commons.datasource.DatasourceConfigProperties;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetStatusType;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.FilesetType;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 
@@ -43,10 +43,10 @@ import java.util.List;
 
 import static io.r2dbc.postgresql.client.SSLMode.fromValue;
 import static io.r2dbc.postgresql.codec.EnumCodec.builder;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.DatasetStatusTypeConverter;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.FilesetTypeConverter;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.GenomeBuildConverter;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.PipelineStatusTypeConverter;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.converter.EnumConverter.DatasetStatusTypeConverter;
 
 /**
  * Reactive database config.

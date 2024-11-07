@@ -17,7 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.utility;
 
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
@@ -25,10 +24,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.commons.exception.ServerException;
 
 import static reactor.core.publisher.Mono.empty;
-import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.exception.MailException.failedToSendEmailException;
 
 /**
  * Email service implementation.
@@ -47,7 +45,7 @@ public class EmailSender implements IEmailSender {
     /**
      * {@inheritDoc}
      *
-     * @throws {@link ServerException}
+     * @throws {@link uk.ac.ebi.gdp.intervene.pipeline.manager.exception.MailException}
      */
     public Mono<Void> sendEmailInHTMLFormat(final EmailData emailData) {
         LOGGER.debug("Email data: {}", emailData.toString());
@@ -60,9 +58,9 @@ public class EmailSender implements IEmailSender {
             helper.setText(emailData.body(), true);
             mailSender.send(message);
             return empty();
-        } catch (final MessagingException messagingException) {
-            LOGGER.error("Error while sending message: " + messagingException.getMessage(), messagingException);
-            throw serverException(messagingException.getMessage());
+        } catch (final Exception emailException) {
+            LOGGER.error("Error while sending message: {}", emailException.getMessage(), emailException);
+            throw failedToSendEmailException(emailException.getMessage());
         }
     }
 }

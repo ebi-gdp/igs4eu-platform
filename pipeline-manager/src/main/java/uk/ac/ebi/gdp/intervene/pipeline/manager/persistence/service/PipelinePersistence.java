@@ -130,13 +130,19 @@ public class PipelinePersistence implements IPipelinePersistence {
     /**
      * {@inheritDoc}
      */
-    @Transactional
     @Override
     public Mono<PipelineResult> createPipelineResult(final PipelineResultEvent pipelineResultEvent) {
-        final PipelineResult pipelineResult = PipelineResult.create(
-                pipelineResultEvent.pipelineId(),
-                pipelineResultEvent.outputFileLocation());
-        return pipelineResultRepository.save(pipelineResult);
+        return pipelineResultRepository
+                .findById(pipelineResultEvent.pipelineId())
+                .flatMap(pipelineResult ->
+                        Mono.<PipelineResult>error(badRequest("Pipeline result record for Pipeline Id: %s already exists!".formatted(pipelineResult.getPipelineId()))))
+                .switchIfEmpty(Mono.defer(() -> {
+                    PipelineResult pipelineResult = PipelineResult.create(
+                            pipelineResultEvent.pipelineId(),
+                            pipelineResultEvent.outputFileLocation()
+                    );
+                    return pipelineResultRepository.save(pipelineResult);
+                }));
     }
 
     /**

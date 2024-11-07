@@ -52,11 +52,11 @@ public abstract class LogUtil {
      */
     public static ExchangeFilterFunction propagateRequestId(final Logger logger) {
         return (request, next) -> deferContextual(contextView -> {
-            final String valueFromContext = contextView.get(REQUEST_ID_HEADER);
-            logger.debug("Request-Id retrieved: {}", valueFromContext);
+            final String uniqueRequestId = contextView.getOrDefault(REQUEST_ID_HEADER, generateNewUniqueRequestId(logger));
+            logger.debug("{} retrieved: {}", REQUEST_ID_HEADER, uniqueRequestId);
             // Continue with the request
             return next.exchange(ClientRequest.from(request)
-                    .headers(headers -> headers.add(REQUEST_ID_HEADER, valueFromContext))
+                    .headers(headers -> headers.add(REQUEST_ID_HEADER, uniqueRequestId))
                     .build());
         });
     }
@@ -73,12 +73,12 @@ public abstract class LogUtil {
                     .asHttpHeaders();
             if (headers.containsKey(REQUEST_ID_HEADER)) {
                 final String requestId = headers.get(REQUEST_ID_HEADER).get(0);
-                logger.info("Request-Id header: {}", requestId);
+                logger.info("{} header: {}", REQUEST_ID_HEADER, requestId);
                 return next
                         .handle(request)
                         .contextWrite(contextView -> writeRequestId(contextView, logger, requestId));
             } else {
-                logger.warn("Request-Id header not found! Generating new");
+                logger.warn("{} header not found! Generating new", REQUEST_ID_HEADER);
                 return next
                         .handle(request)
                         .contextWrite(contextView -> buildContextView(contextView, logger));
@@ -88,15 +88,20 @@ public abstract class LogUtil {
 
     private static Context buildContextView(final Context contextView,
                                             final Logger logger) {
-        final String uniqueRequestId = randomUUID().toString();
-        logger.info("Request-Id generated for this request: {}", uniqueRequestId);
+        final String uniqueRequestId = generateNewUniqueRequestId(logger);
         return contextView.put(REQUEST_ID_HEADER, uniqueRequestId);
     }
 
     private static Context writeRequestId(final Context contextView,
                                           final Logger logger,
                                           final String requestId) {
-        logger.info("Request-Id retrieved & added to context: {}", requestId);
+        logger.info("{} retrieved & added to context: {}", REQUEST_ID_HEADER, requestId);
         return contextView.put(REQUEST_ID_HEADER, requestId);
+    }
+
+    private static String generateNewUniqueRequestId(final Logger logger) {
+        final String uniqueRequestId = randomUUID().toString();
+        logger.info("{} generated for this request: {}", REQUEST_ID_HEADER, uniqueRequestId);
+        return uniqueRequestId;
     }
 }
