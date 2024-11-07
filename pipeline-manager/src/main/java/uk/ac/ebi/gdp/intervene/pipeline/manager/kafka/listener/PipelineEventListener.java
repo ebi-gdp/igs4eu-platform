@@ -28,8 +28,12 @@ import org.springframework.kafka.support.serializer.DeserializationException;
 import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.invocation.MethodArgumentResolutionException;
-import org.springframework.transaction.reactive.TransactionalOperator;
+import org.springframework.retry.annotation.Backoff;
+import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.exception.ClientException;
+import uk.ac.ebi.gdp.intervene.commons.exception.ServerException;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineStatusDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.exception.MailException;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineStatusHandler;
 
 import static org.springframework.kafka.retrytopic.DltStrategy.FAIL_ON_ERROR;
@@ -41,16 +45,14 @@ import static org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC;
 public class PipelineEventListener {
     private final Logger LOGGER = LoggerFactory.getLogger(PipelineEventListener.class);
     private final PipelineStatusHandler pipelineStatusHandler;
-    private final TransactionalOperator transactionalOperator;
 
-    public PipelineEventListener(final PipelineStatusHandler pipelineStatusHandler,
-                                 final TransactionalOperator transactionalOperator) {
+    public PipelineEventListener(final PipelineStatusHandler pipelineStatusHandler) {
         this.pipelineStatusHandler = pipelineStatusHandler;
-        this.transactionalOperator = transactionalOperator;
     }
 
     @RetryableTopic(
-            attempts = "1",
+            attempts = "2",
+            backoff = @Backoff(delay = 1000, multiplier = 2.0),  // Delay and backoff multiplier
             kafkaTemplate = "retryableTopicKafkaTemplate",
             dltStrategy = FAIL_ON_ERROR,
             exclude = {DeserializationException.class,
@@ -58,7 +60,8 @@ public class PipelineEventListener {
                     ConversionException.class,
                     MethodArgumentResolutionException.class,
                     NoSuchMethodException.class,
-                    ClassCastException.class})
+                    ClassCastException.class,
+                    ServerException.class})
     @KafkaListener(
             topics = "${kafka.pipeline-status.topic}",
             clientIdPrefix = "${kafka.group.instance-id}",
@@ -67,15 +70,24 @@ public class PipelineEventListener {
     public void listenPipelineResultQueue(final PipelineStatusDTO pipelineStatusDTO,
                                           final Acknowledgment acknowledgment) {
         LOGGER.info("Pipeline status is being updated to : {} for Pipeline Id: {}", pipelineStatusDTO.getStatus(), pipelineStatusDTO.getRunName());
-        transactionalOperator
-                .execute(status ->
-                        pipelineStatusHandler
-                                .updatePipelineStatus(pipelineStatusDTO.getRunName(), pipelineStatusDTO)
-                                .doOnSuccess(unused -> {
-                                    acknowledgment.acknowledge();
-                                    LOGGER.info("Pipeline status has been updated for Pipeline Id: {}", pipelineStatusDTO.getRunName());
-                                }))
-                .subscribe(null, error -> LOGGER.error("Error occurred while updating status for Pipeline Id: {}", pipelineStatusDTO.getRunName(), error));
+        updatePipelineStatus(pipelineStatusDTO, acknowledgment)
+                .subscribe();
+    }
+
+    private Mono<Void> updatePipelineStatus(final PipelineStatusDTO pipelineStatusDTO,
+                                            final Acknowledgment acknowledgment) {
+        return pipelineStatusHandler
+                .updatePipelineStatus(pipelineStatusDTO.getRunName(), pipelineStatusDTO)
+                .doOnSuccess(unused -> {
+                    acknowledgment.acknowledge();
+                    LOGGER.info("Pipeline status has been updated for Pipeline Id: {}", pipelineStatusDTO.getRunName());
+                })
+                .doOnError(throwable -> {
+                    if (throwable instanceof ClientException || throwable instanceof MailException) {
+                        acknowledgment.acknowledge();
+                    }
+                    LOGGER.error("Error while updating status for Pipeline Id: {}", pipelineStatusDTO.getRunName());
+                });
     }
 
     @DltHandler

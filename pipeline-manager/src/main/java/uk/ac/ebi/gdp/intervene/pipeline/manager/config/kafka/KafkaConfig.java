@@ -25,10 +25,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.transaction.ReactiveTransactionManager;
-import org.springframework.transaction.reactive.TransactionalOperator;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineStatusDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.listener.PipelineEventListener;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineStatusHandler;
@@ -52,17 +50,12 @@ public class KafkaConfig extends DefaultKafkaConfig {
 
     @Bean
     public KafkaTemplate<String, TriggerPipelineEvent> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
-    }
-
-    @Bean
-    public KafkaTemplate<String, String> retryableTopicKafkaTemplate() {
         return new KafkaTemplate<>(defaultProducerFactory());
     }
 
     @Bean
-    public ProducerFactory<String, TriggerPipelineEvent> producerFactory() {
-        return defaultProducerFactory();
+    public KafkaTemplate<String, PipelineStatusDTO> retryableTopicKafkaTemplate() {
+        return new KafkaTemplate<>(defaultProducerFactory());
     }
 
     @Bean("kafkaListenerContainerFactory")
@@ -71,8 +64,7 @@ public class KafkaConfig extends DefaultKafkaConfig {
     }
 
     @Bean
-    public PipelineEventListener pipelineEventListener(final PipelineStatusHandler pipelineStatusHandler,
-                                                       final TransactionalOperator transactionalOperator) {
-        return new PipelineEventListener(pipelineStatusHandler, transactionalOperator);
+    public PipelineEventListener pipelineEventListener(final PipelineStatusHandler pipelineStatusHandler) {
+        return new PipelineEventListener(pipelineStatusHandler);
     }
 }

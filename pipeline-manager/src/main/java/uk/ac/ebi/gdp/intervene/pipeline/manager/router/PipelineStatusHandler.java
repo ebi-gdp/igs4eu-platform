@@ -23,6 +23,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineStatusDTO;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.exception.MailException;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.PipelineResultEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
@@ -78,6 +79,7 @@ public class PipelineStatusHandler {
      *
      * @return {@link Void}
      */
+    @Transactional(noRollbackFor = MailException.class)
     public Mono<Void> updatePipelineStatus(final String pipelineId,
                                            final PipelineStatusDTO pipelineStatusDTO) {
         LOGGER.info("Pipeline status is being updated to status: {} for Pipeline Id: {}", pipelineStatusDTO.getStatus(), pipelineId);
@@ -97,6 +99,7 @@ public class PipelineStatusHandler {
                         "");
                 return pipelinePersistence
                         .createPipelineResult(pipelineResultEvent)
+                        .doOnError(throwable -> LOGGER.error("Error occurred while creating Pipeline Result record: {}", throwable.getMessage()))
                         .flatMap(pipelineResult -> buildSuccessEmailData(pipelineResult.getPipelineId(),
                                 pipelineExecutionStatus.getPipelineDetails().getUserId()))
                         .flatMap(this::sendEmailInHTMLFormat);

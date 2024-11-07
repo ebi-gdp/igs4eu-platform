@@ -20,7 +20,6 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.config;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.spi.ConnectionFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,7 +32,6 @@ import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.transaction.reactive.TransactionalOperator;
 import uk.ac.ebi.gdp.intervene.commons.datasource.DatasourceConfigProperties;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetStatusType;
@@ -119,10 +117,5 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
     @Bean
     public ReactiveAuditorAware<String> auditorAware(final UserManagerService userManagerService) {
         return new ReactiveAuditorAwareImpl(userManagerService);
-    }
-
-    @Bean
-    public TransactionalOperator transactionalOperator(@Qualifier("r2dbcTransactionManager") final ReactiveTransactionManager reactiveTransactionManager) {
-        return TransactionalOperator.create(reactiveTransactionManager);
     }
 }
