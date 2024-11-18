@@ -19,6 +19,7 @@ package uk.ac.ebi.gdp.intervene.commons.security;
 
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.proc.DefaultJOSEObjectTypeVerifier;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
@@ -32,7 +33,6 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.util.pattern.PathPatternParser;
 
-import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.security.config.Customizer.withDefaults;
 import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
@@ -73,11 +73,12 @@ public class GenericOAuth2SecurityConfig {
      * @return {@link SecurityWebFilterChain}
      */
     protected SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http,
-                                                                  final String patternPath) {
-        PathPatternParser parser = new PathPatternParser();
+                                                                  final String patternPath,
+                                                                  final HttpMethod httpMethod) {
+        final PathPatternParser parser = new PathPatternParser();
         http.csrf((ServerHttpSecurity.CsrfSpec::disable));
         http
-                .securityMatcher(new PathPatternParserServerWebExchangeMatcher(parser.parse(patternPath), GET))
+                .securityMatcher(new PathPatternParserServerWebExchangeMatcher(parser.parse(patternPath), httpMethod))
                 .authorizeExchange((exchanges) -> exchanges
                         .anyExchange()
                         .authenticated())

@@ -49,6 +49,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.buildUniqueRequestId;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.config.OAuth2SecurityConfig.DATASET_EXPIRED_DIR;
 
 /**
  * Defines router config beans.
@@ -99,6 +100,15 @@ public class PipelineManagerRouterConfig {
                 .filter(buildUniqueRequestId(LOGGER))
                 //Make sure this path is secured under basic auth, allows pipeline executor to trigger API
                 .path("/integration/pipeline/{pipelineId}/status", pb -> pb.PATCH(pipelineStatusHandler::updatePipelineStatus))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> datasetRoutesBasicAuth(final DatasetRequestHandler datasetRequestHandler) {
+        return route()
+                .filter(buildUniqueRequestId(LOGGER))
+                //Make sure this path is secured under basic auth, allows pipeline executor to trigger API
+                .path(DATASET_EXPIRED_DIR, db -> db.DELETE(serverRequest -> datasetRequestHandler.deleteGlobusDirsOnGuestCollectionInBatches()))
                 .build();
     }
 

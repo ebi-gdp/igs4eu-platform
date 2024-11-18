@@ -29,6 +29,8 @@ import uk.ac.ebi.gdp.intervene.commons.security.GenericOAuth2SecurityConfig;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineManagerRouterConfig;
 
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpMethod.GET;
 
 /**
  * OAuth2 security config, extends {@link GenericOAuth2SecurityConfig}.
@@ -38,6 +40,7 @@ import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 @Configuration
 @EnableWebFluxSecurity
 public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
+    public static final String DATASET_EXPIRED_DIR = "/dataset/expired/dir";
 
     @Bean
     public SecurityWebFilterChain securityFilterChain(final ServerHttpSecurity http,
@@ -52,9 +55,33 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
     @Order(HIGHEST_PRECEDENCE)
     @Bean
     public SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http) {
-        return super.securityFilterChainBasicAuth(http, "/integration/pipeline/**");
+        return super.securityFilterChainBasicAuth(
+                http,
+                "/integration/pipeline/**",
+                GET);
     }
 
+    /**
+     * API call that needs to be authenticated by basic auth should be included here.
+     * Watch for patternPath value, this should match with router function defined in {@link PipelineManagerRouterConfig}
+     */
+    @Order(HIGHEST_PRECEDENCE + 1)
+    @Bean
+    public SecurityWebFilterChain securityFilterChainBasicAuthForScheduler(final ServerHttpSecurity http) {
+        return super.securityFilterChainBasicAuth(
+                http,
+                DATASET_EXPIRED_DIR,
+                DELETE);
+    }
+
+    /**
+     * Provides credentials for basic auth.
+     *
+     * @param username basic auth username
+     * @param password basic auth password
+     *
+     * @return {@link ReactiveUserDetailsService}
+     */
     @Bean
     public ReactiveUserDetailsService userDetailsService(@Value("${basic.auth.username}") final String username,
                                                          @Value("${basic.auth.password}") final String password) {

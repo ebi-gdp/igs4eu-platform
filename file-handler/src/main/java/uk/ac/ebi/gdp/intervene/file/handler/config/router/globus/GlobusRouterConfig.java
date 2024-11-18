@@ -29,7 +29,9 @@ import uk.ac.ebi.gdp.intervene.file.handler.service.globus.collection.IFileOpera
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.AuthService;
 
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
+import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.buildUniqueRequestId;
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
+import static uk.ac.ebi.gdp.intervene.file.handler.config.OAuth2SecurityConfig.URI_INCLUDE_UNDER_BASIC_AUTH;
 
 /**
  * Globus router config.
@@ -38,6 +40,13 @@ import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 public class GlobusRouterConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobusRouterConfig.class);
 
+    /**
+     * @param globusRequestHandler Globus request handler
+     * @param globusUserRequestHandler Globus user request handler
+     * @param dpaConsentCheck DPA consent check implementation
+     *
+     * @return router function
+     */
     @Bean
     public RouterFunction<ServerResponse> globusRoutes(final GlobusRequestHandler globusRequestHandler,
                                                        final GlobusUserRequestHandler globusUserRequestHandler,
@@ -55,12 +64,39 @@ public class GlobusRouterConfig {
                 .build();
     }
 
+    /**
+     * Defines a RouterFunction to trigger globus delete API method.
+     *
+     * @param globusRequestHandler {@link GlobusRequestHandler}
+     *
+     * @return a RouterFunction that routes requests to the appropriate handler.
+     */
+    @Bean
+    public RouterFunction<ServerResponse> pipelineRoutesBasicAuth(final GlobusRequestHandler globusRequestHandler) {
+        return route()
+                .filter(buildUniqueRequestId(LOGGER))
+                //Make sure this path is secured under basic auth
+                .DELETE(URI_INCLUDE_UNDER_BASIC_AUTH, globusRequestHandler::deleteDirectoryOnGuestCollection)
+                .build();
+    }
+
+    /**
+     * @param fileOperationService File operation service
+     * @param guestCollectionId Guest collection id
+     *
+     * @return {@link GlobusRequestHandler}
+     */
     @Bean
     public GlobusRequestHandler globusRequestHandler(final IFileOperationService fileOperationService,
                                                      @Value("${globus.guest-collection.endpoint-id}") final String guestCollectionId) {
         return new GlobusRequestHandler(fileOperationService, guestCollectionId);
     }
 
+    /**
+     * @param authService Auth service.
+     *
+     * @return {@link GlobusRequestHandler}
+     */
     @Bean
     public GlobusUserRequestHandler globusUserRequestHandler(final AuthService authService) {
         return new GlobusUserRequestHandler(authService);

@@ -39,7 +39,6 @@ import static java.nio.file.Files.notExists;
 import static java.nio.file.Files.readAllBytes;
 import static java.nio.file.Files.readString;
 import static java.nio.file.Path.of;
-import static java.util.Arrays.fill;
 import static java.util.UUID.randomUUID;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
@@ -100,11 +99,7 @@ public class KeyRequestHandler {
                 .flatMap(keyGeneratorStatus -> {
                     if (keyGeneratorStatus == SUCCESS) {
                         return readFileContentAsBytes(privateKeyPath)
-                                .map(privateKeyBytes -> {
-                                    final String encryptedKey = aesCryptography.encrypt(privateKeyBytes, privateKeyPassword);
-                                    fill(privateKeyPassword, ' ');
-                                    return encryptedKey;
-                                })
+                                .map(privateKeyBytes -> aesCryptography.encrypt(privateKeyBytes, privateKeyPassword))
                                 .flatMap(encryptedPrivateKey -> uploadPrivateKeyOnSecretManager(randomUUID, encryptedPrivateKey.getBytes()))
                                 .flatMap(secretDetailsDTO -> ok()
                                         .bodyValue(buildDatasetCryptographyDetailsDTO(secretDetailsDTO, publicKeyPath)))

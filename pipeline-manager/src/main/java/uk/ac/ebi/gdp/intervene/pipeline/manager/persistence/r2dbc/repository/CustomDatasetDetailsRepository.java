@@ -17,6 +17,7 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 
@@ -25,7 +26,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Dataset
  */
 public interface CustomDatasetDetailsRepository {
     /**
-     * Returns {@link DatasetDetails} & its dependents
+     * Returns {@link DatasetDetails} & its dependents.
      *
      * @param datasetId dataset id
      * @param createdBy record created by e.g. user id
@@ -33,4 +34,11 @@ public interface CustomDatasetDetailsRepository {
      * @return {@link DatasetDetails}
      */
     Mono<DatasetDetails> findByDatasetIdAndCreatedBy(String datasetId, String createdBy);
+
+    /**
+     * Searches for expired records in batch of given size.
+     *
+     * @return Flux of {@link DatasetDetails}
+     */
+    Flux<DatasetDetails> fetchExpiredRecordsInBatch();
 }

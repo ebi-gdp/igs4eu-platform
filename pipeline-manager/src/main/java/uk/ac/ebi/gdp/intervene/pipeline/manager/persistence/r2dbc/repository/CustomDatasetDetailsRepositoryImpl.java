@@ -17,15 +17,22 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.r2dbc.core.DatabaseClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.DatasetDetailsEntityMapper.expiredDatasetMap;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.DatasetDetailsEntityMapper.fullMap;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.DatasetQueries.FIND_BY_DATASET_ID_AND_CREATED_BY;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.DatasetQueries.FIND_EXPIRED_DATASETS;
 
 public class CustomDatasetDetailsRepositoryImpl implements CustomDatasetDetailsRepository {
     private final DatabaseClient databaseClient;
+
+    @Value("${expired-dataset.batch-size}")
+    private int batchSize;
 
     public CustomDatasetDetailsRepositoryImpl(final DatabaseClient databaseClient) {
         this.databaseClient = databaseClient;
@@ -42,5 +49,14 @@ public class CustomDatasetDetailsRepositoryImpl implements CustomDatasetDetailsR
                 .bind("datasetId", datasetId)
                 .map(fullMap()::apply)
                 .one();
+    }
+
+    @Override
+    public Flux<DatasetDetails> fetchExpiredRecordsInBatch() {
+        return databaseClient
+                .sql(FIND_EXPIRED_DATASETS)
+                .bind("limit", batchSize)
+                .map(expiredDatasetMap()::apply)
+                .all();
     }
 }

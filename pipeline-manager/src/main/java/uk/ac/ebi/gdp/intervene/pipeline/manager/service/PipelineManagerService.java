@@ -154,10 +154,9 @@ public class PipelineManagerService {
         final Stream<GlobusFileDetails> globusFileDetailsStream = collectGlobusFiles(globusFileDetailsWrapperDTO.getFileDetailsList(), files);
         final String globusFileName = globusFileDetailsWrapperDTO.getFileDetailsList().get(0).getFileName();
         if (globusFileName.endsWith(VCF_PATH_GZ.getFileExtension())) {
-            globusFileDetailsStream
-                    .forEach(element -> {
-                    });
-            return buildVcfMap(globusFileName);
+            return buildVcfMap(globusFileName
+                    .substring(0, globusFileName
+                            .lastIndexOf(".")));
         } else {
             return globusFileDetailsStream
                     .collect(toMap(globusFileDetails -> getPropertyName(globusFileDetails.getFileName()),
