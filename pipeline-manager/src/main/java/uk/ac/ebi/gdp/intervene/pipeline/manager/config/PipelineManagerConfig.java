@@ -36,7 +36,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.security.oauth2.server.resource.web.reactive.function.client.ServerBearerExchangeFilterFunction;
 import org.springframework.validation.Validator;
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
@@ -74,8 +73,9 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
 import java.net.URI;
 
-import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.propagateRequestId;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.jsonExchangeStrategies;
+import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.webClient;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.CSC;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.EBI_EMBASSY;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.GCP;
@@ -319,17 +319,29 @@ public class PipelineManagerConfig {
      */
     @Bean
     public GlobusFileHandlerService fileHandlerService(@Qualifier("fileHandlerWebClient") final WebClient fileHandlerWebClient,
+                                                       @Value("${intervene.file-handler.base-url}") final String fileHandlerBaseURL,
+                                                       @Value("${file-handler.basic.auth}") final String credentials,
                                                        @Value("${intervene.file-handler.globus.user-details.uri}") final URI globusUserURI,
                                                        @Value("${intervene.file-handler.globus.list-files-dir.uri}") final URI globusDirListFilesURI,
                                                        @Value("${intervene.file-handler.globus.create-dir.uri}") final URI globusCreateDirURI,
                                                        @Value("${intervene.file-handler.globus.delete-dir.uri}") final URI globusDeleteDirURI) {
         return new GlobusFileHandlerService(
                 fileHandlerWebClient,
+                basicAuthWebClient(fileHandlerBaseURL, credentials),
                 globusUserURI,
                 globusDirListFilesURI,
                 globusCreateDirURI,
                 globusDeleteDirURI
         );
+    }
+
+    private WebClient basicAuthWebClient(final String baseURL,
+                                         final String credentials) {
+        return WebClient
+                .builder()
+                .defaultHeader(AUTHORIZATION, credentials)
+                .baseUrl(baseURL)
+                .build();
     }
 
     /**
@@ -364,7 +376,7 @@ public class PipelineManagerConfig {
      */
     @Bean("fileHandlerWebClient")
     public WebClient fileHandlerWebClient(@Value("${intervene.file-handler.base-url}") final String fileHandlerBaseURL) {
-        return webClient(fileHandlerBaseURL);
+        return webClient(fileHandlerBaseURL, LOGGER);
     }
 
     /**
@@ -378,7 +390,7 @@ public class PipelineManagerConfig {
      */
     @Bean("userManagerWebClient")
     public WebClient userManagerWebClient(@Value("${intervene.user-manager.base-url}") final String userManagerBaseURL) {
-        return webClient(userManagerBaseURL);
+        return webClient(userManagerBaseURL, LOGGER);
     }
 
     /**
@@ -392,16 +404,7 @@ public class PipelineManagerConfig {
      */
     @Bean("keyHandlerWebClient")
     public WebClient keyHandlerWebClient(@Value("${intervene.key-handler.base-url}") final String keyHandlerBaseURL) {
-        return webClient(keyHandlerBaseURL);
-    }
-
-    private WebClient webClient(final String baseURL) {
-        return WebClient
-                .builder()
-                .baseUrl(baseURL)
-                .filter(new ServerBearerExchangeFilterFunction())
-                .filter(propagateRequestId(LOGGER))
-                .build();
+        return webClient(keyHandlerBaseURL, LOGGER);
     }
 
     private AmazonS3 amazonS3(final String endpoint,

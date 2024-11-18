@@ -33,6 +33,7 @@ import uk.ac.ebi.gdp.intervene.user.manager.service.aai.ElixirAuthenticationServ
 
 import static java.net.URI.create;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
+import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.web.reactive.function.client.WebClient.builder;
 import static uk.ac.ebi.gdp.intervene.user.manager.config.OpenAPIConfig.OPEN_API_AUTH_WHITELIST;
 
@@ -62,7 +63,7 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
     @Order(HIGHEST_PRECEDENCE)
     @Bean
     public SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http) {
-        return super.securityFilterChainBasicAuth(http, "/user/account/{accountId}");
+        return super.securityFilterChainBasicAuth(http, "/user/account/{accountId}", GET);
     }
 
     @Bean

@@ -36,6 +36,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
  */
 public class GlobusFileHandlerService {
     private final WebClient fileHandlerWebClient;
+    private final WebClient fileHandlerWebClientBasicAuth;
     private final URI globusUserURI;
     private final URI globusListDirFilesURI;
     private final URI globusCreateDirURI;
@@ -47,16 +48,19 @@ public class GlobusFileHandlerService {
      * listing directory files, and creating directories.
      *
      * @param fileHandlerWebClient the WebClient used for making HTTP requests to Globus services.
+     * @param fileHandlerWebClientBasicAuth the basic auth protected WebClient used for making HTTP requests to Globus services
      * @param globusUserURI the URI for accessing Globus user-related operations.
      * @param globusListDirFilesURI the URI for listing files in a Globus directory.
      * @param globusCreateDirURI the URI for creating a directory in Globus.
      */
     public GlobusFileHandlerService(final WebClient fileHandlerWebClient,
+                                    final WebClient fileHandlerWebClientBasicAuth,
                                     final URI globusUserURI,
                                     final URI globusListDirFilesURI,
                                     final URI globusCreateDirURI,
                                     final URI globusDeleteDirURI) {
         this.fileHandlerWebClient = fileHandlerWebClient;
+        this.fileHandlerWebClientBasicAuth = fileHandlerWebClientBasicAuth;
         this.globusUserURI = globusUserURI;
         this.globusListDirFilesURI = globusListDirFilesURI;
         this.globusCreateDirURI = globusCreateDirURI;
@@ -132,6 +136,24 @@ public class GlobusFileHandlerService {
                         .queryParam("path", path)
                         .build())
                 .accept(APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(DeleteDirResponseDTO.class);
+    }
+
+    /**
+     * This method is intended to use for Demon process.
+     *
+     * @param path directory path to be deleted on Globus guest collection.
+     *
+     * @return Directory deleted details represented {@link DeleteDirResponseDTO}.
+     */
+    public Mono<DeleteDirResponseDTO> deleteDirectoryOnGuestCollectionDemon(final String path) {
+        return fileHandlerWebClientBasicAuth
+                .delete()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/demon" + globusDeleteDirURI.getPath())
+                        .queryParam("path", path)
+                        .build())
                 .retrieve()
                 .bodyToMono(DeleteDirResponseDTO.class);
     }

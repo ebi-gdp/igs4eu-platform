@@ -327,9 +327,8 @@ public class PipelineRequestHandler {
      */
     public Mono<ServerResponse> searchPGSIdsByTraits(final ServerRequest serverRequest) {
         LOGGER.info("Retrieving Trait Ids from PGS Catalog API");
-        final String searchTerm = serverRequest
-                .queryParam("searchTerm")
-                .orElseThrow(() -> ClientException.badRequest("Query parameter 'searchTerm' has an issue!"));
+        final String searchTerm = retrieveSearchTerm(serverRequest);
+        LOGGER.debug("Search term for trait data: {}", searchTerm);
         return pgsCatalogService
                 .searchPGSIdsByTraits(searchTerm)
                 .filter(pgsTraitWrapperDTO -> !pgsTraitWrapperDTO.results().isEmpty())
@@ -348,9 +347,7 @@ public class PipelineRequestHandler {
      */
     public Mono<ServerResponse> searchPGPIdsByPublications(final ServerRequest serverRequest) {
         LOGGER.info("Retrieving Publication data from PGS Catalog API");
-        final String searchTerm = serverRequest
-                .queryParam("searchTerm")
-                .orElseThrow(() -> ClientException.badRequest("Query parameter 'searchTerm' has an issue!"));
+        final String searchTerm = retrieveSearchTerm(serverRequest);
         LOGGER.debug("Search term for publication data: {}", searchTerm);
 
         if (searchTerm.isEmpty() || searchPublications(searchTerm).isEmpty()) {
@@ -361,6 +358,12 @@ public class PipelineRequestHandler {
                     .bodyValue(searchPublications(searchTerm))
                     .doOnNext(serverResponse -> LOGGER.info("Searched for Publication data from Redis"));
         }
+    }
+
+    private String retrieveSearchTerm(final ServerRequest serverRequest) {
+        return serverRequest
+                .queryParam("searchTerm")
+                .orElseThrow(() -> ClientException.badRequest("Query parameter 'searchTerm' has an issue!"));
     }
 
     private Set<PublicationDTO> searchPublications(final String searchTerm) {

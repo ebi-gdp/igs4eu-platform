@@ -70,4 +70,31 @@ public interface DatasetDetailsEntityMapper {
                     getLocalDateTime("gc_updated_on", row));
         };
     }
+
+    static BiFunction<Row, Object, DatasetDetails> expiredDatasetMap() {
+        return (row, object) -> {
+            final GlobusDetails globusDetails = GlobusDetails.load(
+                    getString("fileset_id", row),
+                    getString("globus_username", row),
+                    getString("guest_collection_id", row),
+                    Path.of(getString("dir_path_on_guest_collection", row)),
+                    DatasetStatusType.valueOf(getString("status", row)),
+                    getString("created_by", row),
+                    getLocalDateTime("created_on", row),
+                    getString("updated_by", row),
+                    getLocalDateTime("updated_on", row));
+            return DatasetDetails.load(
+                    getString("dataset_id", row),
+                    getString("dataset_name", row),
+                    GenomeBuild.valueOf(getString("genome_build", row)),
+                    FilesetType.valueOf(getString("fileset_type", row)),
+                    getLocalDateTime("expires_at", row),
+                    getBoolean("is_deleted", row),
+                    globusDetails,
+                    getString("gc_created_by", row),
+                    getLocalDateTime("gc_created_on", row),
+                    getString("gc_updated_by", row),
+                    getLocalDateTime("gc_updated_on", row));
+        };
+    }
 }

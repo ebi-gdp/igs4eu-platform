@@ -28,6 +28,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import uk.ac.ebi.gdp.intervene.commons.security.GenericOAuth2SecurityConfig;
 
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
+import static org.springframework.http.HttpMethod.GET;
 
 /**
  * OAuth2 security config, extends {@link GenericOAuth2SecurityConfig}.
@@ -45,12 +46,24 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
         return securityFilterChain(http, jwkSetURI);
     }
 
+    /**
+     * API call that needs to be authenticated by basic auth should be included here.
+     * Watch for patternPath value, this should match with router function defined in {@link KeyHandlerConfig}
+     */
     @Order(HIGHEST_PRECEDENCE)
     @Bean
     public SecurityWebFilterChain securityFilterChainBasicAuth(final ServerHttpSecurity http) {
-        return super.securityFilterChainBasicAuth(http, URI_INCLUDE_UNDER_BASIC_AUTH);
+        return super.securityFilterChainBasicAuth(http, URI_INCLUDE_UNDER_BASIC_AUTH, GET);
     }
 
+    /**
+     * Provides credentials for basic auth.
+     *
+     * @param username basic auth username
+     * @param password basic auth password
+     *
+     * @return {@link ReactiveUserDetailsService}
+     */
     @Bean
     public ReactiveUserDetailsService userDetailsService(@Value("${basic.auth.username}") final String username,
                                                          @Value("${basic.auth.password}") final String password) {

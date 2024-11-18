@@ -24,7 +24,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.constant.GenomeBuild;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.DatasetDetailsDTO;
@@ -48,6 +50,7 @@ import static java.util.stream.Collectors.toList;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.web.reactive.function.server.ServerResponse.accepted;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
 import static reactor.core.publisher.Mono.defer;
@@ -222,33 +225,10 @@ public class DatasetRequestHandler {
     @Transactional
     public Mono<ServerResponse> deleteDataset(final ServerRequest serverRequest) {
         return doGetDatasetDetails(serverRequest)
-                .flatMap(datasetDetails -> {
-                    final GlobusDetails globusDetails = datasetDetails.getGlobusDetails();
-                    globusDetails.deleted();
-                    return globusDetailsRepository
-                            .save(globusDetails)
-                            .thenReturn(datasetDetails);
-                })
-                .flatMap(datasetDetails -> {
-                    datasetDetails.deleted();
-                    return datasetDetailsRepository.save(datasetDetails);
-                })
-                .flatMap(datasetDetails -> datasetCryptographyDetailsRepository
-                        .findById(datasetDetails.getDatasetCryptographyDetails().getDatasetId())
-                        .flatMap(datasetCryptographyDetails -> keyHandlerService
-                                .deleteKey(datasetDetails.getDatasetCryptographyDetails().getSecretId())
-                                .thenReturn(datasetCryptographyDetails))
-                        .doOnSuccess(DatasetCryptographyDetails::deleted)
-                        .flatMap(datasetCryptographyDetailsRepository::save)
-                        .thenReturn(datasetDetails))
-                .flatMap(datasetDetails -> {
-                    final String dirPathToDelete = Paths.get(datasetDetails.getGlobusDetails().getGlobusUsername()
-                                    , datasetDetails.getGlobusDetails().getDirPathOnGuestCollection())
-                            .toString();
-                    return globusFileHandlerService
-                            .deleteDirectoryOnGuestCollection(dirPathToDelete)
-                            .thenReturn(datasetDetails);
-                })
+                .flatMap(this::deleteCryptographyDetailsForGivenDataset)
+                .flatMap(this::deleteDirOnGuestCollection)
+                .flatMap(this::markGlobusDetailsAsDeleted)
+                .flatMap(this::markDatasetDetailsAsDeleted)
                 .flatMap(datasetDetails -> ok()
                         .bodyValue(datasetMapper.toDTO(datasetDetails)));
     }
@@ -260,9 +240,85 @@ public class DatasetRequestHandler {
                 .flatMap(userAccountDTO -> datasetDetailsRepository
                         .findByDatasetIdAndCreatedBy(datasetId,
                                 userAccountDTO.accountId())
-                        .doOnNext(datasetDetails -> {
-                            LOGGER.info("Retrieved dataset details: {} for the user: {}", datasetId, userAccountDTO.accountId());
-                        })
+                        .doOnNext(datasetDetails -> LOGGER.info("Retrieved dataset details: {} for the user: {}", datasetId, userAccountDTO.accountId()))
                         .switchIfEmpty(error(resourceNotFound("Dataset Id %s not found!".formatted(datasetId)))));
     }
+
+    /**
+     * Delete globus directories on guest collection in batches.
+     *
+     * @return {@code HttpStatus}
+     */
+    public Mono<ServerResponse> deleteGlobusDirsOnGuestCollectionInBatches() {
+        Mono.defer(this::fetchAndProcessBatch)
+                .subscribeOn(Schedulers.boundedElastic()) // Use boundedElastic for non-blocking background work
+                .subscribe();
+        return accepted()
+                .build();
+    }
+
+    private Mono<Void> fetchAndProcessBatch() {
+        // Fetch a batch of records with the given batch size
+        return datasetDetailsRepository
+                .fetchExpiredRecordsInBatch()
+                .collectList()
+                .flatMap(batch -> {
+                    if (batch.isEmpty()) {
+                        // Terminate if the batch is empty
+                        return Mono.empty();
+                    } else {
+                        // Process the batch if it's not empty
+                        return Flux.fromIterable(batch)
+                                .flatMap(record -> deleteDirOnGuestCollectionDemon(record)
+                                        .then(markGlobusDetailsAsDeleted(record))
+                                        .onErrorContinue((error, r) -> LOGGER.error("Dir deletion error for Dataset Id: {}", ((DatasetDetails) r).getDatasetId())))
+                                .then(fetchAndProcessBatch()); // Fetch the next batch
+                    }
+                });
+    }
+
+    private Mono<DatasetDetails> deleteCryptographyDetailsForGivenDataset(final DatasetDetails datasetDetails) {
+        return datasetCryptographyDetailsRepository
+                .findById(datasetDetails.getDatasetCryptographyDetails().getDatasetId())
+                .flatMap(datasetCryptographyDetails -> keyHandlerService
+                        .deleteKey(datasetDetails.getDatasetCryptographyDetails().getSecretId())
+                        .thenReturn(datasetCryptographyDetails))
+                .doOnSuccess(DatasetCryptographyDetails::deleted)
+                .flatMap(datasetCryptographyDetailsRepository::save)
+                .thenReturn(datasetDetails);
+    }
+
+    private String getDirPathToDelete(final DatasetDetails datasetDetails) {
+        return Paths.get(datasetDetails.getGlobusDetails().getGlobusUsername()
+                        , datasetDetails.getGlobusDetails().getDirPathOnGuestCollection())
+                .toString();
+    }
+
+    private Mono<DatasetDetails> deleteDirOnGuestCollection(final DatasetDetails datasetDetails) {
+        final String dirPathToDelete = getDirPathToDelete(datasetDetails);
+        return globusFileHandlerService
+                .deleteDirectoryOnGuestCollection(dirPathToDelete)
+                .thenReturn(datasetDetails);
+    }
+
+    private Mono<DatasetDetails> deleteDirOnGuestCollectionDemon(final DatasetDetails datasetDetails) {
+        final String dirPathToDelete = getDirPathToDelete(datasetDetails);
+        return globusFileHandlerService
+                .deleteDirectoryOnGuestCollectionDemon(dirPathToDelete)
+                .thenReturn(datasetDetails);
+    }
+
+    private Mono<DatasetDetails> markGlobusDetailsAsDeleted(final DatasetDetails datasetDetails) {
+        final GlobusDetails globusDetails = datasetDetails.getGlobusDetails();
+        globusDetails.deleted();
+        return globusDetailsRepository
+                .save(globusDetails)
+                .thenReturn(datasetDetails);
+    }
+
+    private Mono<DatasetDetails> markDatasetDetailsAsDeleted(final DatasetDetails datasetDetails) {
+        datasetDetails.deleted();
+        return datasetDetailsRepository.save(datasetDetails);
+    }
+
 }
