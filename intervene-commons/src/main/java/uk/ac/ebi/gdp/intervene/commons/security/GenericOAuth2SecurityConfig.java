@@ -29,21 +29,17 @@ import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
-import org.springframework.web.reactive.function.client.ClientResponse;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.util.pattern.PathPatternParser;
 
 import static org.springframework.security.config.Customizer.withDefaults;
-import static reactor.core.publisher.Mono.error;
-import static reactor.core.publisher.Mono.just;
-import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.clientException;
-import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
 
 /**
  * Generic OAuth2 security config, provides necessary security config to support
  * modules. Extend this class to declare beans.
  */
 public class GenericOAuth2SecurityConfig {
+
+    private static final String actuatorEndpoint = "/actuator/health";
 
     /**
      * Security filter chain config.
@@ -57,6 +53,8 @@ public class GenericOAuth2SecurityConfig {
                                                          final String jwkSetURI) {
         http
                 .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers(actuatorEndpoint)//Added default behaviour to expose actuator health endpoint
+                        .permitAll()
                         .anyExchange()
                         .authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -99,25 +97,6 @@ public class GenericOAuth2SecurityConfig {
                 .jwtProcessorCustomizer(jwtProcessor -> jwtProcessor
                         .setJWSTypeVerifier(new DefaultJOSEObjectTypeVerifier<>(new JOSEObjectType("at+jwt"))))
                 .build();
-    }
-
-    /**
-     * Error handler.
-     *
-     * @return {@link ClientResponse}
-     */
-    protected ExchangeFilterFunction errorHandler() {
-        return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
-            if (clientResponse.statusCode().is4xxClientError()) {
-                return clientResponse.bodyToMono(String.class)
-                        .flatMap(errorBody -> error(clientException(clientResponse.statusCode().value(), errorBody)));
-            } else if (clientResponse.statusCode().is5xxServerError()) {
-                return clientResponse.bodyToMono(String.class)
-                        .flatMap(errorBody -> error(serverException(clientResponse.statusCode().value(), errorBody)));
-            } else {
-                return just(clientResponse);
-            }
-        });
     }
 
     /**

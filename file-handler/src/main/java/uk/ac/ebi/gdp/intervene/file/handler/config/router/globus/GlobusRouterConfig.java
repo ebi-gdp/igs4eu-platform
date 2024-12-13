@@ -83,13 +83,15 @@ public class GlobusRouterConfig {
     /**
      * @param fileOperationService File operation service
      * @param guestCollectionId Guest collection id
+     * @param listFilesLimit no. of files to list
      *
      * @return {@link GlobusRequestHandler}
      */
     @Bean
     public GlobusRequestHandler globusRequestHandler(final IFileOperationService fileOperationService,
-                                                     @Value("${globus.guest-collection.endpoint-id}") final String guestCollectionId) {
-        return new GlobusRequestHandler(fileOperationService, guestCollectionId);
+                                                     @Value("${globus.guest-collection.endpoint-id}") final String guestCollectionId,
+                                                     @Value("${globus.endpoint.list-files.limit}") final int listFilesLimit) {
+        return new GlobusRequestHandler(fileOperationService, guestCollectionId, listFilesLimit);
     }
 
     /**

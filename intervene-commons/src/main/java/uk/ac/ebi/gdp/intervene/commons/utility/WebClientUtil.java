@@ -21,9 +21,15 @@ import org.slf4j.Logger;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.security.oauth2.server.resource.web.reactive.function.client.ServerBearerExchangeFilterFunction;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import static reactor.core.publisher.Mono.error;
+import static reactor.core.publisher.Mono.just;
+import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.clientException;
+import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.propagateRequestId;
 import static uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil.getJsonObjectMapper;
 
@@ -65,8 +71,28 @@ public abstract class WebClientUtil {
         return WebClient
                 .builder()
                 .baseUrl(baseURL)
+                .filter(errorHandler())
                 .filter(new ServerBearerExchangeFilterFunction())
                 .filter(propagateRequestId(logger))
                 .build();
+    }
+
+    /**
+     * Error handler.
+     *
+     * @return {@link ClientResponse}
+     */
+    public static ExchangeFilterFunction errorHandler() {
+        return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
+            if (clientResponse.statusCode().is4xxClientError()) {
+                return clientResponse.bodyToMono(String.class)
+                        .flatMap(errorBody -> error(clientException(clientResponse.statusCode().value(), errorBody)));
+            } else if (clientResponse.statusCode().is5xxServerError()) {
+                return clientResponse.bodyToMono(String.class)
+                        .flatMap(errorBody -> error(serverException(clientResponse.statusCode().value(), errorBody)));
+            } else {
+                return just(clientResponse);
+            }
+        });
     }
 }

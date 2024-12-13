@@ -18,8 +18,8 @@
 package uk.ac.ebi.gdp.intervene.file.handler.service.globus.collection;
 
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.DeleteDirResponseDTO;
+import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO;
 import uk.ac.ebi.gdp.intervene.file.handler.dto.globus.SubmissionIdDTO;
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.PermissionType;
 
@@ -43,10 +43,12 @@ public interface IFileOperationService {
      * Lists files under specified directory.
      *
      * @param dirPath directory path for the files to search for.
+     * @param defaultListFilesLimit limit number of records.
      *
      * @return GlobusFileDetailsWrapperDTO file details.
      */
-    Mono<GlobusFileDetailsWrapperDTO> listFiles(Path dirPath);
+    Mono<GlobusFileDetailsWrapperDTO> listFiles(Path dirPath,
+                                                int defaultListFilesLimit);
 
     /**
      * @param principal user UID

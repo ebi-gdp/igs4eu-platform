@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.constant;
+package uk.ac.ebi.gdp.intervene.commons.constants;
 
 /**
  * Define constants related to platforms being used.

@@ -48,11 +48,15 @@ public class GlobusRequestHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobusRequestHandler.class);
     private final IFileOperationService fileOperationService;
     private final String guestCollectionId;
+    private static final int defaultListFilesLimit = 1;
+    private final int listFilesLimit;
 
     public GlobusRequestHandler(final IFileOperationService fileOperationService,
-                                final String guestCollectionId) {
+                                final String guestCollectionId,
+                                final int listFilesLimit) {
         this.fileOperationService = fileOperationService;
         this.guestCollectionId = guestCollectionId;
+        this.listFilesLimit = listFilesLimit;
     }
 
     /**
@@ -71,18 +75,16 @@ public class GlobusRequestHandler {
                 .flatMap(guestCollectionDirReqDTO -> {
                     final Path fullDirPath = get(guestCollectionDirReqDTO.getNotifyEmail(), guestCollectionDirReqDTO.getDirectoryName());
                     return fileOperationService
-                            .listFiles(fullDirPath)
+                            .listFiles(fullDirPath, defaultListFilesLimit)
                             .flatMap(ignoreData -> status(OK)
                                     .bodyValue(new GuestCollectionDirResDTO(
                                             guestCollectionId,
                                             fullDirPath.toString())))
                             .doOnNext(serverResponse -> LOGGER.info("Dir \"{}\" already exists! Returning the details for the same", fullDirPath))
                             .onErrorResume(listFullPathThrowable -> fileOperationService
-                                    .listFiles(fullDirPath.getParent())
+                                    .listFiles(fullDirPath.getParent(), defaultListFilesLimit)
                                     .doOnNext(globusFileDetailsWrapperDTO -> LOGGER.info("User's home directory \"{}\" exists!", fullDirPath.getParent()))
-                                    .flatMap(globusFileDetailsWrapperDTO -> fileOperationService
-                                            .createDirectory(fullDirPath)
-                                            .doOnNext(dirName -> LOGGER.info("Directory has been created under user's home directory: {}", dirName)))
+                                    .flatMap(globusFileDetailsWrapperDTO -> createDirectory(fullDirPath))
                                     .onErrorResume(listParentPathThrowable -> {
                                         if (listParentPathThrowable instanceof ClientException ce && NOT_FOUND.equals(ce.getHttpStatus())) {
                                             return createDirAndGrantPermission(guestCollectionDirReqDTO, fullDirPath);
@@ -104,13 +106,17 @@ public class GlobusRequestHandler {
         return fileOperationService
                 .createDirectory(fullDirPath.getParent())
                 .doOnNext(dir -> LOGGER.info("User's home directory has been created: {}", fullDirPath.getParent()))
-                .flatMap(ignoreStr -> fileOperationService
-                        .createDirectory(fullDirPath)
-                        .doOnNext(dir -> LOGGER.info("Directory has been created under user's home directory: {}", fullDirPath)))
+                .flatMap(ignoreStr -> createDirectory(fullDirPath))
                 .flatMap(ignoreResponse -> grantDirectoryPermission(
                         guestCollectionDirReqDTO.getGlobusUserUID(),
                         guestCollectionDirReqDTO.getNotifyEmail(),
                         fullDirPath.getParent()));
+    }
+
+    private Mono<String> createDirectory(final Path dirPath) {
+        return fileOperationService
+                .createDirectory(dirPath)
+                .doOnNext(dirName -> LOGGER.info("Directory has been created under user's home directory: {}", dirName));
     }
 
     /**
@@ -124,7 +130,7 @@ public class GlobusRequestHandler {
         LOGGER.info("Listing files on Guest collection");
         return getPath(serverRequest)
                 .flatMap(path -> fileOperationService
-                        .listFiles(get(path))
+                        .listFiles(get(path), listFilesLimit)
                         .doOnNext(ignoreResponse -> LOGGER.info("Retrieved files at {}", path))
                         .flatMap(globusFileDetailsWrapperDTO -> ok()
                                 .bodyValue(globusFileDetailsWrapperDTO))
