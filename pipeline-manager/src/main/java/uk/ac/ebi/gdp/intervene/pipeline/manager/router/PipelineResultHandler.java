@@ -19,6 +19,7 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
 import org.slf4j.Logger;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -26,12 +27,10 @@ import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.S3ObjectDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.ICloudStorage;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.CloudFileHandlerService;
 
 import java.util.Optional;
-import java.util.Set;
 
-import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
@@ -46,16 +45,16 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.UserAccountUtil.us
 public class PipelineResultHandler {
     private static final Logger LOGGER = getLogger(PipelineResultHandler.class);
     private final IPipelinePersistence pipelinePersistence;
-    private final ICloudStorage cloudStorage;
+    private final CloudFileHandlerService cloudFileHandlerService;
     private final String bucketNameFormat;
     private final String bucketFilePrefix;
 
     public PipelineResultHandler(final IPipelinePersistence pipelinePersistence,
-                                 final ICloudStorage cloudStorage,
+                                 final CloudFileHandlerService cloudFileHandlerService,
                                  final String bucketNameFormat,
                                  final String bucketFilePrefix) {
         this.pipelinePersistence = pipelinePersistence;
-        this.cloudStorage = cloudStorage;
+        this.cloudFileHandlerService = cloudFileHandlerService;
         this.bucketNameFormat = bucketNameFormat;
         this.bucketFilePrefix = bucketFilePrefix;
     }
@@ -75,20 +74,14 @@ public class PipelineResultHandler {
                 .doOnNext(pipelineResult -> LOGGER.info("Retrieved pipeline result"))
                 .flatMap(pipelineResult -> pipelinePersistence
                         .getDatasetName(pipelineResult.getPipelineId())
-                        .flatMap(datasetDetails -> storageFiles(bucketNameFormat.formatted(pipelineResult.getPipelineId()),
-                                bucketFilePrefix.formatted(datasetDetails.getDatasetName()))
+                        .flatMap(datasetDetails -> cloudFileHandlerService
+                                .listFiles(bucketNameFormat.formatted(pipelineResult.getPipelineId()),
+                                        bucketFilePrefix.formatted(datasetDetails.getDatasetName()))
                                 .flatMap(files -> ok().bodyValue(new S3ObjectDTO(pipelineResult.getPipelineId(), files)))
                                 .doOnNext(serverResponse -> LOGGER.info("Result file(s) have been successfully retrieved from S3 object storage"))))
                 .switchIfEmpty(status(NOT_FOUND)
                         .build()
                         .doOnNext(serverResponse -> LOGGER.info("File(s) not found!")));
-    }
-
-    private Mono<Set<String>> storageFiles(final String bucketName,
-                                           final String pathPrefix) {
-        return cloudStorage
-                .listFiles(bucketName, pathPrefix)
-                .map(stringStream -> stringStream.collect(toSet()));
     }
 
     private Mono<PipelineResult> getPipelineResult(final ServerRequest serverRequest,
@@ -114,19 +107,20 @@ public class PipelineResultHandler {
         final String path = serverRequest
                 .queryParam("path")
                 .orElseThrow(() -> badRequest("Query param 'Path' is missing!"));
+        final String pipelineId = serverRequest.pathVariable("pipelineId");
         return userAccount(serverRequest)
                 .flatMap(userAccountDTO -> pipelinePersistence
-                        .getPipeline(serverRequest.pathVariable("pipelineId"), userAccountDTO.accountId())
+                        .getPipeline(pipelineId, userAccountDTO.accountId())
                         .doOnNext(ignorePipelineDetails -> LOGGER.info("Retrieved pipeline details")))
-                .flatMap(ignorePipelineResult -> cloudStorage
+                .flatMap(pipelineResult -> cloudFileHandlerService
                         .streamFileFromBucket(bucketNameFormat
-                                .formatted(ignorePipelineResult.getPipelineId()), path))
-                .flatMap(inputStreamSource -> ok()
-                        .contentType(APPLICATION_OCTET_STREAM)
-                        .bodyValue(inputStreamSource))
-                .doOnNext(serverResponse -> LOGGER.info("File found on Cloud object storage! Now being streamed"))
+                                .formatted(pipelineResult.getPipelineId()), path)
+                        .as(dataBuffer -> ServerResponse.ok()
+                                .contentType(APPLICATION_OCTET_STREAM)
+                                .body(dataBuffer, DataBuffer.class))
+                        .doOnNext(serverResponse -> LOGGER.info("File found on Cloud object storage! pipelineId: {}, path: {}", pipelineId, path)))
                 .switchIfEmpty(status(NOT_FOUND)
                         .build()
-                        .doOnNext(serverResponse -> LOGGER.info("File not found on S3 object storage!")));
+                        .doOnNext(serverResponse -> LOGGER.info("File not found on S3 object storage! pipelineId: {}, path: {}", pipelineId, path)));
     }
 }

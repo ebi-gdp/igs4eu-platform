@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
+package uk.ac.ebi.gdp.intervene.file.handler.cloud;
 
 import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Blob;
@@ -25,6 +25,7 @@ import com.google.cloud.storage.Storage;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.InputStreamSource;
 import reactor.core.publisher.Mono;
+import uk.ac.ebi.gdp.intervene.commons.exception.ClientException;
 
 import java.nio.channels.Channels;
 import java.util.stream.Stream;
@@ -68,9 +69,12 @@ public class GCPCloudStorage implements ICloudStorage {
     @Override
     public Mono<InputStreamSource> streamFileFromBucket(final String bucketName,
                                                         final String path) {
-        return Mono.just(new InputStreamResource(Channels
-                .newInputStream(storage
-                        .get(BlobId.of(bucketName.toLowerCase(), path))
-                        .reader())));
+        final Blob blob = storage.get(BlobId.of(bucketName.toLowerCase(), path));
+        if (blob == null) {
+            return Mono.error(ClientException.badRequest("Path not found on Bucket! bucketName: %s, path: %s".formatted(bucketName, path)));
+        } else {
+            return Mono.just(new InputStreamResource(Channels
+                    .newInputStream(blob.reader())));
+        }
     }
 }

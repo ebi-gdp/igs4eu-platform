@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
+package uk.ac.ebi.gdp.intervene.file.handler.cloud;
 
 import org.springframework.core.io.InputStreamSource;
 import reactor.core.publisher.Mono;
@@ -37,6 +37,12 @@ public interface ICloudStorage {
      */
     Mono<Stream<String>> listFiles(String bucketName, String pathPrefix);
 
+    /**
+     * @param bucketName bucket name on cloud storage
+     * @param path bucket path
+     *
+     * @return {@link InputStreamSource}, contains file contents
+     */
     Mono<InputStreamSource> streamFileFromBucket(String bucketName, String path);
 
     static boolean isValidFileForDownload(final String fileName) {

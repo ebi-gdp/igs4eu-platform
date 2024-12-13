@@ -37,9 +37,9 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.Dat
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.GlobusDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.CloudFileHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.ICloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.KeyHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
@@ -134,12 +134,12 @@ public class PipelineManagerRouterConfig {
 
     @Bean
     public PipelineResultHandler pipelineResultHandler(final IPipelinePersistence pipelinePersistence,
-                                                       final ICloudStorage cloudStorage,
+                                                       final CloudFileHandlerService cloudFileHandlerService,
                                                        @Value("${cloud.storage.bucket-name-format}") final String bucketNameFormat,
                                                        @Value("${cloud.storage.bucket-prefix}") final String bucketFilePrefix) {
         return new PipelineResultHandler(
                 pipelinePersistence,
-                cloudStorage,
+                cloudFileHandlerService,
                 bucketNameFormat,
                 bucketFilePrefix);
     }

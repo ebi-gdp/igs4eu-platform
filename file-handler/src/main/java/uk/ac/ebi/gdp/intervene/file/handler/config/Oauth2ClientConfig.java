@@ -49,6 +49,7 @@ import static io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS;
 import static org.springframework.security.oauth2.client.OAuth2AuthorizationContext.PASSWORD_ATTRIBUTE_NAME;
 import static org.springframework.security.oauth2.client.OAuth2AuthorizationContext.USERNAME_ATTRIBUTE_NAME;
 import static reactor.core.publisher.Mono.just;
+import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.errorHandler;
 import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.jsonExchangeStrategies;
 
 /**

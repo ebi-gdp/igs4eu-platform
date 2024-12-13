@@ -17,10 +17,13 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.config;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.google.cloud.storage.StorageOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -32,9 +35,16 @@ import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.dpa.DefaultUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
 import uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil;
+import uk.ac.ebi.gdp.intervene.file.handler.cloud.GCPCloudStorage;
+import uk.ac.ebi.gdp.intervene.file.handler.cloud.ICloudStorage;
+import uk.ac.ebi.gdp.intervene.file.handler.cloud.S3CloudStorage;
 import uk.ac.ebi.gdp.intervene.file.handler.service.ega.EGAFileService;
 
 import java.net.URI;
+
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformConstants.PIPELINE_EXECUTION_PLATFORM;
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.CSC;
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.GCP;
 
 /**
  * Bean config for file handler service.
@@ -77,14 +87,58 @@ public class FileHandlerConfig {
         return new DPAConsentCheck(userManagerService);
     }
 
+    /**
+     * User manager service instance
+     *
+     * @param userManagerWebClient  user manager web client
+     * @param userAccountURI user account URI
+     *
+     * @return UserManager service instance
+     */
     @Bean
     public IUserManagerService userManagerService(@Qualifier("userManagerWebClient") final WebClient userManagerWebClient,
                                                   @Value("${intervene.user-manager.user-account.uri}") final URI userAccountURI) {
         return new DefaultUserManagerService(userManagerWebClient, userAccountURI);
     }
 
+    /**
+     * WebClient bean for user manager
+     *
+     * @param baseURL user manager service baseURL
+     *
+     * @return {@link WebClient}
+     */
     @Bean("userManagerWebClient")
     public WebClient webClient(@Value("${intervene.user-manager.base-url}") final String baseURL) {
         return WebClientUtil.webClient(baseURL, LOGGER);
+    }
+
+    /**
+     * Creates an {@link ICloudStorage} bean configured for Google Cloud Storage (GCS).
+     * This bean is only created if the property {@code pipeline.execution.platform} is set to {@code GCP}.
+     *
+     * @param gcpProjectId the Google Cloud Project ID to use for GCS operations.
+     *
+     * @return an {@link ICloudStorage} instance configured to use GCS.
+     */
+    @ConditionalOnProperty(value = PIPELINE_EXECUTION_PLATFORM, havingValue = GCP)
+    @Bean
+    public ICloudStorage gcpCloudStorage(@Value("${cloud.gcp.project-id}") final String gcpProjectId) {
+        return new GCPCloudStorage(
+                StorageOptions.newBuilder().setProjectId(gcpProjectId).build().getService());
+    }
+
+    /**
+     * Creates an {@link ICloudStorage} bean configured for S3 cloud storage.
+     * This bean is only created if the property {@code PIPELINE_EXECUTION_PLATFORM} is set to {@code CSC}.
+     *
+     * @param amazonS3 the {@link AmazonS3} client instance used for S3 operations.
+     *
+     * @return an {@link ICloudStorage} instance configured to use S3.
+     */
+    @ConditionalOnProperty(value = PIPELINE_EXECUTION_PLATFORM, havingValue = CSC)
+    @Bean
+    public ICloudStorage s3CloudStorage(final AmazonS3 amazonS3) {
+        return new S3CloudStorage(amazonS3);
     }
 }

@@ -31,8 +31,8 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.kafka.listener.PipelineEventList
 import uk.ac.ebi.gdp.intervene.pipeline.manager.message.TriggerPipelineEvent;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineStatusHandler;
 
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.config.PipelineManagerConfig.PIPELINE_REQUEST_MODE;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.KAFKA;
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformConstants.PIPELINE_REQUEST_MODE;
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.KAFKA;
 
 /**
  * Inherits default {@link DefaultKafkaConfig} & declare beans

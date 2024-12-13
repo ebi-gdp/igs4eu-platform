@@ -64,10 +64,6 @@
             <groupId>io.micrometer</groupId>
             <artifactId>context-propagation</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.google.cloud</groupId>
-            <artifactId>google-cloud-storage</artifactId>
-        </dependency>
         <!-- Testing dependencies -->
         <dependency>
             <groupId>io.projectreactor</groupId>

@@ -23,7 +23,6 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.cloud.storage.StorageOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -55,14 +54,12 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.Pip
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.PipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GCPCloudStorage;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.CloudFileHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.ICloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.KeyHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.service.S3CloudStorage;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.HttpMessageService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.KafkaMessageService;
@@ -74,14 +71,15 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 import java.net.URI;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformConstants.PIPELINE_EXECUTION_PLATFORM;
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformConstants.PIPELINE_REQUEST_MODE;
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.CSC;
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.EBI_EMBASSY;
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.HTTP;
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.KAFKA;
+import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.S3;
 import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.jsonExchangeStrategies;
 import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.webClient;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.CSC;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.EBI_EMBASSY;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.GCP;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.HTTP;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.KAFKA;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.S3;
 
 /**
  * Bean config for pipeline manager service.
@@ -90,8 +88,6 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.constant.PlatformType.S3;
 @Configuration
 public class PipelineManagerConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(PipelineManagerConfig.class);
-    private static final String PIPELINE_EXECUTION_PLATFORM = "pipeline-execution.platform";
-    public static final String PIPELINE_REQUEST_MODE = "pipeline-request.mode";
 
     @Bean
     public IPipelinePersistence pipelinePersistence(final PipelineDetailsRepository pipelineDetailsRepository,
@@ -167,35 +163,6 @@ public class PipelineManagerConfig {
     public MessageService s3MessageService(@Qualifier("allasS3") final AmazonS3 s3Client,
                                            @Value("${cloud.storage.bucket-name-format}") final String bucketName) {
         return new S3MessageService(s3Client, bucketName);
-    }
-
-    /**
-     * Creates an {@link ICloudStorage} bean configured for Google Cloud Storage (GCS).
-     * This bean is only created if the property {@code pipeline.execution.platform} is set to {@code GCP}.
-     *
-     * @param gcpProjectId the Google Cloud Project ID to use for GCS operations.
-     *
-     * @return an {@link ICloudStorage} instance configured to use GCS.
-     */
-    @ConditionalOnProperty(value = PIPELINE_EXECUTION_PLATFORM, havingValue = GCP)
-    @Bean
-    public ICloudStorage gcpCloudStorage(@Value("${cloud.gcp.project-id}") final String gcpProjectId) {
-        return new GCPCloudStorage(
-                StorageOptions.newBuilder().setProjectId(gcpProjectId).build().getService());
-    }
-
-    /**
-     * Creates an {@link ICloudStorage} bean configured for S3 cloud storage.
-     * This bean is only created if the property {@code PIPELINE_EXECUTION_PLATFORM} is set to {@code CSC}.
-     *
-     * @param amazonS3 the {@link AmazonS3} client instance used for S3 operations.
-     *
-     * @return an {@link ICloudStorage} instance configured to use S3.
-     */
-    @ConditionalOnProperty(value = PIPELINE_EXECUTION_PLATFORM, havingValue = CSC)
-    @Bean
-    public ICloudStorage s3CloudStorage(final AmazonS3 amazonS3) {
-        return new S3CloudStorage(amazonS3);
     }
 
     /**
@@ -541,5 +508,19 @@ public class PipelineManagerConfig {
     @Bean
     public ScoreIdsDTOValidator scoreIdsDTOValidator(final Validator validator) {
         return new ScoreIdsDTOValidator(validator);
+    }
+
+    /**
+     * @param fileHandlerWebClient file handler webclient
+     * @param listFilesOnCloudURI list files URI
+     * @param streamFileFromCloudURI file streaming from cloud URI
+     *
+     * @return {@link CloudFileHandlerService} instance
+     */
+    @Bean
+    public CloudFileHandlerService cloudFileHandlerService(final WebClient fileHandlerWebClient,
+                                                           @Value("${intervene.file-handler.cloud.list-files.uri}") final URI listFilesOnCloudURI,
+                                                           @Value("${intervene.file-handler.cloud.stream-files.uri}") final URI streamFileFromCloudURI) {
+        return new CloudFileHandlerService(fileHandlerWebClient, listFilesOnCloudURI, streamFileFromCloudURI);
     }
 }

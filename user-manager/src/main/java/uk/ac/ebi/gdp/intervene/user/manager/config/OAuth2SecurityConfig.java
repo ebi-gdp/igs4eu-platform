@@ -35,6 +35,7 @@ import static java.net.URI.create;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.web.reactive.function.client.WebClient.builder;
+import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.errorHandler;
 import static uk.ac.ebi.gdp.intervene.user.manager.config.OpenAPIConfig.OPEN_API_AUTH_WHITELIST;
 
 /**

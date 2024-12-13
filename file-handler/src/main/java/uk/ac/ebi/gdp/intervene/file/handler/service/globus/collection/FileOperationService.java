@@ -88,12 +88,14 @@ public class FileOperationService implements IFileOperationService {
      * {@inheritDoc}
      */
     @Override
-    public Mono<GlobusFileDetailsWrapperDTO> listFiles(final Path dirPath) {
+    public Mono<GlobusFileDetailsWrapperDTO> listFiles(final Path dirPath,
+                                                       final int recordLimit) {
         return webClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
                         .path(listFilesURI.getPath())
                         .queryParam("path", guestCollectionHomePath.resolve(dirPath).toString())
+                        .queryParam("limit", recordLimit)
                         .build())
                 .accept(APPLICATION_JSON)
                 .retrieve()
