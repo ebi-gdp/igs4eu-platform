@@ -8,9 +8,6 @@ variables:
   PIPELINE_MANAGER_MODULE: 'pipeline-manager'
   USER_MANAGER_MODULE: 'user-manager'
   KEY_HANDLER_MODULE: 'key-handler'
-  GENERIC_DOCKER_FILE: 'docker/Dockerfile'
-  KEY_HANDLER_DOCKER_FILE: 'docker/key-handler/Dockerfile'
-  TARGET_PLATFORM: 'linux/amd64'
 
 cache:
   key: $CACHE_KEY
@@ -33,6 +30,9 @@ stages:
     paths:
       - '*/target'
     expire_in: 30 min
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"' # Run on push
+      when: always
 
 .test-module:
   stage: test
@@ -40,6 +40,9 @@ stages:
   script:
     - 'echo Testing $MODULE'
     - 'mvn $MAVEN_CLI_OPTS -pl $MODULE surefire:test --also-make'
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"' # Run on push
+      when: always
 
 .containerize-module:
   stage: containerize
@@ -49,28 +52,55 @@ stages:
   script:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/${DOCKER_FILE}"
-      --build-arg "MODULE_NAME=${MODULE}"
-      --build-arg "TARGET_PLATFORM=${TARGET_PLATFORM}"
+      --dockerfile "${CI_PROJECT_DIR}/${MODULE}/docker/Dockerfile"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${CI_COMMIT_TAG}-dev"
-  only:
-    - /^\d+\.\d+\.\d+$/
-    - tags
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"' # Run on push
+      when: always
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
+      when: always
 
 .deploy-module:
   stage: deploy
-  image: bitnami/kubectl:latest #change to stable version
+  image: bitnami/kubectl:1.31.4 #change to stable version
   variables:
     K8S_CLUSTER_AGENT: gdp/ga4k:k8s-agent
+    ENV_FILE: 'gcp-dev-env'
+    GCP_PROJECT_ID: '968549395092'
+  id_tokens:
+    GCP_ID_TOKEN:
+      # Keep same names/location in diff. envs.
+      aud: https://iam.googleapis.com/projects/${GCP_PROJECT_ID}/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
+  secrets:
+    BASIC_AUTH_SEC_PASSWD_SECRET:
+      gcp_secret_manager:
+        name: basic-auth-sec-passwd-secret
+    DATABASE_SECRET:
+      gcp_secret_manager:
+        name: database-secret
+    EGA_AAI_SECRET:
+      gcp_secret_manager:
+        name: ega-aai-secret
+    EMAIL_SECRET:
+      gcp_secret_manager:
+        name: email-secret
+    GLOBUS_AUTH_SECRET:
+      gcp_secret_manager:
+        name: globus-auth-secret
+    S3_SECRET:
+      gcp_secret_manager:
+        name: s3-secret
+      token: $GCP_ID_TOKEN
   script:
     - kubectl config get-contexts
     - kubectl config use-context $K8S_CLUSTER_AGENT
     - kubectl -n intervene-dev get pods
-  #   - sed "s/\$NAMESPACE/intervene-dev/; s/\$TAG/$CI_COMMIT_TAG/"
-  #   - kubectl -f $MODULE/deployments/
-  only:
-    - /^\d+\.\d+\.\d+$/
-    - tags
+    - helm upgrade --install ${MODULE} ./${MODULE}/deployments -f values-${ENV_FILE} \
+      --namespace $KUBE_NAMESPACE \
+      --set image.tag=$IMAGE_TAG
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
+      when: always
 
 build-intervene-commons-module:
   variables:
@@ -81,7 +111,6 @@ build-intervene-commons-module:
     - changes:
         - '$INTERVENE_COMMONS_MODULE/**/*'
         - pom.xml
-        - .gitlab-ci.yml
 
 build-file-handler-module:
   variables:
@@ -92,12 +121,10 @@ build-file-handler-module:
     - changes:
         - '$FILE_HANDLER_MODULE/**/*'
         - pom.xml
-        - .gitlab-ci.yml
 
 containerize-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
-    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -118,22 +145,12 @@ build-pipeline-manager-module:
     - changes:
         - '$PIPELINE_MANAGER_MODULE/**/*'
         - pom.xml
-        - .gitlab-ci.yml
 
 containerize-pipeline-manager-module:
   variables:
     MODULE: $PIPELINE_MANAGER_MODULE
-    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
-
-deploy-pipeline-manager-module:
-  variables:
-    MODULE: $PIPELINE_MANAGER_MODULE
-  extends:
-    - .deploy-module
-  needs:
-    - 'containerize-pipeline-manager-module'
 
 build-user-manager-module:
   variables:
@@ -144,22 +161,12 @@ build-user-manager-module:
     - changes:
         - '$USER_MANAGER_MODULE/**/*'
         - pom.xml
-        - .gitlab-ci.yml
 
 containerize-user-manager-module:
   variables:
     MODULE: $USER_MANAGER_MODULE
-    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
-
-deploy-user-manager-module:
-  variables:
-    MODULE: $USER_MANAGER_MODULE
-  extends:
-    - .deploy-module
-  needs:
-    - 'containerize-user-manager-module'
 
 build-key-handler-module:
   variables:
@@ -170,19 +177,9 @@ build-key-handler-module:
     - changes:
         - '$KEY_HANDLER_MODULE/**/*'
         - pom.xml
-        - .gitlab-ci.yml
 
 containerize-key-handler-module:
   variables:
     MODULE: $KEY_HANDLER_MODULE
-    DOCKER_FILE: $KEY_HANDLER_DOCKER_FILE
   extends:
     - .containerize-module
-
-deploy-key-handler-module:
-  variables:
-    MODULE: $KEY_HANDLER_MODULE
-  extends:
-    - .deploy-module
-  needs:
-    - 'containerize-key-handler-module'
