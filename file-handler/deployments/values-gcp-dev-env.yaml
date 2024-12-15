@@ -1,0 +1,38 @@
+# Namespace
+namespace: intervene-dev
+
+# Environment-specific variables
+env:
+  profile: "gcp-dev-env"
+
+# Replica count for development
+replicaCount: 1
+
+# Image details
+image:
+  repository: dockerhub.ebi.ac.uk/gdp/igs4eu-platform
+  tagPrefix: file-handler
+  tag: 0.0.1
+  tagPostfix: dev
+  pullPolicy: Always
+
+# Service account
+serviceAccount: gcp-service-api
+
+# Application properties file
+properties:
+  fileName: "application-gcp-dev-env.properties"
+
+# Kubernetes resource limits for development
+resources:
+  limits:
+    cpu: "0.5"
+    memory: "512Mi"
+  requests:
+    cpu: "0.2"
+    memory: "256Mi"
+
+# Java jvm memory size
+java:
+  maxSize: -Xmx256m
+

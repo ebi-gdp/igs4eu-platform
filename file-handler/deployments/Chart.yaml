@@ -1,0 +1,8 @@
+apiVersion: v1
+name: file-handler-chart
+description: A Helm chart for deploying a microservice
+annotations:
+  category: "REST Microservice Application"
+  createdBy: "GDP Team"
+type: microservice application
+version: 1.0.0
