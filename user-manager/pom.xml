@@ -64,6 +64,7 @@
             <artifactId>r2dbc-h2</artifactId>
             <scope>test</scope>
         </dependency>
+
         <!-- Swagger API -->
         <dependency>
             <groupId>org.springdoc</groupId>
