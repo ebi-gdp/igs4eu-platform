@@ -30,9 +30,6 @@ stages:
     paths:
       - '*/target'
     expire_in: 30 min
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"' # Run on push
-      when: always
 
 .test-module:
   stage: test
@@ -40,9 +37,6 @@ stages:
   script:
     - 'echo Testing $MODULE'
     - 'mvn $MAVEN_CLI_OPTS -pl $MODULE surefire:test --also-make'
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"' # Run on push
-      when: always
 
 .containerize-module:
   stage: containerize
@@ -55,8 +49,6 @@ stages:
       --dockerfile "${CI_PROJECT_DIR}/${MODULE}/docker/Dockerfile"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${CI_COMMIT_TAG}-dev"
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"' # Run on push
-      when: always
     - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
       when: always
 
