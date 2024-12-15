@@ -75,18 +75,23 @@ stages:
     BASIC_AUTH_SEC_PASSWD_SECRET:
       gcp_secret_manager:
         name: basic-auth-sec-passwd-secret
+      token: $GCP_ID_TOKEN
     DATABASE_SECRET:
       gcp_secret_manager:
         name: database-secret
+      token: $GCP_ID_TOKEN
     EGA_AAI_SECRET:
       gcp_secret_manager:
         name: ega-aai-secret
+      token: $GCP_ID_TOKEN
     EMAIL_SECRET:
       gcp_secret_manager:
         name: email-secret
+      token: $GCP_ID_TOKEN
     GLOBUS_AUTH_SECRET:
       gcp_secret_manager:
         name: globus-auth-secret
+      token: $GCP_ID_TOKEN
     S3_SECRET:
       gcp_secret_manager:
         name: s3-secret
