@@ -99,7 +99,7 @@ stages:
     - kubectl -n intervene-dev get pods
     - helm upgrade --install ${MODULE} ./${MODULE}/deployments -f values-${ENV_FILE} \
       --namespace $KUBE_NAMESPACE \
-      --set image.tag=$IMAGE_TAG
+      --set image.tag=$CI_COMMIT_TAG
   rules:
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
       when: always
@@ -119,6 +119,16 @@ build-file-handler-module:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .build-module
+  rules:
+    - changes:
+        - '$FILE_HANDLER_MODULE/**/*'
+        - pom.xml
+
+test-file-handler-module:
+  variables:
+    MODULE: $FILE_HANDLER_MODULE
+  extends:
+    - .test-module
   rules:
     - changes:
         - '$FILE_HANDLER_MODULE/**/*'
