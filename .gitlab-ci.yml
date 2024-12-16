@@ -8,6 +8,9 @@ variables:
   PIPELINE_MANAGER_MODULE: 'pipeline-manager'
   USER_MANAGER_MODULE: 'user-manager'
   KEY_HANDLER_MODULE: 'key-handler'
+  GENERIC_DOCKER_FILE: 'docker/Dockerfile'
+  KEY_HANDLER_DOCKER_FILE: 'docker/key-handler/Dockerfile'
+  TARGET_PLATFORM: 'linux/amd64'
   TAG_REGEX: '/^\d+\.\d+\.\d+$/'
 
 cache:
@@ -47,7 +50,9 @@ stages:
   script:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/${MODULE}/docker/Dockerfile"
+      --dockerfile "${CI_PROJECT_DIR}/${DOCKER_FILE}"
+      --build-arg "MODULE_NAME=${MODULE}"
+      --build-arg "TARGET_PLATFORM=${TARGET_PLATFORM}"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${CI_COMMIT_TAG}-dev"
   rules:
     - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX'
@@ -55,7 +60,7 @@ stages:
 
 .deploy-module:
   stage: deploy
-  image: bitnami/kubectl:1.31.4
+  image: alpine/k8s:1.32.0
   variables:
     K8S_CLUSTER_AGENT: gdp/ga4k:k8s-agent
     ENV_FILE: 'gcp-dev-env'
@@ -109,6 +114,7 @@ build-intervene-commons-module:
     - changes:
         - '$INTERVENE_COMMONS_MODULE/**/*'
         - pom.xml
+        - .gitlab-ci.yml
 
 build-file-handler-module:
   variables:
@@ -119,6 +125,7 @@ build-file-handler-module:
     - changes:
         - '$FILE_HANDLER_MODULE/**/*'
         - pom.xml
+        - .gitlab-ci.yml
 
 test-file-handler-module:
   variables:
@@ -131,6 +138,7 @@ test-file-handler-module:
 containerize-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
+    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -151,10 +159,12 @@ build-pipeline-manager-module:
     - changes:
         - '$PIPELINE_MANAGER_MODULE/**/*'
         - pom.xml
+        - .gitlab-ci.yml
 
 containerize-pipeline-manager-module:
   variables:
     MODULE: $PIPELINE_MANAGER_MODULE
+    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -167,10 +177,12 @@ build-user-manager-module:
     - changes:
         - '$USER_MANAGER_MODULE/**/*'
         - pom.xml
+        - .gitlab-ci.yml
 
 containerize-user-manager-module:
   variables:
     MODULE: $USER_MANAGER_MODULE
+    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -183,9 +195,11 @@ build-key-handler-module:
     - changes:
         - '$KEY_HANDLER_MODULE/**/*'
         - pom.xml
+        - .gitlab-ci.yml
 
 containerize-key-handler-module:
   variables:
     MODULE: $KEY_HANDLER_MODULE
+    DOCKER_FILE: $KEY_HANDLER_DOCKER_FILE
   extends:
     - .containerize-module
