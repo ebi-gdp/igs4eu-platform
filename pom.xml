@@ -12,7 +12,7 @@
     <groupId>uk.ac.ebi.gdp.intervene</groupId>
     <artifactId>igs4eu-platform</artifactId>
     <packaging>pom</packaging>
-    <version>3.0.2-SNAPSHOT</version>
+    <version>4.0.9-SNAPSHOT</version>
 
     <modules>
         <module>file-handler</module>

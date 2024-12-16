@@ -8,6 +8,12 @@ variables:
   PIPELINE_MANAGER_MODULE: 'pipeline-manager'
   USER_MANAGER_MODULE: 'user-manager'
   KEY_HANDLER_MODULE: 'key-handler'
+  GENERIC_DOCKER_FILE: 'docker/Dockerfile'
+  KEY_HANDLER_DOCKER_FILE: 'docker/key-handler/Dockerfile'
+  TARGET_PLATFORM: 'linux/amd64'
+  TAG_REGEX: '/^\d+\.\d+\.\d+$/'
+  STAGE: "BUILD_TEST_CONTAINERIZE"
+  DEPLOY_STAGE: "DEPLOY"
 
 cache:
   key: $CACHE_KEY
@@ -25,20 +31,31 @@ stages:
   image: maven:3.8.7-eclipse-temurin-19
   script:
     - 'echo "Building $MODULE"'
-    - 'mvn $MAVEN_CLI_OPTS -pl $MODULE package $SKIP_TESTS --also-make'
+    - 'mvn $MAVEN_CLI_OPTS -pl $MODULE install $SKIP_TESTS --also-make'
   artifacts:
     paths:
       - '*/target'
     expire_in: 30 min
+  rules:
+    - if: '$STAGE != $DEPLOY_STAGE'  # Skip if STAGE is set to "DEPLOY"
+      changes:
+        - '$MODULE/**/*'
+        - pom.xml
+        - .gitlab-ci.yml
+      when: always
 
 .test-module:
   stage: test
   image: maven:3.8.7-eclipse-temurin-19
   script:
     - 'echo Testing $MODULE'
-    - 'mvn $MAVEN_CLI_OPTS -pl $MODULE surefire:test --also-make'
+    - 'mvn $MAVEN_CLI_OPTS -pl $MODULE -am surefire:test'
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"' # Run on push
+    - if: '$STAGE != $DEPLOY_STAGE'  # Skip if STAGE is set to "DEPLOY"
+      changes:
+        - '$MODULE/**/*'
+        - pom.xml
+        - .gitlab-ci.yml
       when: always
 
 .containerize-module:
@@ -49,21 +66,22 @@ stages:
   script:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/${MODULE}/docker/Dockerfile"
+      --dockerfile "${CI_PROJECT_DIR}/${DOCKER_FILE}"
+      --build-arg "MODULE_NAME=${MODULE}"
+      --build-arg "TARGET_PLATFORM=${TARGET_PLATFORM}"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${CI_COMMIT_TAG}-dev"
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"' # Run on push
-      when: always
-    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE != $DEPLOY_STAGE'
       when: always
 
 .deploy-module:
   stage: deploy
-  image: bitnami/kubectl:1.31.4 #change to stable version
+  image: alpine/k8s:1.32.0
   variables:
-    K8S_CLUSTER_AGENT: gdp/ga4k:k8s-agent
+    K8S_CLUSTER_AGENT: gdp/ga4k:gcp-k8s-agent
     ENV_FILE: 'gcp-dev-env'
     GCP_PROJECT_ID: '968549395092'
+    DEFAULT_NAMESPACE: 'intervene-dev'
   id_tokens:
     GCP_ID_TOKEN:
       # Keep same names/location in diff. envs.
@@ -96,12 +114,21 @@ stages:
   script:
     - kubectl config get-contexts
     - kubectl config use-context $K8S_CLUSTER_AGENT
-    - kubectl -n intervene-dev get pods
-    - helm upgrade --install ${MODULE} ./${MODULE}/deployments -f values-${ENV_FILE} \
-      --namespace $KUBE_NAMESPACE \
-      --set image.tag=$CI_COMMIT_TAG
+    - kubectl -n $DEFAULT_NAMESPACE get pods
+    - mv $BASIC_AUTH_SEC_PASSWD_SECRET "$BASIC_AUTH_SEC_PASSWD_SECRET".yaml
+    - mv $DATABASE_SECRET "$DATABASE_SECRET".yaml
+    - mv $EGA_AAI_SECRET "$EGA_AAI_SECRET".yaml
+    - mv $EMAIL_SECRET "$EMAIL_SECRET".yaml
+    - mv $GLOBUS_AUTH_SECRET "$GLOBUS_AUTH_SECRET".yaml
+    - mv $S3_SECRET "$S3_SECRET".yaml
+    - SECRET_FILES_PATH=$(dirname "$BASIC_AUTH_SEC_PASSWD_SECRET")
+    - kubectl -n $DEFAULT_NAMESPACE apply -f "$SECRET_FILES_PATH"/
+    - |
+      helm upgrade --install "${MODULE}" "./${MODULE}/deployments" -f "./${MODULE}/deployments/values-${ENV_FILE}.yaml" \
+      --namespace "$DEFAULT_NAMESPACE" \
+      --set image.tag="$CI_COMMIT_TAG"
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE == $DEPLOY_STAGE'
       when: always
 
 build-intervene-commons-module:
@@ -109,34 +136,26 @@ build-intervene-commons-module:
     MODULE: $INTERVENE_COMMONS_MODULE
   extends:
     - .build-module
-  rules:
-    - changes:
-        - '$INTERVENE_COMMONS_MODULE/**/*'
-        - pom.xml
 
 build-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .build-module
-  rules:
-    - changes:
-        - '$FILE_HANDLER_MODULE/**/*'
-        - pom.xml
 
 test-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .test-module
-  rules:
-    - changes:
-        - '$FILE_HANDLER_MODULE/**/*'
-        - pom.xml
+  needs:
+    - job: build-file-handler-module  # Ensures the build job completes first
+      artifacts: true
 
 containerize-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
+    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -145,22 +164,26 @@ deploy-file-handler-module:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .deploy-module
-  needs:
-    - 'containerize-file-handler-module'
 
 build-pipeline-manager-module:
   variables:
     MODULE: $PIPELINE_MANAGER_MODULE
   extends:
     - .build-module
-  rules:
-    - changes:
-        - '$PIPELINE_MANAGER_MODULE/**/*'
-        - pom.xml
+
+test-pipeline-manager-module:
+  variables:
+    MODULE: $PIPELINE_MANAGER_MODULE
+  extends:
+    - .test-module
+  needs:
+    - job: build-pipeline-manager-module  # Ensures the build job completes first
+      artifacts: true
 
 containerize-pipeline-manager-module:
   variables:
     MODULE: $PIPELINE_MANAGER_MODULE
+    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -169,14 +192,20 @@ build-user-manager-module:
     MODULE: $USER_MANAGER_MODULE
   extends:
     - .build-module
-  rules:
-    - changes:
-        - '$USER_MANAGER_MODULE/**/*'
-        - pom.xml
+
+test-user-manager-module:
+  variables:
+    MODULE: $USER_MANAGER_MODULE
+  extends:
+    - .test-module
+  needs:
+    - job: build-user-manager-module  # Ensures the build job completes first
+      artifacts: true
 
 containerize-user-manager-module:
   variables:
     MODULE: $USER_MANAGER_MODULE
+    DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
 
@@ -185,13 +214,19 @@ build-key-handler-module:
     MODULE: $KEY_HANDLER_MODULE
   extends:
     - .build-module
-  rules:
-    - changes:
-        - '$KEY_HANDLER_MODULE/**/*'
-        - pom.xml
+
+test-key-handler-module:
+  variables:
+    MODULE: $KEY_HANDLER_MODULE
+  extends:
+    - .test-module
+  needs:
+    - job: build-key-handler-module  # Ensures the build job completes first
+      artifacts: true
 
 containerize-key-handler-module:
   variables:
     MODULE: $KEY_HANDLER_MODULE
+    DOCKER_FILE: $KEY_HANDLER_DOCKER_FILE
   extends:
     - .containerize-module
