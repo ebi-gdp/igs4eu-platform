@@ -13,6 +13,7 @@ variables:
   TARGET_PLATFORM: 'linux/amd64'
   TAG_REGEX: '/^\d+\.\d+\.\d+$/'
   STAGE: "BUILD_TEST_CONTAINERIZE"
+  DEPLOY_STAGE: "DEPLOY"
 
 cache:
   key: $CACHE_KEY
@@ -36,8 +37,16 @@ stages:
       - '*/target'
     expire_in: 30 min
   rules:
-    - if: '$STAGE != "DEPLOY"'  # Skip if STAGE is set to "deploy"
-      when: always
+    # Skip if STAGE is set to DEPLOY
+    - if: '$STAGE == $DEPLOY_STAGE'
+      when: never
+    # Run if STAGE is not DEPLOY and there are changes
+    - if: '$STAGE != $DEPLOY_STAGE'
+      changes:
+        - '$FILE_HANDLER_MODULE/**/*'
+        - pom.xml
+        - .gitlab-ci.yml
+      when: on_success
 
 .test-module:
   stage: test
@@ -46,7 +55,7 @@ stages:
     - 'echo Testing $MODULE'
     - 'mvn $MAVEN_CLI_OPTS -pl $MODULE -am surefire:test'
   rules:
-    - if: '$STAGE != "DEPLOY"'  # Skip if STAGE is set to "deploy"
+    - if: '$STAGE != $DEPLOY_STAGE'  # Skip if STAGE is set to "deploy"
       when: always
 
 .containerize-module:
@@ -62,7 +71,7 @@ stages:
       --build-arg "TARGET_PLATFORM=${TARGET_PLATFORM}"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${CI_COMMIT_TAG}-dev"
   rules:
-    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE != "DEPLOY"'
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE != $DEPLOY_STAGE'
       when: always
 
 .deploy-module:
@@ -116,7 +125,7 @@ stages:
       --namespace $KUBE_NAMESPACE \
       --set image.tag=$CI_COMMIT_TAG
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE == "DEPLOY"'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE == $DEPLOY_STAGE'
       when: always
 
 build-intervene-commons-module:
