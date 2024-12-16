@@ -3,5 +3,5 @@ kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-config
 data:
-  { { .Values.properties.fileName } }: |
-    { { .Files.Get (printf "files/%s" .Values.properties.fileName) | indent 4 } }
+  {{ .Values.properties.fileName }}: |
+    {{ .Files.Get (printf "files/%s" .Values.properties.fileName) | indent 4 }}
