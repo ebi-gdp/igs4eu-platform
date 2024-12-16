@@ -110,8 +110,6 @@ stages:
     - echo "Release Name: $MODULE"
     - echo "Chart Path: ./${MODULE}/deployments"
     - echo "Values File: values-${ENV_FILE}"
-    - echo "Namespace: $KUBE_NAMESPACE"
-    - echo "Image Tag: $CI_COMMIT_TAG"
     - helm upgrade --install ${MODULE} ./${MODULE}/deployments -f values-${ENV_FILE} \
       --namespace $KUBE_NAMESPACE \
       --set image.tag=$CI_COMMIT_TAG
