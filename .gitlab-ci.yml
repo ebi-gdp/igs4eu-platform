@@ -62,9 +62,7 @@ stages:
       --build-arg "TARGET_PLATFORM=${TARGET_PLATFORM}"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${CI_COMMIT_TAG}-dev"
   rules:
-    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX'
-      when: always
-    - if: '$STAGE != "DEPLOY"'  # Skip if STAGE is set to "deploy"
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE != "DEPLOY"'
       when: always
 
 .deploy-module:
@@ -118,9 +116,7 @@ stages:
       --namespace $KUBE_NAMESPACE \
       --set image.tag=$CI_COMMIT_TAG
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX'
-      when: always
-    - if: '$STAGE == "DEPLOY"'  # Skip if STAGE is set to "deploy"
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE == "DEPLOY"'
       when: always
 
 build-intervene-commons-module:
