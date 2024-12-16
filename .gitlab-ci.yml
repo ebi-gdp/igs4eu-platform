@@ -50,8 +50,6 @@ stages:
       --dockerfile "${CI_PROJECT_DIR}/${MODULE}/docker/Dockerfile"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${CI_COMMIT_TAG}-dev"
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"' # Run on push
-      when: always
     - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX'
       when: always
 
