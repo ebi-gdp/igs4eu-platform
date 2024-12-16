@@ -81,6 +81,7 @@ stages:
     K8S_CLUSTER_AGENT: gdp/ga4k:gcp-k8s-agent
     ENV_FILE: 'gcp-dev-env'
     GCP_PROJECT_ID: '968549395092'
+    DEFAULT_NAMESPACE: 'intervene-dev'
   id_tokens:
     GCP_ID_TOKEN:
       # Keep same names/location in diff. envs.
@@ -122,8 +123,8 @@ stages:
     - 'echo "MODULE NAME:" ${MODULE}'
     - 'ls -l ./${MODULE}/deployments'
     - |
-      helm upgrade --install "${MODULE}" "./${MODULE}/deployments" -f "values-${ENV_FILE}" \
-      --namespace "$KUBE_NAMESPACE" \
+      helm upgrade --install "${MODULE}" "./${MODULE}/deployments" -f "./${MODULE}/deployments/values-${ENV_FILE}" \
+      --namespace "$DEFAULT_NAMESPACE" \
       --set image.tag="$CI_COMMIT_TAG"
   rules:
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE == $DEPLOY_STAGE'
