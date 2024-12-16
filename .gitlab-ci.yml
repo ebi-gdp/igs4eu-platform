@@ -37,16 +37,12 @@ stages:
       - '*/target'
     expire_in: 30 min
   rules:
-    # Skip if STAGE is set to DEPLOY
-    - if: '$STAGE == $DEPLOY_STAGE'
-      when: never
-    # Run if STAGE is not DEPLOY and there are changes
-    - if: '$STAGE != $DEPLOY_STAGE'
-      changes:
+    - if: '$STAGE != $DEPLOY_STAGE'  # Skip if STAGE is set to "DEPLOY"
+      when: always
+    - changes:
         - '$MODULE/**/*'
         - pom.xml
         - .gitlab-ci.yml
-      when: on_success
 
 .test-module:
   stage: test
@@ -54,9 +50,16 @@ stages:
   script:
     - 'echo Testing $MODULE'
     - 'mvn $MAVEN_CLI_OPTS -pl $MODULE -am surefire:test'
+  needs:
+    - job: .build-module
+      artifacts: true
   rules:
     - if: '$STAGE != $DEPLOY_STAGE'  # Skip if STAGE is set to "deploy"
       when: always
+    - changes:
+        - '$MODULE/**/*'
+        - pom.xml
+        - .gitlab-ci.yml
 
 .containerize-module:
   stage: containerize
