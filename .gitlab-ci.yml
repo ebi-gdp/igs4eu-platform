@@ -8,6 +8,7 @@ variables:
   PIPELINE_MANAGER_MODULE: 'pipeline-manager'
   USER_MANAGER_MODULE: 'user-manager'
   KEY_HANDLER_MODULE: 'key-handler'
+  TAG_REGEX: '/^\d+\.\d+\.\d+$/'
 
 cache:
   key: $CACHE_KEY
@@ -25,7 +26,7 @@ stages:
   image: maven:3.8.7-eclipse-temurin-19
   script:
     - 'echo "Building $MODULE"'
-    - 'mvn $MAVEN_CLI_OPTS -pl $MODULE package $SKIP_TESTS --also-make'
+    - 'mvn $MAVEN_CLI_OPTS -pl $MODULE install $SKIP_TESTS --also-make'
   artifacts:
     paths:
       - '*/target'
@@ -36,10 +37,7 @@ stages:
   image: maven:3.8.7-eclipse-temurin-19
   script:
     - 'echo Testing $MODULE'
-    - 'mvn $MAVEN_CLI_OPTS -pl $MODULE surefire:test --also-make'
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"' # Run on push
-      when: always
+    - 'mvn $MAVEN_CLI_OPTS -pl $MODULE -am surefire:test'
 
 .containerize-module:
   stage: containerize
@@ -54,12 +52,12 @@ stages:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"' # Run on push
       when: always
-    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX'
       when: always
 
 .deploy-module:
   stage: deploy
-  image: bitnami/kubectl:1.31.4 #change to stable version
+  image: bitnami/kubectl:1.31.4
   variables:
     K8S_CLUSTER_AGENT: gdp/ga4k:k8s-agent
     ENV_FILE: 'gcp-dev-env'
@@ -101,7 +99,7 @@ stages:
       --namespace $KUBE_NAMESPACE \
       --set image.tag=$CI_COMMIT_TAG
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX'
       when: always
 
 build-intervene-commons-module:
@@ -129,10 +127,8 @@ test-file-handler-module:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .test-module
-  rules:
-    - changes:
-        - '$FILE_HANDLER_MODULE/**/*'
-        - pom.xml
+  dependencies:
+    - 'build-file-handler-module'
 
 containerize-file-handler-module:
   variables:
