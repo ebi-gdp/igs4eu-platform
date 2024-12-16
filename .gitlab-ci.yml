@@ -114,14 +114,9 @@ stages:
   script:
     - kubectl config get-contexts
     - kubectl config use-context $K8S_CLUSTER_AGENT
-    - kubectl -n intervene-dev get pods
-    - 'echo "K8S_CLUSTER_AGENT: $K8S_CLUSTER_AGENT"'
-    - 'echo "MODULE: $MODULE"'
-    - 'echo "ENV_FILE: $ENV_FILE"'
-    - 'echo "KUBE_NAMESPACE: $KUBE_NAMESPACE"'
-    - 'echo "CI_COMMIT_TAG: $CI_COMMIT_TAG"'
-    - 'echo "MODULE NAME:" ${MODULE}'
-    - 'ls -l ./${MODULE}/deployments'
+    - kubectl -n $DEFAULT_NAMESPACE get pods
+    - echo $BASIC_AUTH_SEC_PASSWD_SECRET $DATABASE_SECRET $EGA_AAI_SECRET $EMAIL_SECRET $GLOBUS_AUTH_SECRET $S3_SECRET
+    - kubectl -n $DEFAULT_NAMESPACE apply -f $BASIC_AUTH_SEC_PASSWD_SECRET $DATABASE_SECRET $EGA_AAI_SECRET $EMAIL_SECRET $GLOBUS_AUTH_SECRET $S3_SECRET
     - |
       helm upgrade --install "${MODULE}" "./${MODULE}/deployments" -f "./${MODULE}/deployments/values-${ENV_FILE}.yaml" \
       --namespace "$DEFAULT_NAMESPACE" \
