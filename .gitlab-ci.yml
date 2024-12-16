@@ -107,9 +107,13 @@ stages:
     - kubectl config get-contexts
     - kubectl config use-context $K8S_CLUSTER_AGENT
     - kubectl -n intervene-dev get pods
-    - echo "Release Name: $MODULE"
-    - echo "Chart Path: ./${MODULE}/deployments"
-    - echo "Values File: values-${ENV_FILE}"
+    - 'echo "K8S_CLUSTER_AGENT: $K8S_CLUSTER_AGENT"'
+    - 'echo "MODULE: $MODULE"'
+    - 'echo "ENV_FILE: $ENV_FILE"'
+    - 'echo "KUBE_NAMESPACE: $KUBE_NAMESPACE"'
+    - 'echo "CI_COMMIT_TAG: $CI_COMMIT_TAG"'
+    - 'echo "MODULE NAME:" ${MODULE}'
+    - 'ls -l ./${MODULE}/deployments'
     - helm upgrade --install ${MODULE} ./${MODULE}/deployments -f values-${ENV_FILE} \
       --namespace $KUBE_NAMESPACE \
       --set image.tag=$CI_COMMIT_TAG
