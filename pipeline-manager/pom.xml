@@ -5,18 +5,18 @@
     <parent>
         <groupId>uk.ac.ebi.gdp.intervene</groupId>
         <artifactId>igs4eu-platform</artifactId>
-        <version>4.0.5</version>
+        <version>4.0.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>pipeline-manager</artifactId>
-    <version>4.0.5</version>
+    <version>4.0.5-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>uk.ac.ebi.gdp.intervene</groupId>
             <artifactId>intervene-commons</artifactId>
-            <version>4.0.5</version>
+            <version>4.0.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.kafka</groupId>
