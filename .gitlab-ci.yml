@@ -165,8 +165,6 @@ deploy-file-handler-module:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .deploy-module
-  needs:
-    - 'containerize-file-handler-module'
 
 build-pipeline-manager-module:
   variables:
