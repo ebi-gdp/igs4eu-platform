@@ -62,7 +62,7 @@ stages:
   stage: deploy
   image: alpine/k8s:1.32.0
   variables:
-    K8S_CLUSTER_AGENT: gdp/ga4k:k8s-agent
+    K8S_CLUSTER_AGENT: gdp/ga4k:gcp-k8s-agent
     ENV_FILE: 'gcp-dev-env'
     GCP_PROJECT_ID: '968549395092'
   id_tokens:
