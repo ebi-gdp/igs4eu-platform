@@ -12,7 +12,7 @@
     <groupId>uk.ac.ebi.gdp.intervene</groupId>
     <artifactId>igs4eu-platform</artifactId>
     <packaging>pom</packaging>
-    <version>3.0.2-SNAPSHOT</version>
+    <version>4.0.0</version>
 
     <modules>
         <module>file-handler</module>
@@ -40,7 +40,7 @@
 
     <scm>
         <connection>scm:git:git@github.com:ebi-gdp/igs4eu-platform.git</connection>
-        <tag>HEAD</tag>
+        <tag>4.0.0</tag>
     </scm>
 
     <repositories>
