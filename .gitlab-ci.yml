@@ -50,9 +50,6 @@ stages:
   script:
     - 'echo Testing $MODULE'
     - 'mvn $MAVEN_CLI_OPTS -pl $MODULE -am surefire:test'
-  needs:
-    - job: .build-module
-      artifacts: true
   rules:
     - if: '$STAGE != $DEPLOY_STAGE'  # Skip if STAGE is set to "deploy"
       when: always
@@ -150,8 +147,9 @@ test-file-handler-module:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .test-module
-  dependencies:
-    - 'build-file-handler-module'
+  needs:
+    - job: build-file-handler-module  # Ensures the build job completes first
+      artifacts: true
 
 containerize-file-handler-module:
   variables:
