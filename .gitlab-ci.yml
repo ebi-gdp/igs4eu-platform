@@ -43,7 +43,7 @@ stages:
     # Run if STAGE is not DEPLOY and there are changes
     - if: '$STAGE != $DEPLOY_STAGE'
       changes:
-        - '$FILE_HANDLER_MODULE/**/*'
+        - '$MODULE/**/*'
         - pom.xml
         - .gitlab-ci.yml
       when: on_success
@@ -133,22 +133,12 @@ build-intervene-commons-module:
     MODULE: $INTERVENE_COMMONS_MODULE
   extends:
     - .build-module
-  rules:
-    - changes:
-        - '$INTERVENE_COMMONS_MODULE/**/*'
-        - pom.xml
-        - .gitlab-ci.yml
 
 build-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .build-module
-  rules:
-    - changes:
-        - '$FILE_HANDLER_MODULE/**/*'
-        - pom.xml
-        - .gitlab-ci.yml
 
 test-file-handler-module:
   variables:
@@ -176,11 +166,6 @@ build-pipeline-manager-module:
     MODULE: $PIPELINE_MANAGER_MODULE
   extends:
     - .build-module
-  rules:
-    - changes:
-        - '$PIPELINE_MANAGER_MODULE/**/*'
-        - pom.xml
-        - .gitlab-ci.yml
 
 containerize-pipeline-manager-module:
   variables:
@@ -194,11 +179,6 @@ build-user-manager-module:
     MODULE: $USER_MANAGER_MODULE
   extends:
     - .build-module
-  rules:
-    - changes:
-        - '$USER_MANAGER_MODULE/**/*'
-        - pom.xml
-        - .gitlab-ci.yml
 
 containerize-user-manager-module:
   variables:
@@ -212,11 +192,6 @@ build-key-handler-module:
     MODULE: $KEY_HANDLER_MODULE
   extends:
     - .build-module
-  rules:
-    - changes:
-        - '$KEY_HANDLER_MODULE/**/*'
-        - pom.xml
-        - .gitlab-ci.yml
 
 containerize-key-handler-module:
   variables:
