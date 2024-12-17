@@ -1,5 +1,5 @@
 # Service name
-serviceName: file-handler
+serviceName: pipeline-manager
 
 # Namespace
 namespace: intervene-dev
@@ -14,7 +14,7 @@ replicaCount: 1
 # Image details
 image:
   repository: dockerhub.ebi.ac.uk/gdp/igs4eu-platform
-  tagPrefix: file-handler
+  tagPrefix: pipeline-manager
   tag: 0.0.1
   tagPostfix: dev
   pullPolicy: Always
@@ -29,13 +29,29 @@ properties:
 # Kubernetes resource limits for development
 resources:
   limits:
-    cpu: "0.5"
-    memory: "512Mi"
+    cpu: "1000m"
+    memory: "1000Mi"
   requests:
-    cpu: "0.2"
-    memory: "256Mi"
+    cpu: "200m"
+    memory: "500Mi"
 
 # Java jvm memory size
 java:
-  maxSize: -Xmx256m
+  maxSize: -Xmx768m
+
+# GCP project details
+gcp:
+  projectName: "prj-ext-dev-intervene-413412"
+  zone: "europe-west2"
+  dbName: "intervene"
+
+# GCP cloud sql proxy resource
+cloudSql:
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "500Mi"
+    requests:
+      cpu: "500m"
+      memory: "300Mi"
 

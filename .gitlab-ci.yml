@@ -1,3 +1,4 @@
+# Global variables
 variables:
   MAVEN_OPTS: '-Dhttps.protocols=TLSv1.2 -Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
   MAVEN_CLI_OPTS: '--batch-mode --errors --fail-at-end --show-version -s ci_settings.xml'
@@ -15,17 +16,20 @@ variables:
   STAGE: "BUILD_TEST_CONTAINERIZE"
   DEPLOY_STAGE: "DEPLOY"
 
+# Cache path
 cache:
   key: $CACHE_KEY
   paths:
     - .m2/repository/
 
+# Pipeline stages
 stages:
   - build
   - test
   - containerize
   - deploy
 
+# Generic build stage
 .build-module:
   stage: build
   image: maven:3.8.7-eclipse-temurin-19
@@ -44,6 +48,7 @@ stages:
         - .gitlab-ci.yml
       when: always
 
+# Generic test stage
 .test-module:
   stage: test
   image: maven:3.8.7-eclipse-temurin-19
@@ -58,6 +63,7 @@ stages:
         - .gitlab-ci.yml
       when: always
 
+# Generic containerize stage
 .containerize-module:
   stage: containerize
   image:
@@ -74,6 +80,7 @@ stages:
     - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE != $DEPLOY_STAGE'
       when: always
 
+# Generic deploy stage
 .deploy-module:
   stage: deploy
   image: alpine/k8s:1.32.0
@@ -131,18 +138,21 @@ stages:
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE == $DEPLOY_STAGE'
       when: always
 
+# Commons library build stage
 build-intervene-commons-module:
   variables:
     MODULE: $INTERVENE_COMMONS_MODULE
   extends:
     - .build-module
 
+# File handler build stage
 build-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .build-module
 
+# File handler test stage
 test-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
@@ -152,6 +162,7 @@ test-file-handler-module:
     - job: build-file-handler-module  # Ensures the build job completes first
       artifacts: true
 
+# File handler containerize stage
 containerize-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
@@ -159,18 +170,21 @@ containerize-file-handler-module:
   extends:
     - .containerize-module
 
+# File handler deploy stage
 deploy-file-handler-module:
   variables:
     MODULE: $FILE_HANDLER_MODULE
   extends:
     - .deploy-module
 
+# Pipeline manager build stage
 build-pipeline-manager-module:
   variables:
     MODULE: $PIPELINE_MANAGER_MODULE
   extends:
     - .build-module
 
+# Pipeline manager test stage
 test-pipeline-manager-module:
   variables:
     MODULE: $PIPELINE_MANAGER_MODULE
@@ -180,6 +194,7 @@ test-pipeline-manager-module:
     - job: build-pipeline-manager-module  # Ensures the build job completes first
       artifacts: true
 
+# Pipeline manager containerize stage
 containerize-pipeline-manager-module:
   variables:
     MODULE: $PIPELINE_MANAGER_MODULE
@@ -187,12 +202,14 @@ containerize-pipeline-manager-module:
   extends:
     - .containerize-module
 
+# User manager build stage
 build-user-manager-module:
   variables:
     MODULE: $USER_MANAGER_MODULE
   extends:
     - .build-module
 
+# User manager test stage
 test-user-manager-module:
   variables:
     MODULE: $USER_MANAGER_MODULE
@@ -202,6 +219,7 @@ test-user-manager-module:
     - job: build-user-manager-module  # Ensures the build job completes first
       artifacts: true
 
+# User manager containerize stage
 containerize-user-manager-module:
   variables:
     MODULE: $USER_MANAGER_MODULE
@@ -209,12 +227,14 @@ containerize-user-manager-module:
   extends:
     - .containerize-module
 
+# Key handler build stage
 build-key-handler-module:
   variables:
     MODULE: $KEY_HANDLER_MODULE
   extends:
     - .build-module
 
+# Key handler test stage
 test-key-handler-module:
   variables:
     MODULE: $KEY_HANDLER_MODULE
@@ -224,6 +244,7 @@ test-key-handler-module:
     - job: build-key-handler-module  # Ensures the build job completes first
       artifacts: true
 
+# Key handler containerize stage
 containerize-key-handler-module:
   variables:
     MODULE: $KEY_HANDLER_MODULE
