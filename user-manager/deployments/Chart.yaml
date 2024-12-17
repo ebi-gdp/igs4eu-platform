@@ -1,0 +1,9 @@
+apiVersion: v2
+name: user-manager-chart
+description: A Helm chart for deploying a microservice
+annotations:
+  category: "REST Microservice Application"
+  createdBy: "GDP Team"
+type: application
+appVersion: "1.0"
+version: 1.0.0

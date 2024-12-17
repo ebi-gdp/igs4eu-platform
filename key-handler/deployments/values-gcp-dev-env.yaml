@@ -1,5 +1,5 @@
 # Service name
-serviceName: file-handler
+serviceName: key-handler
 
 # Namespace
 namespace: intervene-dev
@@ -14,7 +14,7 @@ replicaCount: 1
 # Image details
 image:
   repository: dockerhub.ebi.ac.uk/gdp/igs4eu-platform
-  tagPrefix: file-handler
+  tagPrefix: key-handler
   tag: 0.0.1
   tagPostfix: dev
   pullPolicy: Always

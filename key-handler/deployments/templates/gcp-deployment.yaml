@@ -31,7 +31,6 @@ spec:
               memory: {{ .Values.resources.requests.memory }}
           ports:
             - containerPort: 8080
-            - containerPort: 9080
           volumeMounts:
             - mountPath: /config
               name: config
@@ -43,9 +42,7 @@ spec:
               value: {{ .Values.env.profile }}
           envFrom:
             - secretRef:
-                name: ega-aai-secret
-            - secretRef:
-                name: globus-secret
+                name: basic-auth-secret
       imagePullSecrets:
         - name: gitlabpullimage
       volumes:
@@ -57,7 +54,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Values.serviceName }}
-  namespace: intervene-dev
+  namespace: {{ .Values.namespace }}
   labels:
     app: {{ .Values.serviceName }}
 spec:
@@ -66,5 +63,5 @@ spec:
   ports:
     - port: 8080
       protocol: TCP
-      name: file-handler-app-port
+      name: {{ .Values.serviceName }}-app-port
   type: NodePort
