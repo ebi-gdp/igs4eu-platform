@@ -17,9 +17,6 @@ variables:
     description: 'Pipeline stage. For deployment stage set this value to DEPLOY'
     value: 'BUILD_TEST_CONTAINERIZE'
   DEPLOY_STAGE: 'DEPLOY'
-  NAMESPACE:
-    description: 'Specify deployment namespace, intervene-dev is default'
-    value: 'intervene-dev'
 
 # Cache path
 cache:
@@ -91,8 +88,14 @@ stages:
   image: alpine/k8s:1.32.0
   variables:
     K8S_CLUSTER_AGENT: gdp/ga4k:gcp-k8s-agent
+    GCP_PROJECT_ID:
+      description: 'GCP project id, provide appropriate project id, default is set to dev instance'
+      value: '968549395092'
     ENV_FILE: 'gcp-dev-env'
-    GCP_PROJECT_ID: '968549395092'
+    NAMESPACE: 'intervene-dev'
+    PLATFORM_ENV:
+      description: 'Platform environment, dev is default. For production use prod'
+      value: 'dev'
   id_tokens:
     GCP_ID_TOKEN:
       # Keep same names/location in diff. envs.
@@ -122,6 +125,13 @@ stages:
       gcp_secret_manager:
         name: s3-secret
       token: $GCP_ID_TOKEN
+  before_script:
+    - |
+      if [[ "$PLATFORM_ENV" == "prod" ]]; then
+        export NAMESPACE="intervene-prod"
+        export ENV_FILE="gcp-prod-env"
+        export K8S_CLUSTER_AGENT="gdp/ga4k:gcp-prod-k8s-agent"
+      fi
   script:
     - kubectl config get-contexts
     - kubectl config use-context $K8S_CLUSTER_AGENT
