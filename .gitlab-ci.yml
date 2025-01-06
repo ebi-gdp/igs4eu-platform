@@ -88,7 +88,7 @@ stages:
       --build-arg "TARGET_PLATFORM=${TARGET_PLATFORM}"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${DEPLOYMENT_RELEASE_TAG}-dev"
   rules:
-    - if: '$DEPLOYMENT_RELEASE_TAG && $CI_COMMIT_REF_NAME == "main" && $DEPLOYMENT_RELEASE_TAG =~ $TAG_REGEX && $STAGE != $DEPLOY_STAGE'
+    - if: '$DEPLOYMENT_RELEASE_TAG && $DEPLOYMENT_RELEASE_TAG =~ $TAG_REGEX && $STAGE != $DEPLOY_STAGE'
       when: always
 
 # Generic deploy stage
@@ -152,7 +152,7 @@ stages:
       --namespace "$NAMESPACE" \
       --set image.tag="$DEPLOYMENT_RELEASE_TAG"
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_REF_NAME == "main" && $DEPLOYMENT_RELEASE_TAG && $DEPLOYMENT_RELEASE_TAG =~ $TAG_REGEX && $STAGE == $DEPLOY_STAGE'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $DEPLOYMENT_RELEASE_TAG && $DEPLOYMENT_RELEASE_TAG =~ $TAG_REGEX && $STAGE == $DEPLOY_STAGE'
       when: manual
 
 # Commons library build stage
