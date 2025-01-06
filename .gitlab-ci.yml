@@ -13,8 +13,13 @@ variables:
   KEY_HANDLER_DOCKER_FILE: 'docker/key-handler/Dockerfile'
   TARGET_PLATFORM: 'linux/amd64'
   TAG_REGEX: '/^\d+\.\d+\.\d+$/'
-  STAGE: "BUILD_TEST_CONTAINERIZE"
-  DEPLOY_STAGE: "DEPLOY"
+  STAGE:
+    description: 'Pipeline stage. For deployment stage set this value to DEPLOY'
+    value: 'BUILD_TEST_CONTAINERIZE'
+  DEPLOY_STAGE: 'DEPLOY'
+  NAMESPACE:
+    description: 'Specify deployment namespace, intervene-dev is default'
+    value: 'intervene-dev'
 
 # Cache path
 cache:
@@ -88,7 +93,6 @@ stages:
     K8S_CLUSTER_AGENT: gdp/ga4k:gcp-k8s-agent
     ENV_FILE: 'gcp-dev-env'
     GCP_PROJECT_ID: '968549395092'
-    DEFAULT_NAMESPACE: 'intervene-dev'
   id_tokens:
     GCP_ID_TOKEN:
       # Keep same names/location in diff. envs.
@@ -121,7 +125,7 @@ stages:
   script:
     - kubectl config get-contexts
     - kubectl config use-context $K8S_CLUSTER_AGENT
-    - kubectl -n $DEFAULT_NAMESPACE get pods
+    - kubectl -n $NAMESPACE get pods
     - mv $BASIC_AUTH_SEC_PASSWD_SECRET "$BASIC_AUTH_SEC_PASSWD_SECRET".yaml
     - mv $DATABASE_SECRET "$DATABASE_SECRET".yaml
     - mv $EGA_AAI_SECRET "$EGA_AAI_SECRET".yaml
@@ -129,14 +133,14 @@ stages:
     - mv $GLOBUS_AUTH_SECRET "$GLOBUS_AUTH_SECRET".yaml
     - mv $S3_SECRET "$S3_SECRET".yaml
     - SECRET_FILES_PATH=$(dirname "$BASIC_AUTH_SEC_PASSWD_SECRET")
-    - kubectl -n $DEFAULT_NAMESPACE apply -f "$SECRET_FILES_PATH"/
+    - kubectl -n $NAMESPACE apply -f "$SECRET_FILES_PATH"/
     - |
       helm upgrade --install "${MODULE}" "./${MODULE}/deployments" -f "./${MODULE}/deployments/values-${ENV_FILE}.yaml" \
-      --namespace "$DEFAULT_NAMESPACE" \
+      --namespace "$NAMESPACE" \
       --set image.tag="$CI_COMMIT_TAG"
   rules:
     - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE == $DEPLOY_STAGE'
-      when: always
+      when: manual
 
 # Commons library build stage
 build-intervene-commons-module:
@@ -202,6 +206,13 @@ containerize-pipeline-manager-module:
   extends:
     - .containerize-module
 
+# Pipeline manager deploy stage
+deploy-pipeline-manager-module:
+  variables:
+    MODULE: $PIPELINE_MANAGER_MODULE
+  extends:
+    - .deploy-module
+
 # User manager build stage
 build-user-manager-module:
   variables:
@@ -227,6 +238,13 @@ containerize-user-manager-module:
   extends:
     - .containerize-module
 
+# User manager deploy stage
+deploy-user-manager-module:
+  variables:
+    MODULE: $USER_MANAGER_MODULE
+  extends:
+    - .deploy-module
+
 # Key handler build stage
 build-key-handler-module:
   variables:
@@ -251,3 +269,10 @@ containerize-key-handler-module:
     DOCKER_FILE: $KEY_HANDLER_DOCKER_FILE
   extends:
     - .containerize-module
+
+# Key handler deploy stage
+deploy-key-handler-module:
+  variables:
+    MODULE: $KEY_HANDLER_MODULE
+  extends:
+    - .deploy-module
