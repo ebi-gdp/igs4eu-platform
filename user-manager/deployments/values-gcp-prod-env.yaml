@@ -2,11 +2,11 @@
 serviceName: user-manager
 
 # Namespace
-namespace: intervene-dev
+namespace: intervene-prod
 
 # Environment-specific variables
 env:
-  profile: "gcp-dev-env"
+  profile: "gcp-prod-env"
 
 # Replica count for development
 replicaCount: 1
@@ -16,7 +16,7 @@ image:
   repository: dockerhub.ebi.ac.uk/gdp/igs4eu-platform
   tagPrefix: user-manager
   tag: 0.0.1
-  tagPostfix: dev
+  tagPostfix: prod
   pullPolicy: Always
 
 # Service account
@@ -24,12 +24,12 @@ serviceAccount: gcp-service-api
 
 # Application properties file
 properties:
-  fileName: "application-gcp-dev-env.properties"
+  fileName: "application-gcp-prod-env.properties"
 
 # Kubernetes resource limits for development
 resources:
   limits:
-    cpu: "0.5"
+    cpu: "1"
     memory: "500Mi"
   requests:
     cpu: "0.5"
@@ -41,9 +41,9 @@ java:
 
 # GCP project details
 gcp:
-  projectName: "prj-ext-dev-intervene-413412"
+  projectName: "prj-ext-prod-intervene-437413"
   zone: "europe-west2"
-  dbName: "intervene"
+  dbName: "intervene-prod"
 
 # GCP cloud sql proxy resource
 cloudSql:
@@ -52,6 +52,6 @@ cloudSql:
       cpu: "0.5"
       memory: "500Mi"
     requests:
-      cpu: "0.5"
+      cpu: "0.2"
       memory: "300Mi"
 

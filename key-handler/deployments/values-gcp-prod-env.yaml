@@ -1,0 +1,41 @@
+# Service name
+serviceName: key-handler
+
+# Namespace
+namespace: intervene-prod
+
+# Environment-specific variables
+env:
+  profile: "gcp-prod-env"
+
+# Replica count for development
+replicaCount: 1
+
+# Image details
+image:
+  repository: dockerhub.ebi.ac.uk/gdp/igs4eu-platform
+  tagPrefix: key-handler
+  tag: 0.0.1
+  tagPostfix: prod
+  pullPolicy: Always
+
+# Service account
+serviceAccount: gcp-service-api
+
+# Application properties file
+properties:
+  fileName: "application-gcp-prod-env.properties"
+
+# Kubernetes resource limits for development
+resources:
+  limits:
+    cpu: "1"
+    memory: "512Mi"
+  requests:
+    cpu: "0.2"
+    memory: "256Mi"
+
+# Java jvm memory size
+java:
+  maxSize: -Xmx384m
+

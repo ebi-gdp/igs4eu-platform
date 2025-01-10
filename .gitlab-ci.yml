@@ -13,14 +13,20 @@ variables:
   KEY_HANDLER_DOCKER_FILE: 'docker/key-handler/Dockerfile'
   TARGET_PLATFORM: 'linux/amd64'
   TAG_REGEX: '/^\d+\.\d+\.\d+$/'
+  BUILD_TEST_STAGE: 'BUILD_TEST'
+  CONTAINERIZE_STAGE: 'CONTAINERIZE'
+  RETAG_STAGE: 'RETAG'
   DEPLOY_STAGE: 'DEPLOY'
+  DEPLOY_SECRET:
+    description: "Flag to decide whether secret(s) have been changed & needs deployment. Default is false, set to true if there is a change."
+    value: "false"
   STAGE:
-    description: 'Pipeline stage. For deployment stage set this value to DEPLOY'
-    value: 'BUILD_TEST_CONTAINERIZE'
+    description: 'Pipeline stages, BUILD_TEST, CONTAINERIZE, RETAG & DEPLOY. Select appropriately!'
+    value: 'BUILD_TEST'
   PLATFORM_ENV:
     description: 'Platform environment, dev is default. For production use prod'
     value: 'dev'
-  GCP_PROJECT_ID:
+  GCP_PROJECT_NUMBER:
     description: 'GCP project id, provide appropriate project id, default is set to dev instance'
     value: '968549395092'
 
@@ -35,6 +41,7 @@ stages:
   - build
   - test
   - containerize
+  - retag
   - deploy
 
 # Generic build stage
@@ -49,7 +56,7 @@ stages:
       - '*/target'
     expire_in: 30 min
   rules:
-    - if: '$STAGE != $DEPLOY_STAGE'  # Skip if STAGE is set to "DEPLOY"
+    - if: '$STAGE == $BUILD_TEST_STAGE || $STAGE == $CONTAINERIZE_STAGE'
       changes:
         - '$MODULE/**/*'
         - pom.xml
@@ -64,7 +71,7 @@ stages:
     - 'echo Testing $MODULE'
     - 'mvn $MAVEN_CLI_OPTS -pl $MODULE -am surefire:test'
   rules:
-    - if: '$STAGE != $DEPLOY_STAGE'  # Skip if STAGE is set to "DEPLOY"
+    - if: '$STAGE == $BUILD_TEST_STAGE || $STAGE == $CONTAINERIZE_STAGE'
       changes:
         - '$MODULE/**/*'
         - pom.xml
@@ -85,8 +92,23 @@ stages:
       --build-arg "TARGET_PLATFORM=${TARGET_PLATFORM}"
       --destination "${CI_REGISTRY_IMAGE}:${MODULE}-${CI_COMMIT_TAG}-dev"
   rules:
-    - if: '$CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE != $DEPLOY_STAGE'
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE == $CONTAINERIZE_STAGE'
       when: always
+
+# Generic re-tag stage
+.retag-module:
+  stage: retag
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: [""]
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - crane auth login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - crane cp "$CI_REGISTRY_IMAGE:$MODULE-$CI_COMMIT_TAG-dev" "$CI_REGISTRY_IMAGE:$MODULE-$CI_COMMIT_TAG-prod"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ $TAG_REGEX && $STAGE == $RETAG_STAGE'
+      when: manual
 
 # Generic deploy stage
 .deploy-module:
@@ -99,7 +121,7 @@ stages:
   id_tokens:
     GCP_ID_TOKEN:
       # Keep same names/location in diff. envs.
-      aud: https://iam.googleapis.com/projects/${GCP_PROJECT_ID}/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider
+      aud: https://iam.googleapis.com/projects/${GCP_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${GCP_WORKLOAD_IDENTITY_FEDERATION_POOL_ID}/providers/${GCP_WORKLOAD_IDENTITY_FEDERATION_PROVIDER_ID}
   secrets:
     BASIC_AUTH_SEC_PASSWD_SECRET:
       gcp_secret_manager:
@@ -133,17 +155,25 @@ stages:
         export K8S_CLUSTER_AGENT="gdp/ga4k:gcp-prod-k8s-agent"
       fi
   script:
+    - 'echo Deploying to project: $GCP_PROJECT_NUMBER'
     - kubectl config get-contexts
     - kubectl config use-context $K8S_CLUSTER_AGENT
     - kubectl -n $NAMESPACE get pods
-    - mv $BASIC_AUTH_SEC_PASSWD_SECRET "$BASIC_AUTH_SEC_PASSWD_SECRET".yaml
-    - mv $DATABASE_SECRET "$DATABASE_SECRET".yaml
-    - mv $EGA_AAI_SECRET "$EGA_AAI_SECRET".yaml
-    - mv $EMAIL_SECRET "$EMAIL_SECRET".yaml
-    - mv $GLOBUS_AUTH_SECRET "$GLOBUS_AUTH_SECRET".yaml
-    - mv $S3_SECRET "$S3_SECRET".yaml
-    - SECRET_FILES_PATH=$(dirname "$BASIC_AUTH_SEC_PASSWD_SECRET")
-    - kubectl -n $NAMESPACE apply -f "$SECRET_FILES_PATH"/
+    - 'echo DEPLOY_SECRET value is set to $DEPLOY_SECRET'
+    - if [[ "$DEPLOY_SECRET" == "true" ]]; then
+        mv $BASIC_AUTH_SEC_PASSWD_SECRET "$BASIC_AUTH_SEC_PASSWD_SECRET".yaml;
+        mv $DATABASE_SECRET "$DATABASE_SECRET".yaml;
+        mv $EGA_AAI_SECRET "$EGA_AAI_SECRET".yaml;
+        mv $EMAIL_SECRET "$EMAIL_SECRET".yaml;
+        mv $GLOBUS_AUTH_SECRET "$GLOBUS_AUTH_SECRET".yaml;
+        mv $S3_SECRET "$S3_SECRET".yaml;
+        SECRET_FILES_PATH=$(dirname "$BASIC_AUTH_SEC_PASSWD_SECRET");
+        kubectl -n $NAMESPACE apply -f "$SECRET_FILES_PATH"/;
+      else
+        echo "Skipping secret deployment.";
+      fi
+    - 'echo NAMESPACE set to $NAMESPACE'
+    - 'echo ENV_FILE set to $ENV_FILE'
     - |
       helm upgrade --install "${MODULE}" "./${MODULE}/deployments" -f "./${MODULE}/deployments/values-${ENV_FILE}.yaml" \
       --namespace "$NAMESPACE" \
@@ -184,6 +214,13 @@ containerize-file-handler-module:
   extends:
     - .containerize-module
 
+# File handler retag stage
+retag-file-handler-module:
+  variables:
+    MODULE: $FILE_HANDLER_MODULE
+  extends:
+    - .retag-module
+
 # File handler deploy stage
 deploy-file-handler-module:
   variables:
@@ -215,6 +252,13 @@ containerize-pipeline-manager-module:
     DOCKER_FILE: $GENERIC_DOCKER_FILE
   extends:
     - .containerize-module
+
+# Pipeline manager retag stage
+retag-pipeline-manager-module:
+  variables:
+    MODULE: $PIPELINE_MANAGER_MODULE
+  extends:
+    - .retag-module
 
 # Pipeline manager deploy stage
 deploy-pipeline-manager-module:
@@ -248,6 +292,13 @@ containerize-user-manager-module:
   extends:
     - .containerize-module
 
+# User manager retag stage
+retag-user-manager-module:
+  variables:
+    MODULE: $USER_MANAGER_MODULE
+  extends:
+    - .retag-module
+
 # User manager deploy stage
 deploy-user-manager-module:
   variables:
@@ -279,6 +330,13 @@ containerize-key-handler-module:
     DOCKER_FILE: $KEY_HANDLER_DOCKER_FILE
   extends:
     - .containerize-module
+
+# Key handler retag stage
+retag-key-handler-module:
+  variables:
+    MODULE: $KEY_HANDLER_MODULE
+  extends:
+    - .retag-module
 
 # Key handler deploy stage
 deploy-key-handler-module:

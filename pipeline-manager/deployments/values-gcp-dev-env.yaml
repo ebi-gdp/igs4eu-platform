@@ -29,10 +29,10 @@ properties:
 # Kubernetes resource limits for development
 resources:
   limits:
-    cpu: "1000m"
+    cpu: "1"
     memory: "1000Mi"
   requests:
-    cpu: "200m"
+    cpu: "0.2"
     memory: "500Mi"
 
 # Java jvm memory size
@@ -49,9 +49,9 @@ gcp:
 cloudSql:
   resources:
     limits:
-      cpu: "500m"
+      cpu: "0.5"
       memory: "500Mi"
     requests:
-      cpu: "500m"
+      cpu: "0.5"
       memory: "300Mi"
 
