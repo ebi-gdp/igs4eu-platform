@@ -56,7 +56,9 @@ public interface DatasetQueries {
                                                " globus_guest_collection_files_details f" +
                                                " ON d.fileset_id = f.fileset_id " +
                                                "WHERE" +
-                                               " d.dataset_id = :datasetId";
+                                               " d.dataset_id = :datasetId " +
+                                               "AND" +
+                                               " d.created_by = :createdBy ";
 
     String FIND_EXPIRED_DATASETS = "SELECT " +
                                    " d.dataset_id," +

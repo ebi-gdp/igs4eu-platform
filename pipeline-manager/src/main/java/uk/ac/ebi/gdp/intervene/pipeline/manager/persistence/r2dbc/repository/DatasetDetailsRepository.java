@@ -26,6 +26,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.DatasetDetails;
 
+import java.time.LocalDateTime;
+
 @Repository
 public interface DatasetDetailsRepository extends R2dbcRepository<DatasetDetails, String>,
         ReactiveSortingRepository<DatasetDetails, String>,
@@ -36,5 +38,21 @@ public interface DatasetDetailsRepository extends R2dbcRepository<DatasetDetails
     Flux<DatasetDetails> findAllByCreatedBy(String createdBy, Pageable pageable);
 
     Mono<Long> countAllByCreatedBy(String userId);
+
+    Mono<DatasetDetails> findByDatasetIdAndCreatedByAndExpiresAtAfter(String datasetId, String createdBy, LocalDateTime expiresAt);
+
+    /**
+     * Default method to retrieve active dataset,
+     * calls {@link #findByDatasetIdAndCreatedByAndExpiresAtAfter(String, String, LocalDateTime)} method internally
+     *
+     * @param datasetId dataset id
+     * @param createdBy user id
+     *
+     * @return dataset details
+     */
+    default Mono<DatasetDetails> findActiveDataset(final String datasetId,
+                                                   final String createdBy) {
+        return findByDatasetIdAndCreatedByAndExpiresAtAfter(datasetId, createdBy, LocalDateTime.now());
+    }
 }
 

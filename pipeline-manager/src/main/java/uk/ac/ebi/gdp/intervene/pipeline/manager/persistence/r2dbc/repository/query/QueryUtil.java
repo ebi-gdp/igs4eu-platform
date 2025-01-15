@@ -45,4 +45,9 @@ public interface QueryUtil {
         return row.get(fieldName) != null ?
                 row.get(fieldName, LocalDateTime.class) : parse("0000-01-01T00:00:00");
     }
+
+    static Byte getByte(final String fieldName,
+                        final Row row) {
+        return row.get(fieldName) != null ? row.get(fieldName, Integer.class).byteValue() : (byte) 0;
+    }
 }

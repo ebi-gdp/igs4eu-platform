@@ -22,12 +22,14 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Pipelin
 
 import java.util.function.BiFunction;
 
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.FILE_DOWNLOAD_PATH;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.PIPELINE_ID;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getString;
 
 public interface PipelineResultEntityMapper {
     static BiFunction<Row, Object, PipelineResult> map() {
         return (row, object) -> PipelineResult.create(
-                getString("pipeline_id", row),
-                getString("file_download_path", row));
+                getString(PIPELINE_ID, row),
+                getString(FILE_DOWNLOAD_PATH, row));
     }
 }

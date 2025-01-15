@@ -42,7 +42,7 @@ public class PipelineExecutionStatus implements Persistable<String> {
     private String pipelineId;
     private PipelineStatus status;
     private String traceName;
-    private byte traceExit;
+    private Byte traceExit;
     private LocalDateTime submittedOn;
     private LocalDateTime startedOn;
     private LocalDateTime endedOn;
@@ -74,7 +74,7 @@ public class PipelineExecutionStatus implements Persistable<String> {
     private PipelineExecutionStatus(final String pipelineId,
                                     final PipelineStatus pipelineStatus,
                                     final String traceName,
-                                    final byte traceExit,
+                                    final Byte traceExit,
                                     final LocalDateTime submittedOn,
                                     final LocalDateTime startedOn,
                                     final LocalDateTime endedOn,
@@ -98,7 +98,7 @@ public class PipelineExecutionStatus implements Persistable<String> {
     private PipelineExecutionStatus(final String pipelineId,
                                     final PipelineStatus pipelineStatus,
                                     final String traceName,
-                                    final byte traceExit,
+                                    final Byte traceExit,
                                     final LocalDateTime submittedOn,
                                     final LocalDateTime startedOn,
                                     final LocalDateTime endedOn,
@@ -143,7 +143,7 @@ public class PipelineExecutionStatus implements Persistable<String> {
     public static PipelineExecutionStatus load(final String pipelineId,
                                                final PipelineStatus pipelineStatus,
                                                final String traceName,
-                                               final byte traceExit,
+                                               final Byte traceExit,
                                                final LocalDateTime submittedOn,
                                                final LocalDateTime startedOn,
                                                final LocalDateTime endedOn,
@@ -176,7 +176,7 @@ public class PipelineExecutionStatus implements Persistable<String> {
     public static PipelineExecutionStatus load(final String pipelineId,
                                                final PipelineStatus pipelineStatus,
                                                final String traceName,
-                                               final byte traceExit,
+                                               final Byte traceExit,
                                                final LocalDateTime submittedOn,
                                                final LocalDateTime startedOn,
                                                final LocalDateTime endedOn,
@@ -208,7 +208,7 @@ public class PipelineExecutionStatus implements Persistable<String> {
         return traceName;
     }
 
-    public byte getTraceExit() {
+    public Byte getTraceExit() {
         return traceExit;
     }
 

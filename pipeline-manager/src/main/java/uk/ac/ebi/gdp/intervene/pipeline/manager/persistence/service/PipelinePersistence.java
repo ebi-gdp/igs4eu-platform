@@ -26,7 +26,6 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Dataset
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineExecutionStatusRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineResultRepository;
@@ -36,7 +35,6 @@ import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails.create;
-import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus.PENDING;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus.getPipelineStatusByDescription;
 
 /**
@@ -83,36 +81,16 @@ public class PipelinePersistence implements IPipelinePersistence {
     @Transactional
     @Override
     public Mono<PipelineExecutionStatus> updatePipelineStatus(final String pipelineId,
-                                                              final PipelineStatus pipelineStatus) {
-        return getPipelineExecutionStatus(pipelineId)
-                .flatMap(pipelineExecutionStatus -> doUpdatePipelineStatus(pipelineStatus, pipelineExecutionStatus)
-                        .then(pipelineExecutionStatusRepository.save(pipelineExecutionStatus)));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Transactional
-    @Override
-    public Mono<PipelineExecutionStatus> updatePipelineStatus(final String pipelineId,
                                                               final PipelineStatusDTO pipelineStatusDTO) {
         return getPipelineExecutionStatus(pipelineId)
                 .flatMap(pipelineExecutionStatus -> doUpdatePipelineStatus(pipelineStatusDTO, pipelineExecutionStatus)
-                        .then(pipelineExecutionStatusRepository.save(pipelineExecutionStatus)))
-                .switchIfEmpty(error(resourceNotFound("Pipeline Id %s not found!".formatted(pipelineId))));
-    }
-
-    private Mono<Void> doUpdatePipelineStatus(final PipelineStatus pipelineStatus,
-                                              final PipelineExecutionStatus pipelineExecutionStatus) {
-        if (pipelineStatus == PENDING) {
-            pipelineExecutionStatus.pending();
-        }
-        return empty();
+                        .then(pipelineExecutionStatusRepository.save(pipelineExecutionStatus)));
     }
 
     private Mono<Void> doUpdatePipelineStatus(final PipelineStatusDTO pipelineStatusDTO,
                                               final PipelineExecutionStatus pipelineExecutionStatus) {
         switch (getPipelineStatusByDescription(pipelineStatusDTO.getStatus())) {
+            case PENDING -> pipelineExecutionStatus.pending();
             case STARTED -> pipelineExecutionStatus.started(pipelineStatusDTO.getUtcTime());
             case COMPLETED -> pipelineExecutionStatus.completed(pipelineStatusDTO.getUtcTime());
             case ERROR -> pipelineExecutionStatus.error(
@@ -220,7 +198,9 @@ public class PipelinePersistence implements IPipelinePersistence {
      */
     @Override
     public Mono<PipelineExecutionStatus> getPipelineExecutionStatus(final String pipelineId) {
-        return pipelineExecutionStatusRepository.findPipelineExecutionStatus(pipelineId);
+        return pipelineExecutionStatusRepository
+                .findPipelineExecutionStatus(pipelineId)
+                .switchIfEmpty(error(resourceNotFound("Pipeline Id %s not found!".formatted(pipelineId))));
     }
 
     /**

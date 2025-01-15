@@ -115,7 +115,7 @@ public class PipelineDetailsDTO {
 
     private String getMeaningfulStatus(final PipelineStatus pipelineStatus) {
         return switch (pipelineStatus) {
-            case NEW -> "Submission error";
+            case NEW -> "Created";
             case PENDING -> "Submitted";
             case STARTED -> "Running";
             case COMPLETED -> "Completed";

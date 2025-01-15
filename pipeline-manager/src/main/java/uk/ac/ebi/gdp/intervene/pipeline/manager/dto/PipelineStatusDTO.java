@@ -35,9 +35,17 @@ public class PipelineStatusDTO {
     private String traceName;
 
     @JsonProperty("trace_exit")
-    private byte traceExit;
+    private Byte traceExit;
 
     private PipelineStatusDTO() {
+    }
+
+    private PipelineStatusDTO(final Builder builder) {
+        this.runName = builder.runName;
+        this.status = builder.status;
+        this.utcTime = builder.utcTime;
+        this.traceName = builder.traceName;
+        this.traceExit = builder.traceExit;
     }
 
     public String getRunName() {
@@ -56,7 +64,41 @@ public class PipelineStatusDTO {
         return traceName;
     }
 
-    public byte getTraceExit() {
+    public Byte getTraceExit() {
         return traceExit;
     }
+
+    public static class Builder {
+        private final String runName;
+        private final String status;
+        private final LocalDateTime utcTime;
+        private String traceName;
+        private Byte traceExit;
+
+        public Builder(final String runName,
+                       final String status,
+                       final LocalDateTime utcTime) {
+            if (runName == null || status == null || utcTime == null) {
+                throw new IllegalArgumentException("runName, status, and utcTime are required fields and cannot be null.");
+            }
+            this.runName = runName;
+            this.status = status;
+            this.utcTime = utcTime;
+        }
+
+        public Builder traceName(final String traceName) {
+            this.traceName = traceName;
+            return this;
+        }
+
+        public Builder traceExit(final Byte traceExit) {
+            this.traceExit = traceExit;
+            return this;
+        }
+
+        public PipelineStatusDTO build() {
+            return new PipelineStatusDTO(this);
+        }
+    }
 }
+
