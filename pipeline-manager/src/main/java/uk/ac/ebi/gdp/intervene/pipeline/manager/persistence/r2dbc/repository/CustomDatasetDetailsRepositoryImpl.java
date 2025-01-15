@@ -47,6 +47,7 @@ public class CustomDatasetDetailsRepositoryImpl implements CustomDatasetDetailsR
         return databaseClient
                 .sql(FIND_BY_DATASET_ID_AND_CREATED_BY)
                 .bind("datasetId", datasetId)
+                .bind("createdBy", createdBy)
                 .map(fullMap()::apply)
                 .one();
     }

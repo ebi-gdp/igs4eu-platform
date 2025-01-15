@@ -77,6 +77,7 @@ public class PipelineResultHandler {
                         .flatMap(datasetDetails -> cloudFileHandlerService
                                 .listFiles(bucketNameFormat.formatted(pipelineResult.getPipelineId()),
                                         bucketFilePrefix.formatted(datasetDetails.getDatasetName()))
+
                                 .flatMap(files -> ok().bodyValue(new S3ObjectDTO(pipelineResult.getPipelineId(), files)))
                                 .doOnNext(serverResponse -> LOGGER.info("Result file(s) have been successfully retrieved from S3 object storage"))))
                 .switchIfEmpty(status(NOT_FOUND)

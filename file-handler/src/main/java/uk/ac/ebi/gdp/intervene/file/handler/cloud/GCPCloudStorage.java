@@ -17,18 +17,22 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.cloud;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageException;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.InputStreamSource;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.commons.exception.ClientException;
 
 import java.nio.channels.Channels;
 import java.util.stream.Stream;
+
+import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
+import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
 
 /**
  * Google Cloud Storage implementation.
@@ -53,13 +57,20 @@ public class GCPCloudStorage implements ICloudStorage {
     @Override
     public Mono<Stream<String>> listFiles(final String bucketName,
                                           final String pathPrefix) {
-        final Page<Blob> blobs = storage
-                .list(bucketName.toLowerCase(), Storage.BlobListOption.prefix(pathPrefix));
-        return Mono.just(blobs
-                .streamValues()
-                .map(BlobInfo::getName)
-                .filter(ICloudStorage::isValidFileForDownload)
-                .parallel());
+        try {
+            final Page<Blob> blobs = storage
+                    .list(bucketName.toLowerCase(), Storage.BlobListOption.prefix(pathPrefix));
+            return Mono.just(blobs
+                    .streamValues()
+                    .map(BlobInfo::getName)
+                    .filter(ICloudStorage::isValidFileForDownload)
+                    .parallel());
+        } catch (StorageException se) {
+            if (se.getCause() instanceof GoogleJsonResponseException) {
+                return Mono.error(resourceNotFound("File(s) not found! bucketName: %s, pathPrefix: %s".formatted(bucketName, pathPrefix)));
+            }
+            return Mono.error(se);
+        }
     }
 
     /**
@@ -71,7 +82,7 @@ public class GCPCloudStorage implements ICloudStorage {
                                                         final String path) {
         final Blob blob = storage.get(BlobId.of(bucketName.toLowerCase(), path));
         if (blob == null) {
-            return Mono.error(ClientException.badRequest("Path not found on Bucket! bucketName: %s, path: %s".formatted(bucketName, path)));
+            return Mono.error(badRequest("Path not found on Bucket! bucketName: %s, path: %s".formatted(bucketName, path)));
         } else {
             return Mono.just(new InputStreamResource(Channels
                     .newInputStream(blob.reader())));

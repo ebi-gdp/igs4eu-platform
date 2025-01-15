@@ -142,7 +142,7 @@ public class PipelineStatusHandler {
     private Mono<IEmailSender.EmailData> buildErrorEmailData(final String pipelineId,
                                                              final String userId,
                                                              final String traceName,
-                                                             final byte traceExit) {
+                                                             final Byte traceExit) {
         return userManagerService
                 .getUserAccountDetails(userId)
                 .map(userAccountDTO -> new IEmailSender.EmailData(
@@ -156,7 +156,7 @@ public class PipelineStatusHandler {
     }
 
     private String errorMessage(final String traceName,
-                                final byte traceExit) {
+                                final Byte traceExit) {
         return "<html>" +
                 "<head>" +
                 "<style>" +

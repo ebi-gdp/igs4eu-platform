@@ -28,6 +28,29 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.GlobusD
 import java.nio.file.Path;
 import java.util.function.BiFunction;
 
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.CREATED_BY;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.CREATED_ON;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.C_IS_DELETED;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.DATASET_ID;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.DATASET_NAME;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.DIR_PATH_ON_GUEST_COLLECTION;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.EXPIRES_AT;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.FILESET_ID;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.FILESET_TYPE;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.GC_CREATED_BY;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.GC_CREATED_ON;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.GC_UPDATED_BY;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.GC_UPDATED_ON;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.GENOME_BUILD;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.GLOBUS_USERNAME;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.GUEST_COLLECTION_ID;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.IS_DELETED;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.PUBLIC_KEY;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.SECRET_ID;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.SECRET_ID_VERSION;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.STATUS;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.UPDATED_BY;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.mapper.FieldNames.UPDATED_ON;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getBoolean;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getLocalDateTime;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.query.QueryUtil.getString;
@@ -36,65 +59,65 @@ public interface DatasetDetailsEntityMapper {
     static BiFunction<Row, Object, DatasetDetails> fullMap() {
         return (row, object) -> {
             final DatasetCryptographyDetails datasetCryptographyDetails = DatasetCryptographyDetails.load(
-                    getString("dataset_id", row),
-                    getString("public_key", row),
-                    getString("secret_id", row),
-                    getString("secret_id_version", row),
-                    getBoolean("c_is_deleted", row),
-                    getString("created_by", row),
-                    getLocalDateTime("created_on", row),
-                    getString("updated_by", row),
-                    getLocalDateTime("updated_on", row));
+                    getString(DATASET_ID, row),
+                    getString(PUBLIC_KEY, row),
+                    getString(SECRET_ID, row),
+                    getString(SECRET_ID_VERSION, row),
+                    getBoolean(C_IS_DELETED, row),
+                    getString(CREATED_BY, row),
+                    getLocalDateTime(CREATED_ON, row),
+                    getString(UPDATED_BY, row),
+                    getLocalDateTime(UPDATED_ON, row));
             final GlobusDetails globusDetails = GlobusDetails.load(
-                    getString("fileset_id", row),
-                    getString("globus_username", row),
-                    getString("guest_collection_id", row),
-                    Path.of(getString("dir_path_on_guest_collection", row)),
-                    DatasetStatusType.valueOf(getString("status", row)),
-                    getString("created_by", row),
-                    getLocalDateTime("created_on", row),
-                    getString("updated_by", row),
-                    getLocalDateTime("updated_on", row));
+                    getString(FILESET_ID, row),
+                    getString(GLOBUS_USERNAME, row),
+                    getString(GUEST_COLLECTION_ID, row),
+                    Path.of(getString(DIR_PATH_ON_GUEST_COLLECTION, row)),
+                    DatasetStatusType.valueOf(getString(STATUS, row)),
+                    getString(CREATED_BY, row),
+                    getLocalDateTime(CREATED_ON, row),
+                    getString(UPDATED_BY, row),
+                    getLocalDateTime(UPDATED_ON, row));
             return DatasetDetails.load(
-                    getString("dataset_id", row),
-                    getString("dataset_name", row),
-                    GenomeBuild.valueOf(getString("genome_build", row)),
-                    FilesetType.valueOf(getString("fileset_type", row)),
-                    getLocalDateTime("expires_at", row),
-                    getBoolean("is_deleted", row),
+                    getString(DATASET_ID, row),
+                    getString(DATASET_NAME, row),
+                    GenomeBuild.valueOf(getString(GENOME_BUILD, row)),
+                    FilesetType.valueOf(getString(FILESET_TYPE, row)),
+                    getLocalDateTime(EXPIRES_AT, row),
+                    getBoolean(IS_DELETED, row),
                     datasetCryptographyDetails,
                     globusDetails,
-                    getString("gc_created_by", row),
-                    getLocalDateTime("gc_created_on", row),
-                    getString("gc_updated_by", row),
-                    getLocalDateTime("gc_updated_on", row));
+                    getString(GC_CREATED_BY, row),
+                    getLocalDateTime(GC_CREATED_ON, row),
+                    getString(GC_UPDATED_BY, row),
+                    getLocalDateTime(GC_UPDATED_ON, row));
         };
     }
 
     static BiFunction<Row, Object, DatasetDetails> expiredDatasetMap() {
         return (row, object) -> {
             final GlobusDetails globusDetails = GlobusDetails.load(
-                    getString("fileset_id", row),
-                    getString("globus_username", row),
-                    getString("guest_collection_id", row),
-                    Path.of(getString("dir_path_on_guest_collection", row)),
-                    DatasetStatusType.valueOf(getString("status", row)),
-                    getString("created_by", row),
-                    getLocalDateTime("created_on", row),
-                    getString("updated_by", row),
-                    getLocalDateTime("updated_on", row));
+                    getString(FILESET_ID, row),
+                    getString(GLOBUS_USERNAME, row),
+                    getString(GUEST_COLLECTION_ID, row),
+                    Path.of(getString(DIR_PATH_ON_GUEST_COLLECTION, row)),
+                    DatasetStatusType.valueOf(getString(STATUS, row)),
+                    getString(CREATED_BY, row),
+                    getLocalDateTime(CREATED_ON, row),
+                    getString(UPDATED_BY, row),
+                    getLocalDateTime(UPDATED_ON, row));
             return DatasetDetails.load(
-                    getString("dataset_id", row),
-                    getString("dataset_name", row),
-                    GenomeBuild.valueOf(getString("genome_build", row)),
-                    FilesetType.valueOf(getString("fileset_type", row)),
-                    getLocalDateTime("expires_at", row),
-                    getBoolean("is_deleted", row),
+                    getString(DATASET_ID, row),
+                    getString(DATASET_NAME, row),
+                    GenomeBuild.valueOf(getString(GENOME_BUILD, row)),
+                    FilesetType.valueOf(getString(FILESET_TYPE, row)),
+                    getLocalDateTime(EXPIRES_AT, row),
+                    getBoolean(IS_DELETED, row),
                     globusDetails,
-                    getString("gc_created_by", row),
-                    getLocalDateTime("gc_created_on", row),
-                    getString("gc_updated_by", row),
-                    getLocalDateTime("gc_updated_on", row));
+                    getString(GC_CREATED_BY, row),
+                    getLocalDateTime(GC_CREATED_ON, row),
+                    getString(GC_UPDATED_BY, row),
+                    getLocalDateTime(GC_UPDATED_ON, row));
         };
     }
 }

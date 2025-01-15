@@ -20,7 +20,6 @@ package uk.ac.ebi.gdp.intervene.file.handler.config.router.cloud;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
-import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirResDTO;
 import uk.ac.ebi.gdp.intervene.file.handler.cloud.ICloudStorage;
 
 import static java.util.stream.Collectors.toSet;

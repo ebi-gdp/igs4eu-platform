@@ -35,6 +35,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.ScoreIdsDTOValida
 import uk.ac.ebi.gdp.intervene.pipeline.manager.mapper.PipelineDetailsMapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.DatasetDetailsRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
@@ -47,6 +48,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.http.HttpStatus.ACCEPTED;
+import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.web.reactive.function.server.ServerResponse.badRequest;
@@ -65,6 +67,7 @@ public class PipelineRequestHandler {
     private final PipelineManagerService pipelineManagerService;
     private final IPipelinePersistence pipelinePersistence;
     private final PipelineDetailsMapper pipelineDetailsMapper;
+    private final DatasetDetailsRepository datasetDetailsRepository;
     private final StringRedisTemplate redisTemplate;
     private final PGSCatalogService pgsCatalogService;
     private final String redisPgsIdsKeyPrefix;
@@ -74,6 +77,7 @@ public class PipelineRequestHandler {
     public PipelineRequestHandler(final PipelineManagerService pipelineManagerService,
                                   final IPipelinePersistence pipelinePersistence,
                                   final PipelineDetailsMapper pipelineDetailsMapper,
+                                  final DatasetDetailsRepository datasetDetailsRepository,
                                   final StringRedisTemplate redisTemplate,
                                   final PGSCatalogService pgsCatalogService,
                                   final String redisPgsIdsKeyPrefix,
@@ -82,6 +86,7 @@ public class PipelineRequestHandler {
         this.pipelineManagerService = pipelineManagerService;
         this.pipelinePersistence = pipelinePersistence;
         this.pipelineDetailsMapper = pipelineDetailsMapper;
+        this.datasetDetailsRepository = datasetDetailsRepository;
         this.redisTemplate = redisTemplate;
         this.pgsCatalogService = pgsCatalogService;
         this.redisPgsIdsKeyPrefix = redisPgsIdsKeyPrefix;
@@ -101,11 +106,15 @@ public class PipelineRequestHandler {
                 .bodyToMono(String.class)
                 .flatMap(datasetId -> userAccount(serverRequest)
                         .doOnNext(userAccountDTO -> LOGGER.info("Creating pipeline instance for Dataset Id: {}", datasetId))
-                        .flatMap(userAccountDTO -> pipelinePersistence
-                                .createPipeline(userAccountDTO.accountId(), datasetId)
-                                .doOnNext(pipelineDetails -> LOGGER.info("Pipeline instance has been created, Pipeline Id: {}", pipelineDetails.getPipelineId()))))
+                        .flatMap(userAccountDTO ->
+                                datasetDetailsRepository
+                                        .findActiveDataset(datasetId, userAccountDTO.accountId())
+                                        .switchIfEmpty(error(resourceNotFound("Dataset Id %s not found!".formatted(datasetId))))
+                                        .flatMap(datasetDetails -> pipelinePersistence
+                                                .createPipeline(userAccountDTO.accountId(), datasetId)
+                                                .doOnNext(pipelineDetails -> LOGGER.info("Pipeline instance has been created, Pipeline Id: {}", pipelineDetails.getPipelineId())))))
                 .map(pipelineDetails -> new PipelineDetailsDTO(pipelineDetails.getPipelineId(), pipelineDetails.getPipelineExecutionStatus().getStatus()))
-                .flatMap(pipelineDetailsDTO -> ok().bodyValue(pipelineDetailsDTO));
+                .flatMap(pipelineDetailsDTO -> status(CREATED).bodyValue(pipelineDetailsDTO));
     }
 
     /**
@@ -227,7 +236,7 @@ public class PipelineRequestHandler {
                                 .triggerGeneticScoringPipelineWithPgsIds(
                                         pipelineDetails,
                                         scoreIds.getScoreIds())
-                                .doOnSuccess(unused -> LOGGER.info("Pipeline execution request has been submitted!")))
+                                .doOnSuccess(unused -> LOGGER.info("Pipeline execution request for PGS Ids has been submitted!")))
                         .thenReturn(pipelineDetails))
                 .flatMap(this::updatePipelineExecutionStatus);
     }
@@ -249,7 +258,7 @@ public class PipelineRequestHandler {
                                 .triggerGeneticScoringPipelineWithTraitIds(
                                         pipelineDetails,
                                         scoreIds.getScoreIds())
-                                .doOnSuccess(unused -> LOGGER.info("Pipeline execution request has been submitted!")))
+                                .doOnSuccess(unused -> LOGGER.info("Pipeline execution request for Trait Ids has been submitted!")))
                         .thenReturn(pipelineDetails))
                 .flatMap(this::updatePipelineExecutionStatus);
     }
@@ -271,7 +280,7 @@ public class PipelineRequestHandler {
                                 .triggerGeneticScoringPipelineWithPublicationIds(
                                         pipelineDetails,
                                         scoreIds.getScoreIds())
-                                .doOnSuccess(unused -> LOGGER.info("Pipeline execution request has been submitted!")))
+                                .doOnSuccess(unused -> LOGGER.info("Pipeline execution request for Publication Ids has been submitted!")))
                         .thenReturn(pipelineDetails))
                 .flatMap(this::updatePipelineExecutionStatus);
     }

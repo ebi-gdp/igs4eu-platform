@@ -25,7 +25,6 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Dataset
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineExecutionStatus;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineResult;
-import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 
 /**
  * Database operations layer.
@@ -40,16 +39,6 @@ public interface IPipelinePersistence {
      * @return pipeline details represented by {@link PipelineDetails}
      */
     Mono<PipelineDetails> createPipeline(String userId, String datasetId);
-
-    /**
-     * Update pipeline status.
-     *
-     * @param pipelineId pipeline id
-     * @param pipelineStatus pipeline status
-     *
-     * @return pipeline execution status represented by {@link PipelineExecutionStatus}
-     */
-    Mono<PipelineExecutionStatus> updatePipelineStatus(String pipelineId, PipelineStatus pipelineStatus);
 
     /**
      * Update pipeline status.
