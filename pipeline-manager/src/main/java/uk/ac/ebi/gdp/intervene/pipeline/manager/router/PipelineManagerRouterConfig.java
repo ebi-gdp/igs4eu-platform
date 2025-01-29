@@ -17,7 +17,13 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.slf4j.Logger;
+import org.springdoc.core.annotations.RouterOperation;
+import org.springdoc.core.annotations.RouterOperations;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,6 +53,8 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
 import static org.slf4j.LoggerFactory.getLogger;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.buildUniqueRequestId;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.config.OAuth2SecurityConfig.DATASET_EXPIRED_DIR;
@@ -57,7 +65,30 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.config.OAuth2SecurityConf
 @Configuration
 public class PipelineManagerRouterConfig {
     private final Logger LOGGER = getLogger(PipelineManagerRouterConfig.class);
+    private static final String PIPELINE_MANAGER = "User Management";
 
+    @RouterOperations({
+            @RouterOperation(path = "/pipeline", produces = {
+                    APPLICATION_JSON_VALUE},
+                    method = POST,
+                    operation = @Operation(operationId = "createPipeline", description = "Creates Pipeline Instance", responses = {
+                            @ApiResponse(responseCode = "200", description = "Successful operation",
+                                    content = @Content(schema = @Schema(implementation = String.class))),
+                            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                            @ApiResponse(responseCode = "403", description = "Forbidden")},
+                            tags = {PIPELINE_MANAGER}
+                    )),
+            @RouterOperation(path = "/pipeline", produces = {
+                    APPLICATION_JSON_VALUE},
+                    method = POST,
+                    operation = @Operation(operationId = "createPipeline", description = "Creates Pipeline Instance", responses = {
+                            @ApiResponse(responseCode = "200", description = "Successful operation",
+                                    content = @Content(schema = @Schema(implementation = String.class))),
+                            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                            @ApiResponse(responseCode = "403", description = "Forbidden")},
+                            tags = {PIPELINE_MANAGER}
+                    ))
+    })
     @Bean
     public RouterFunction<ServerResponse> pipelineRoutes(final PipelineRequestHandler pipelineRequestHandler,
                                                          final GlobusRequestHandler globusRequestHandler,
@@ -68,7 +99,6 @@ public class PipelineManagerRouterConfig {
                 .filter(buildUniqueRequestId(LOGGER))
                 .filter(dpaConsentCheck.hasUserGivenConsent())
                 .path("/pipeline", pb -> pb
-                        .GET("/recent/top", pipelineRequestHandler::getPipelineRecent)
                         .GET("/success/result", pipelineResultHandler::listResultFiles)
                         .POST("/pgs-ids/validate", pipelineRequestHandler::validatePGSIds)
                         .GET("/pgs-ids-catalog-traits", pipelineRequestHandler::searchPGSIdsByTraits)

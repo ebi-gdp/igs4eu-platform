@@ -361,7 +361,7 @@ public class PipelineRequestHandler {
 
         if (searchTerm.isEmpty() || searchPublications(searchTerm).isEmpty()) {
             return status(NOT_FOUND)
-                    .bodyValue("Traits not found!");
+                    .bodyValue("Publications not found!");
         } else {
             return ok()
                     .bodyValue(searchPublications(searchTerm))

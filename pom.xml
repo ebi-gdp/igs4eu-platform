@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.0</version>
-        <relativePath /> <!-- lookup parent from repository -->
+        <version>3.4.0</version>
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
     <groupId>uk.ac.ebi.gdp.intervene</groupId>
@@ -32,10 +33,12 @@
         <skipUnitTests>${skipTests}</skipUnitTests>
         <skipITs>true</skipITs>
         <slf4j-version>2.0.7</slf4j-version>
-        <amazon-sdk>1.12.470</amazon-sdk>
+        <amazon-sdk>1.12.779</amazon-sdk>
         <map-struct-version>1.5.4.Final</map-struct-version>
         <micometer-context-propagation>1.1.0</micometer-context-propagation>
         <open-api-swagger-version>2.1.0</open-api-swagger-version>
+        <springdoc-openapi-ui-version>1.8.0</springdoc-openapi-ui-version>
+        <jacoco-maven-plugin-version>0.8.12</jacoco-maven-plugin-version>
     </properties>
 
     <scm>
@@ -73,6 +76,12 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-s3</artifactId>
                 <version>${amazon-sdk}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.mapstruct</groupId>
@@ -84,7 +93,12 @@
                 <artifactId>context-propagation</artifactId>
                 <version>${micometer-context-propagation}</version>
             </dependency>
-            <!-- Swagger API -->
+            <!-- OpenAPI/Swagger -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-ui</artifactId>
+                <version>${springdoc-openapi-ui-version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
@@ -93,7 +107,7 @@
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>26.38.0</version>
+                <version>26.52.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -106,7 +120,6 @@
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
-                    <version>3.0.6</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -127,7 +140,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.12</version>
+                    <version>${jacoco-maven-plugin-version}</version>
                     <executions>
                         <execution>
                             <id>prepare-agent</id>
@@ -150,7 +163,6 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.0.0-M5</version>
                     <configuration>
                         <argLine>${jacoco.agent.argLine}</argLine>
                     </configuration>

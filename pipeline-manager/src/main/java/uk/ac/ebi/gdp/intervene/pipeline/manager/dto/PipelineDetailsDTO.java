@@ -17,10 +17,12 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus;
 
 import java.time.LocalDateTime;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PipelineDetailsDTO {
     private String pipelineId;
     private PipelineStatus pipelineStatus;
@@ -30,7 +32,6 @@ public class PipelineDetailsDTO {
     private LocalDateTime startedOn;
     private LocalDateTime endedOn;
     private DatasetDetailsDTO datasetDetails;
-    private GlobusDetailsDTO globusDetails;
 
     public PipelineDetailsDTO() {
     }
@@ -63,14 +64,6 @@ public class PipelineDetailsDTO {
 
     public void setDatasetDetails(DatasetDetailsDTO datasetDetails) {
         this.datasetDetails = datasetDetails;
-    }
-
-    public GlobusDetailsDTO getGlobusDetails() {
-        return globusDetails;
-    }
-
-    public void setGlobusDetails(GlobusDetailsDTO globusDetails) {
-        this.globusDetails = globusDetails;
     }
 
     public String getTraceName() {

@@ -1,0 +1,191 @@
+openapi: 3.1.0
+info:
+  title: File Handler API
+  version: 1.0.0
+  description: API for managing Globus guest collections and users
+servers:
+  - url: http://localhost:8010/file-handler
+    description: Local File Handler API
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    GuestCollectionRequest:
+      type: object
+      properties:
+        directoryName:
+          type: string
+          example: "Sample-Set-Name"
+        globusUserUID:
+          type: string
+          example: "674073da-bfb6-4599-bbc6-aca9092f1cf4"
+        notifyEmail:
+          type: string
+          example: "test@test.com"
+    GuestCollectionResponse:
+      type: object
+      properties:
+        guestCollectionId:
+          type: string
+          example: "c1e6310c-11d5-4e8a-9443-211884f04c6f"
+        dirPathOnGuestCollection:
+          type: string
+          example: "test@test.com/api::test::11-07-23::16-07"
+    UserIdentityResponse:
+      type: object
+      properties:
+        identities:
+          type: array
+          items:
+            type: object
+            properties:
+              username:
+                type: string
+                example: "test@test.com"
+              validIdentity:
+                type: boolean
+                example: true
+              id:
+                type: string
+                example: "674073da-bfb6-4599-bbc6-aca9092f1cf4"
+    GuestCollectionDetailsResponse:
+      type: object
+      properties:
+        path:
+          type: string
+          example: "/~/upload/intervene-igs4eu-platform-dev-env/test@test.com/Load-test-bed-bim-fam-ch37-777f126c/"
+        total:
+          type: integer
+          example: 3
+        DATA:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                example: "file"
+              size:
+                type: integer
+                example: 515799981
+              name:
+                type: string
+                example: "hapnest.bed.c4gh"
+    DeletionResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "Accepted"
+        taskId:
+          type: string
+          example: "d201a936-da76-11ef-9c96-33056a2963dc"
+
+paths:
+  /globus/guest-collection:
+    post:
+      summary: "Create a Globus guest collection"
+      operationId: createGuestCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GuestCollectionRequest"
+      responses:
+        "201":
+          description: "Guest collection created successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuestCollectionResponse"
+        "200":
+          description: "Guest collection already exists"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuestCollectionResponse"
+
+    get:
+      summary: "Get details of a Globus guest collection"
+      operationId: getGuestCollection
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "/~/upload/intervene-igs4eu-platform-dev-env/test@test.com/Load-test-bed-bim-fam-ch37-777f126c/"
+      responses:
+        "200":
+          description: "Guest collection details retrieved successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuestCollectionDetailsResponse"
+        "404":
+          description: "Guest collection not found"
+
+    delete:
+      summary: "Delete a Globus guest collection"
+      operationId: deleteGuestCollection
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "test@test.com/api::test::11-07-23::16-07"
+      responses:
+        "200":
+          description: "Guest collection deleted successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionResponse"
+
+  /globus/user:
+    get:
+      summary: "Get Globus user identities"
+      operationId: getUserIdentities
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "test@test.com"
+      responses:
+        "200":
+          description: "User identities retrieved successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserIdentityResponse"
+        "400":
+          description: "Invalid request"
+
+  /demon/globus/guest-collection:
+    delete:
+      summary: "Delete a Globus guest collection in demon mode"
+      operationId: deleteDemonGuestCollection
+      security:
+        - basicAuth:  [ ]
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "test@test.com/Delete-Test-02-11-2024-10-45-482b7b8c"
+      responses:
+        "200":
+          description: "Guest collection deleted successfully in demon mode"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionResponse"
+

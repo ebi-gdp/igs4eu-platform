@@ -35,8 +35,9 @@ import static java.net.URI.create;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.web.reactive.function.client.WebClient.builder;
+//import static uk.ac.ebi.gdp.intervene.commons.openapi.OpenAPIConfig.OPEN_API_AUTH_WHITELIST;
+import static uk.ac.ebi.gdp.intervene.commons.openapi.OpenAPIConfig.OPEN_API_AUTH_WHITELIST;
 import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.errorHandler;
-import static uk.ac.ebi.gdp.intervene.user.manager.config.OpenAPIConfig.OPEN_API_AUTH_WHITELIST;
 
 /**
  * OAuth2 security config, extends {@link GenericOAuth2SecurityConfig}.
@@ -58,7 +59,7 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
                 .authorizeExchange(authorizeExchangeSpec ->
                         authorizeExchangeSpec.pathMatchers(OPEN_API_AUTH_WHITELIST)
                                 .permitAll());
-        return securityFilterChain(http, jwkSetURI);
+        return super.securityFilterChain(http, jwkSetURI);
     }
 
     @Order(HIGHEST_PRECEDENCE)

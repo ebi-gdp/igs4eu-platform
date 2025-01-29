@@ -29,6 +29,7 @@ import uk.ac.ebi.gdp.intervene.commons.security.GenericOAuth2SecurityConfig;
 
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.http.HttpMethod.GET;
+import static uk.ac.ebi.gdp.intervene.commons.openapi.OpenAPIConfig.OPEN_API_AUTH_WHITELIST;
 
 /**
  * OAuth2 security config, extends {@link GenericOAuth2SecurityConfig}.
@@ -43,6 +44,10 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(final ServerHttpSecurity http,
                                                             @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") final String jwkSetURI) {
+        http
+                .authorizeExchange(authorizeExchangeSpec ->
+                        authorizeExchangeSpec.pathMatchers(OPEN_API_AUTH_WHITELIST)
+                                .permitAll());
         return securityFilterChain(http, jwkSetURI);
     }
 

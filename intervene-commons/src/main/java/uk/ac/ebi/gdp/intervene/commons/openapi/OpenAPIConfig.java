@@ -15,11 +15,10 @@
  * limitations under the License.
  *
  */
-package uk.ac.ebi.gdp.intervene.user.manager.config;
+package uk.ac.ebi.gdp.intervene.commons.openapi;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -36,7 +35,8 @@ public class OpenAPIConfig {
             //Swagger UI v3 (OpenAPI)
             "/webjars/**",
             "/v3/api-docs/**",
-            "/swagger-ui/**"
+            "/swagger-ui/**",
+            "/openapi.yaml"
     };
 
     @Bean
@@ -48,13 +48,11 @@ public class OpenAPIConfig {
                         .addSecuritySchemes
                                 (AUTHENTICATION, createAPIKeyScheme()))
                 .info(new Info()
-                        .title("IGS4EU Backend Services")
-                        .version("1.0")
-                        .contact(new Contact()
-                                .url("https://www.intervenegeneticscores.org/")));
+                        .title("Genetic Scoring Platform Backend Services")
+                        .version("1.0"));
     }
 
-    private SecurityScheme createAPIKeyScheme() {
+    protected SecurityScheme createAPIKeyScheme() {
         return new SecurityScheme().type(SecurityScheme.Type.HTTP)
                 .bearerFormat("JWT")
                 .scheme("bearer");

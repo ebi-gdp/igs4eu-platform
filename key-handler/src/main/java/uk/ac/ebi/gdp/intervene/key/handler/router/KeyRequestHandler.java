@@ -17,6 +17,7 @@
  */
 package uk.ac.ebi.gdp.intervene.key.handler.router;
 
+import com.google.api.gax.rpc.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -46,6 +47,7 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
 import static reactor.core.publisher.Mono.fromCallable;
 import static reactor.core.scheduler.Schedulers.boundedElastic;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
+import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
 import static uk.ac.ebi.gdp.intervene.key.handler.service.IKeyGenerator.KeyGeneratorStatus.SUCCESS;
 
@@ -190,6 +192,9 @@ public class KeyRequestHandler {
                     .downloadSecret(secretId, secretVersionId)
                     .flatMap(inputStream -> fromCallable(inputStream::readAllBytes))
                     .subscribeOn(boundedElastic());
+        } catch (NotFoundException nfe) {
+            LOGGER.error(nfe.getMessage(), nfe);
+            throw resourceNotFound("Specified Secret ID: %s and Version ID: %s not found!".formatted(secretId, secretVersionId));
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
             throw serverException("Error while downloading encrypted private key: " + e.getMessage());
@@ -201,9 +206,10 @@ public class KeyRequestHandler {
             try {
                 deleteIfExists(path);
                 LOGGER.info("File {} is successfully deleted!", path);
+            } catch (NotFoundException nfe) {
+                LOGGER.error("Specified path: {} not found!", path, nfe);
             } catch (IOException e) {
-                LOGGER.error(e.getMessage(), e);
-                throw serverException("Error while deleting key: %s. ".formatted(path) + e.getMessage());
+                LOGGER.error("Error while deleting key: {}.", path, e);
             }
         });
     }
@@ -221,6 +227,9 @@ public class KeyRequestHandler {
             return secretManager
                     .deleteSecret(secretPathPrefix.resolve(secretId).toString())
                     .then(ok().build());
+        } catch (NotFoundException nfe) {
+            LOGGER.error(nfe.getMessage(), nfe);
+            throw resourceNotFound("Specified secretId: %s not found!".formatted(secretId));
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
             throw serverException("Error while deleting encrypted private key: " + e.getMessage());

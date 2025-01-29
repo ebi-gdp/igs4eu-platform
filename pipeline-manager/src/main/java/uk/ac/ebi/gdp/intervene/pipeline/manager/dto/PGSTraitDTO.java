@@ -12,9 +12,9 @@ public record PGSTraitDTO(String id,
                           String description,
                           String url,
                           @JsonProperty(value = "associated_pgs_ids", access = WRITE_ONLY)
-                       Collection<String> associatedPgsIds,
+                          Collection<String> associatedPgsIds,
                           @JsonProperty(value = "child_associated_pgs_ids", access = WRITE_ONLY)
-                       Collection<String> childAssociatedPgsIds) {
+                          Collection<String> childAssociatedPgsIds) {
     @JsonGetter
     public long getPgsIdsSize() {
         return associatedPgsIds.size() + childAssociatedPgsIds.size();

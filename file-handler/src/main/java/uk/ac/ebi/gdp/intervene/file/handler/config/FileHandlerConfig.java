@@ -34,6 +34,7 @@ import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
 import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.dpa.DefaultUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
+import uk.ac.ebi.gdp.intervene.commons.openapi.OpenAPIConfig;
 import uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil;
 import uk.ac.ebi.gdp.intervene.file.handler.cloud.GCPCloudStorage;
 import uk.ac.ebi.gdp.intervene.file.handler.cloud.ICloudStorage;
@@ -55,7 +56,7 @@ import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.GCP;
  * @see WebClientProperties
  * @see EGAFileService
  */
-@Import(ReactiveExceptionHandler.class)
+@Import({ReactiveExceptionHandler.class, OpenAPIConfig.class})
 @Configuration
 public class FileHandlerConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileHandlerConfig.class);
@@ -90,7 +91,7 @@ public class FileHandlerConfig {
     /**
      * User manager service instance
      *
-     * @param userManagerWebClient  user manager web client
+     * @param userManagerWebClient user manager web client
      * @param userAccountURI user account URI
      *
      * @return UserManager service instance

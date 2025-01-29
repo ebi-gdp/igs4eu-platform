@@ -38,6 +38,7 @@ public class DatasetDetailsDTO {
     private GlobusDetailsDTO globusDetails;
 
     public DatasetDetailsDTO() {
+        this.datasetId = "";
     }
 
     public String getDatasetName() {
