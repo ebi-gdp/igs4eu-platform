@@ -41,6 +41,7 @@ import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
 import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
+import uk.ac.ebi.gdp.intervene.commons.openapi.OpenAPIConfig;
 import uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.CreateDirDTOValidator;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.DatasetDetailsDTOValidator;
@@ -84,7 +85,7 @@ import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.webClient;
 /**
  * Bean config for pipeline manager service.
  */
-@Import(ReactiveExceptionHandler.class)
+@Import({ReactiveExceptionHandler.class, OpenAPIConfig.class})
 @Configuration
 public class PipelineManagerConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(PipelineManagerConfig.class);

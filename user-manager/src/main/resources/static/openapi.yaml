@@ -1,0 +1,169 @@
+openapi: 3.1.0
+info:
+  title: User Account API
+  description: API for managing user accounts and consent data
+  version: 1.0.0
+servers:
+  - url: /user-manager
+    description: Base path for User Manager API
+paths:
+  /user/account:
+    get:
+      operationId: getUser
+      description: Get User Details
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessfulOperation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      tags:
+        - User Manager
+    post:
+      operationId: createUser
+      description: Create User Account
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      tags:
+        - User Manager
+  /user/account/{accountId}:
+    get:
+      operationId: getUserById
+      description: Get User Details for UserId
+      security:
+        - basicAuth: [ ]
+      parameters:
+        - name: accountId
+          in: path
+          description: User Account Id of the user to fetch
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessfulOperation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      tags:
+        - User Manager
+  /user/account/consent/data:
+    get:
+      operationId: getConsent
+      description: Get consent data
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          $ref: '#/components/responses/ConsentData'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      tags:
+        - User Manager
+    post:
+      operationId: giveConsent
+      description: Provide consent data
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '201':
+          $ref: '#/components/responses/ConsentCreated'
+        '200':
+          $ref: '#/components/responses/ConsentExists'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      tags:
+        - User Manager
+    delete:
+      operationId: revokeConsent
+      description: Revoke consent data
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '201':
+          $ref: '#/components/responses/ConsentCreated'
+        '200':
+          $ref: '#/components/responses/ConsentExists'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      tags:
+        - User Manager
+components:
+  responses:
+    SuccessfulOperation:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserAccountDTO'
+    Created:
+      description: Resource successfully created
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserAccountDTO'
+    Conflict:
+      description: Conflict, in case record already exists
+    Unauthorized:
+      description: Unauthorized
+    Forbidden:
+      description: Forbidden
+    ConsentData:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: string
+            example: Base64 encoded DPA PDF content
+    ConsentCreated:
+      description: Successful operation, if record doesn't exist
+    ConsentExists:
+      description: Successful operation, if record already exists
+    InternalServerError:
+      description: Internal server error
+  schemas:
+    UserAccountDTO:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

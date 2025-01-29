@@ -215,7 +215,7 @@ public class PipelineManagerService {
     }
 
     private TriggerPipelineEvent buildTriggerPipelineEvent(final PipelineDetails pipelineDetails,
-                                                           PipelineParam pipelineParam,
+                                                           final PipelineParam pipelineParam,
                                                            final Set<FileDetails> files) {
         return new TriggerPipelineEvent(
                 pipelineParam,

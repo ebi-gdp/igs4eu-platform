@@ -22,7 +22,9 @@ import org.mapstruct.Mapping;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineDetailsDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineDetails;
 
-@Mapper(componentModel = "spring")
+import static org.mapstruct.ReportingPolicy.IGNORE;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = IGNORE)
 public interface PipelineDetailsMapper {
     @Mapping(target = "pipelineStatus", source = "pipelineExecutionStatus.status")
     @Mapping(target = "traceName", source = "pipelineExecutionStatus.traceName")
@@ -30,10 +32,5 @@ public interface PipelineDetailsMapper {
     @Mapping(target = "submittedOn", source = "pipelineExecutionStatus.submittedOn")
     @Mapping(target = "startedOn", source = "pipelineExecutionStatus.startedOn")
     @Mapping(target = "endedOn", source = "pipelineExecutionStatus.endedOn")
-    @Mapping(target = "globusDetails.dirPathOnGuestCollection", source = "datasetDetails.globusDetails.dirPathOnGuestCollection")
-    @Mapping(target = "globusDetails.username", source = "datasetDetails.globusDetails.globusUsername")
-    @Mapping(target = "globusDetails.userAccountUID", source = "datasetDetails.globusDetails.globusUserDetails.userUID")
-    @Mapping(target = "globusDetails.guestCollectionId", source = "datasetDetails.globusDetails.guestCollectionId")
-    @Mapping(target = "globusDetails.filesetId", source = "datasetDetails.globusDetails.filesetId")
     PipelineDetailsDTO toDTO(PipelineDetails pipelineDetails);
 }

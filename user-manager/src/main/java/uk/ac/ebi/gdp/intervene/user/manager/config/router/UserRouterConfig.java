@@ -17,20 +17,12 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.config.router;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springdoc.core.annotations.RouterOperation;
-import org.springdoc.core.annotations.RouterOperations;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import uk.ac.ebi.gdp.intervene.commons.dto.usermanager.UserAccountDTO;
 import uk.ac.ebi.gdp.intervene.user.manager.auth.AuthenticationContext;
 import uk.ac.ebi.gdp.intervene.user.manager.dpa.IAuditLogUserDPAConsentService;
 import uk.ac.ebi.gdp.intervene.user.manager.handler.UserDPAConsentHandler;
@@ -38,6 +30,8 @@ import uk.ac.ebi.gdp.intervene.user.manager.handler.UserHandler;
 import uk.ac.ebi.gdp.intervene.user.manager.mapper.UserAccountMapper;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.IUserAccountPersistenceService;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 import static org.springframework.web.reactive.function.server.RequestPredicates.path;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
@@ -52,22 +46,20 @@ import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 public class UserRouterConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserRouterConfig.class);
 
-    @RouterOperations({
-            @RouterOperation(path = "/user/account", produces = {
-                    MediaType.APPLICATION_JSON_VALUE},
-                    operation = @Operation(operationId = "getUser", responses = {
-                            @ApiResponse(responseCode = "200", description = "successful operation",
-                                    content = @Content(schema = @Schema(implementation = UserAccountDTO.class)))}
-                    ))
-    })
     @Bean
     public RouterFunction<ServerResponse> userRoutes(final UserHandler userHandler,
                                                      final UserDPAConsentHandler userDPAConsentHandler) {
+        return userRoutesConfig(userHandler, userDPAConsentHandler);
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> userRoutesConfig(final UserHandler userHandler,
+                                                           final UserDPAConsentHandler userDPAConsentHandler) {
         return route()
                 .filter(logRequestIdHeader(LOGGER))
                 .path("/user/account", ub -> ub
                         .path("/consent/data", cub -> cub
-                                .POST(serverRequest -> userDPAConsentHandler.giveConsent())
+                                .POST(accept(APPLICATION_JSON), serverRequest -> userDPAConsentHandler.giveConsent())
                                 .DELETE(serverRequest -> userDPAConsentHandler.revokeConsent())
                                 .GET(serverRequest -> userDPAConsentHandler.getDPAConsentContent()))
                         .GET(path("/{accountId:^(?!consent$).+}"), userHandler::getUserAccount)

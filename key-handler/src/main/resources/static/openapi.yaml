@@ -1,0 +1,125 @@
+openapi: 3.1.0
+info:
+  title: Key Handler API
+  version: 1.0.0
+  description: API for managing cryptographic keys
+servers:
+  - url: /key-handler
+    description: Key Handler API
+paths:
+  /key:
+    post:
+      summary: "Create a new key"
+      operationId: createKey
+      tags:
+        - Key
+      responses:
+        "200":
+          description: "Keys created successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secretId:
+                    type: string
+                    example: "CC0D4FD4-B455-4610-B886-7B3A5A188920"
+                  secretIdVersion:
+                    type: string
+                    example: "projects/123456395092/secrets/BB0F4FF4-A455-4610-A886-7B3A5A188920/versions/1"
+                  publicKey:
+                    type: string
+                    example: |
+                      -----BEGIN CRYPT4GH PUBLIC KEY-----
+                      9dQlwVOm9thjxxv3fbl15a67qrr2uIhhHsKOc8d17DE=
+                      -----END CRYPT4GH PUBLIC KEY-----
+                  expiresAt:
+                    type: string
+                    format: date-time
+                    example: "2025-02-23T13:05:05.654069702"
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: "Delete a key by secretId"
+      operationId: deleteKey
+      tags:
+        - Key
+      parameters:
+        - name: secretId
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "FF0D4DF4-A455-4610-B886-7B3A5A18892"
+      responses:
+        "200":
+          description: "Key deleted successfully"
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+  /key/{secretId}/version/{version}:
+    get:
+      summary: "Get a private key by secretId and version"
+      operationId: getPrivateKey
+      security:
+        - basicAuth: [ ]
+      tags:
+        - Key
+      parameters:
+        - name: secretId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "F43040CD-5604-496E-B277-1FFB87B46EEF"
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "1"
+      responses:
+        "200":
+          description: "Private key retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  privateKey:
+                    type: string
+                    example: |
+                      bDUuLele59hiR5+qUsQIoXgGB6/GJ0CbtY/C6vbn7YvLtdwKUwX6CP4H+s1bR7O9jLcltrsFexFi/k86WK+uFa7X7MtUScm+arDaDNUQXsJ+2GCMDrokseAC2QB0Y6o/pmQz/Y/5lWR2VCT4b8LdGz+qahQH7sMQ5nLesGsgIeH2rNR7LAvdBANdUNJpQNj/UaN5rJqvNZ3TyHud5UGOj20KpOoHPOgJeP3C9NaBnvs4Pm4Y7C9yNtFFtBeO
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "403":
+          $ref: '#/components/responses/Forbidden'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+components:
+    responses:
+      Unauthorized:
+        description: Unauthorized
+      Forbidden:
+        description: Forbidden
+      NotFound:
+        description: Key not found
+      InternalServerError:
+        description: Internal server error
+    securitySchemes:
+     bearerAuth:
+       type: http
+       scheme: bearer
+       bearerFormat: JWT

@@ -31,6 +31,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.router.PipelineManagerRouterConf
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
+import static uk.ac.ebi.gdp.intervene.commons.openapi.OpenAPIConfig.OPEN_API_AUTH_WHITELIST;
 
 /**
  * OAuth2 security config, extends {@link GenericOAuth2SecurityConfig}.
@@ -45,6 +46,10 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(final ServerHttpSecurity http,
                                                       @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") final String jwkSetURI) {
+        http
+                .authorizeExchange(authorizeExchangeSpec ->
+                        authorizeExchangeSpec.pathMatchers(OPEN_API_AUTH_WHITELIST)
+                                .permitAll());
         return super.securityFilterChain(http, jwkSetURI);
     }
 

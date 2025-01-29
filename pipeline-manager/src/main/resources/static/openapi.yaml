@@ -1,0 +1,986 @@
+openapi: 3.1.0
+info:
+  title: Pipeline Management API
+  version: 1.0.0
+  description: API for managing pipelines, datasets, and Globus integrations
+tags:
+  - name: Pipeline
+    description: Operations related to pipelines.
+  - name: Dataset
+    description: Operations related to datasets.
+  - name: Globus
+    description: Operations related to Globus integration.
+servers:
+  - url: /pipeline-manager
+    description: Base path for Pipeline Manager API
+paths:
+  /pipeline:
+    post:
+      tags:
+        - Pipeline
+      summary: Create a new pipeline
+      operationId: createPipeline
+      requestBody:
+        required: true
+        description: "Dataset Id"
+        content:
+          text/plain:
+            schema:
+              type: string
+              title: "Dataset Id"
+              default: INTD00000000001
+      responses:
+        '201':
+          description: Pipeline created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineDetailsResponseDTOCreated'
+        '404':
+          description: Dataset ID not found
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      tags:
+        - Pipeline
+      summary: Get all pipelines
+      operationId: getPipelines
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pipelines retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginationResponseDTO_PipelineDetailsDTO'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /pipeline/success/result:
+    get:
+      tags:
+        - Pipeline
+      summary: List result files for a pipeline
+      operationId: listResultFiles
+      parameters:
+        - name: pipelineId
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "INTP00000005666"
+      responses:
+        '200':
+          description: Files retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/S3ObjectResponseDTO'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Files not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /pipeline/pgs-ids/validate:
+    post:
+      tags:
+        - Pipeline
+      summary: Validate PGS IDs
+      operationId: validatePGSIds
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoreIdsRequestDTO'
+      responses:
+        '200':
+          description: Validation successful
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  PGS001229:
+                    type: boolean
+                  PGS00XXXX:
+                    type: boolean
+                    example: false
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /pipeline/pgs-ids-catalog-traits:
+    get:
+      tags:
+        - Pipeline
+      summary: Search PGS IDs by traits
+      operationId: searchPGSIdsByTraits
+      parameters:
+        - name: searchTerm
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "Abdominal Aortic Aneurysm"
+      responses:
+        '200':
+          description: Traits found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PGSTraitWrapperResponseDTO'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Traits not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /pipeline/publication-data:
+    get:
+      tags:
+        - Pipeline
+      summary: Search PGP IDs by publications
+      operationId: searchPGPIdsByPublications
+      parameters:
+        - name: searchTerm
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "Abdominal"
+      responses:
+        '200':
+          description: Publications found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationResponseDTO'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Publications not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /pipeline/{pipelineId}:
+    get:
+      tags:
+        - Pipeline
+      summary: Get pipeline details for Pipeline Id
+      operationId: getPipelineById
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "INTP00000000480"
+      responses:
+        '200':
+          description: Pipeline retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineDetailsResponseDTO'
+        '400':
+          description: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: File not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /pipeline/{pipelineId}/execute/pgs-ids:
+    post:
+      tags:
+        - Pipeline
+      summary: Execute pipeline for PGS IDs
+      operationId: executePipelineForPgsIds
+      parameters:
+        - name: pipelineId
+          in: path
+          description: Pipeline Id to execute pgs-ids for
+          required: true
+          schema:
+            type: string
+          example: "INTP00000005670"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoreIdsRequestDTO'
+      responses:
+        '202':
+          description: Request received
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /pipeline/{pipelineId}/execute/trait-ids:
+    post:
+      tags:
+        - Pipeline
+      summary: Execute pipeline for trait IDs
+      operationId: executePipelineForTraitIds
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "INTP00000005670"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoreIdsRequestDTOTraitIds'
+      responses:
+        '202':
+          description: Request received
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /pipeline/{pipelineId}/execute/publication-ids:
+    post:
+      tags:
+        - Pipeline
+      summary: Execute pipeline for publication IDs
+      operationId: executePipelineForPublicationIds
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "INTP00000005670"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoreIdsRequestDTOPublication'
+      responses:
+        '202':
+          description: Request received
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /pipeline/{pipelineId}/dataset:
+    patch:
+      tags:
+        - Pipeline
+      summary: Update dataset ID
+      operationId: updateDatasetId
+      parameters:
+        - name: pipelineId
+          in: path
+          description: Pipeline Id to fetch details for
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dataset updated successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /pipeline/{pipelineId}/report:
+    get:
+      tags:
+        - Pipeline
+      summary: Stream file from cloud storage
+      operationId: streamFileFromCloudStorage
+      parameters:
+        - name: pipelineId
+          in: path
+          description: Pipeline Id to fetch report for
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File streamed successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: File not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /dataset:
+    post:
+      tags:
+        - Dataset
+      summary: Create or update dataset details
+      operationId: createOrUpdateDatasetDetails
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasetDetailsRequestDTO'
+      responses:
+        '201':
+          description: Dataset created or updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetDetailsResponseDTOCreated'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      tags:
+        - Dataset
+      summary: "Get all datasets"
+      operationId: "getDatasets"
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: "Datasets retrieved successfully"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginationResponseDTO_DatasetDetailsDTO'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /dataset/{datasetId}:
+    get:
+      tags:
+        - Dataset
+      summary: "Get dataset details"
+      operationId: "getDatasetDetails"
+      parameters:
+        - name: "datasetId"
+          in: "path"
+          description: "Dataset Id to fetch details for"
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Dataset retrieved successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatasetDetailsResponseDTOv1"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Dataset
+      summary: "Delete a dataset"
+      operationId: "deleteDataset"
+      parameters:
+        - name: "datasetId"
+          in: "path"
+          required: true
+          schema:
+            type: string
+          example: "INTD00000000197"
+      responses:
+        '200':
+          description: "Dataset deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /globus/user:
+    post:
+      tags:
+        - Globus
+      summary: "Map Globus user ID"
+      operationId: "mapGlobusUserId"
+      requestBody:
+        required: true
+        description: "Email Id"
+        content:
+          text/plain:
+            schema:
+              type: string
+              title: "Email Id"
+              default: "test@test.com"
+      responses:
+        '200':
+          description: "User ID mapped successfully"
+        '201':
+          description: "User ID created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobusUserDetailsResponseDTO"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /globus/dir-guest-collection:
+    post:
+      tags:
+        - Globus
+      summary: "Create directory on guest collection"
+      operationId: "createDirectoryOnGuestCollection"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GlobusDetailsRequestDTO"
+      responses:
+        '200':
+          description: "Directory created successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobusDetailsResponseDTOv1"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /globus/files/validate:
+    get:
+      tags:
+        - Globus
+      summary: "Validate files"
+      operationId: "validateFiles"
+      parameters:
+        - name: "path"
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Files validated successfully"
+        '400':
+          description: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Additional routes can be defined similarly...
+
+components:
+  schemas:
+    PipelineDetailsResponseDTOCreated:
+      type: object
+      properties:
+        pipelineId:
+          type: string
+          default: "String in the format of INTP00000000000"
+        pipelineStatus:
+          type: string
+          default: "Created"
+
+    PipelineDetailsResponseDTO:
+      type: object
+      properties:
+        pipelineId:
+          type: string
+          example: "INTP00000003982"
+        pipelineStatus:
+          $ref: '#/components/schemas/PipelineStatus'
+        traceName:
+          type: string
+          example: ""
+        traceExit:
+          type: string
+          example: "0"
+        submittedOn:
+          type: string
+          format: date-time
+          example: "09-12-2024 16:09:11"
+        startedOn:
+          type: string
+          format: date-time
+          example: "09-12-2024 16:15:42"
+        endedOn:
+          type: string
+          format: date-time
+          example: "31-12-0002 23:58:45"
+        datasetDetails:
+          $ref: '#/components/schemas/DatasetDetailsResponseDTOv3'
+
+    PipelineDetailsResponseDTOList:
+      type: object
+      properties:
+        pipelineId:
+          type: string
+          example: "INTP00000003982"
+        pipelineStatus:
+          $ref: '#/components/schemas/PipelineStatus'
+        traceName:
+          type: string
+        traceExit:
+          type: string
+        submittedOn:
+          type: string
+          format: date-time
+        startedOn:
+          type: string
+          format: date-time
+        endedOn:
+          type: string
+          format: date-time
+        datasetDetails:
+          $ref: '#/components/schemas/DatasetDetailsResponseDTOv2'
+        globusDetails:
+          type: object
+          example: {}
+
+    DatasetDetailsRequestDTO:
+      type: object
+      properties:
+        datasetName:
+          type: string
+          example: "Sample-Dataset-Name"
+        genomeBuild:
+          type: string
+          enum:
+            - GRCH37
+            - GRCH38
+        filesetId:
+          type: string
+          example: "INTF00000000001"
+
+    DatasetDetailsResponseDTOCreated:
+      type: object
+      properties:
+        datasetId:
+          type: string
+          example: "INTD00000000001"
+
+    DatasetDetailsResponseDTOv1:
+      type: object
+      properties:
+        datasetId:
+          type: string
+          example: "INTD00000004385"
+        datasetName:
+          type: string
+          example: "Open-API-Test-22-Jan-11-42"
+        genomeBuild:
+          type: string
+          enum:
+            - GRCH37
+            - GRCH38
+        expiresAt:
+          type: string
+          format: date-time
+          example: "21-02-2025 12:53:25"
+        filesetId:
+          type: string
+          example: "INTF00000006585"
+        publicKey:
+          type: string
+          example: "-----BEGIN CRYPT4GH PUBLIC KEY-----\ncvJbnYHbLHncCbwlXojQserBuyA8AyD8ggsIdR1B5Rg=\n-----END CRYPT4GH PUBLIC KEY-----\n"
+        deleted:
+          type: boolean
+          example: false
+        expired:
+          type: boolean
+          example: false
+        globusDetails:
+          $ref: '#/components/schemas/GlobusDetailsResponseDTOv2'
+
+    DatasetDetailsResponseDTOv2:
+      type: object
+      properties:
+        datasetId:
+          type: string
+          example: "INTD00000004385"
+        datasetName:
+          type: string
+          example: "Open-API-Test-22-Jan-11-42"
+        genomeBuild:
+          type: string
+          enum:
+            - GRCH37
+            - GRCH38
+        expiresAt:
+          type: string
+          format: date-time
+          example: "21-02-2025 12:53:25"
+        filesetId:
+          type: string
+          example: "INTF00000006585"
+        deleted:
+          type: boolean
+          example: false
+        expired:
+          type: boolean
+          example: false
+
+    DatasetDetailsResponseDTOv3:
+      type: object
+      properties:
+        datasetId:
+          type: string
+          example: "INTD00000004385"
+        datasetName:
+          type: string
+          example: "Open-API-Test-22-Jan-11-42"
+        genomeBuild:
+          type: string
+          enum:
+            - GRCH37
+            - GRCH38
+        expiresAt:
+          type: string
+          format: date-time
+          example: "21-02-2025 12:53:25"
+        filesetId:
+          type: string
+          example: "INTF00000006585"
+        deleted:
+          type: boolean
+          example: false
+        expired:
+          type: boolean
+          example: false
+        globusDetails:
+          $ref: '#/components/schemas/GlobusDetailsResponseDTOv3'
+
+    DatasetDetailsResponseDTOv4:
+      type: object
+      properties:
+        datasetId:
+          type: string
+          example: "INTD00000004385"
+        datasetName:
+          type: string
+          example: "Open-API-Test-22-Jan-11-42"
+        genomeBuild:
+          type: string
+          enum:
+            - GRCH37
+            - GRCH38
+        expiresAt:
+          type: string
+          format: date-time
+          example: "21-02-2025 12:53:25"
+        filesetId:
+          type: string
+          example: "INTF00000006585"
+        deleted:
+          type: boolean
+          example: false
+        expired:
+          type: boolean
+          example: false
+
+    GlobusDetailsRequestDTO:
+      type: object
+      properties:
+        globusUsername:
+          type: string
+          example: "test@test.com"
+        datasetName:
+          type: string
+          example: "Sample-Set-Name"
+
+    GlobusDetailsResponseDTOv1:
+      type: object
+      properties:
+        guestCollectionId:
+          type: string
+          example: "c3e6780c-11d5-4e8a-1234-422884f90c6f"
+        dirPathOnGuestCollection:
+          type: string
+          example: "test@test.com/Open-API-Test-22-Jan-11-42-f0426d27"
+        filesetId:
+          type: string
+          example: "INTF00000000001"
+
+    GlobusDetailsResponseDTOv2:
+      type: object
+      properties:
+        guestCollectionId:
+          type: string
+          example: "c3e6780c-11d5-4e8a-1234-422884f90c6f"
+        dirPathOnGuestCollection:
+          type: string
+          example: "/File-Downloader-Test-14-11-2024-16-25-f07c437a"
+        username:
+          type: string
+          example: "test@test.com"
+        filesetId:
+          type: string
+          example: "INTF00000000061"
+        status:
+          type: string
+          example: "ACTIVE"
+
+    GlobusDetailsResponseDTOv3:
+      type: object
+      properties:
+        guestCollectionId:
+          type: string
+          example: "c3e6780c-11d5-4e8a-1234-422884f90c6f"
+        dirPathOnGuestCollection:
+          type: string
+          example: "/Load-test-pgen-psam-pvar-ch38-ff68e17a"
+        filesetId:
+          type: string
+          example: "INTF00000005721"
+        status:
+          type: string
+          example: "ACTIVE"
+
+    GlobusUserDetailsResponseDTO:
+      type: object
+      properties:
+        globusUsername:
+          type: string
+          description: "Globus username."
+          example: "test@test.com"
+        globusUserUID:
+          type: string
+          description: "Globus user unique identifier."
+          example: "676783da-cfc6-4599-ccc6-bca9092f1cf4"
+        interveneUserId:
+          type: string
+          description: "Intervene user identifier."
+          example: "INTU00000000001"
+
+    ScoreIdsRequestDTO:
+      type: object
+      properties:
+        scoreIds:
+          type: array
+          items:
+            type: string
+          example: ["PGS001229","PGS003456"]
+
+    ScoreIdsRequestDTOTraitIds:
+      type: object
+      properties:
+        scoreIds:
+          type: array
+          items:
+            type: string
+          example: ["MONDO_0007254"]
+
+    ScoreIdsRequestDTOPublication:
+      type: object
+      properties:
+        scoreIds:
+          type: array
+          items:
+            type: string
+          example: ["PGP000227"]
+
+    PGSTraitWrapperResponseDTO:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PGSTraitResponseDTO'
+
+    PGSTraitResponseDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "EFO_0004214"
+        label:
+          type: string
+          example: "Abdominal Aortic Aneurysm"
+        description:
+          type: string
+          example: "Enlargement and ballooning of the vessel that supplies arterial blood to the abdomen, pelvis and legs. [NCIT: P378]"
+        url:
+          type: string
+          example: "http://www.ebi.ac.uk/efo/EFO_0004214"
+        pgsIdsSize:
+          type: integer
+          example: 1
+
+    PublicationResponseDTO:
+      type: object
+      properties:
+        key:
+          type: string
+          example: "Genetic Architecture of Abdominal Aortic Aneurysm in the Million Veteran Program."
+        pubId:
+          type: string
+          example: "PGP000159"
+        pubIdsCount:
+          type: integer
+          example: 1
+
+    S3ObjectResponseDTO:
+      type: object
+      properties:
+        pipelineId:
+          type: string
+          example: "INTP00000005666"
+        files:
+          type: array
+          items:
+            type: string
+          example:
+            - "results/pgen-psam-pvar-ch38-test-12-Jan/score/aggregated_scores.txt.gz"
+            - "results/pgen-psam-pvar-ch38-test-12-Jan/score/report.html"
+
+    PaginationResponseDTO_PipelineDetailsDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PipelineDetailsResponseDTOList'
+        count:
+          type: integer
+          format: int64
+          description: "Total count"
+          example: 1
+
+    PaginationResponseDTO_DatasetDetailsDTO:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasetDetailsResponseDTOv4'
+        count:
+          type: integer
+          format: int64
+          description: "Total count"
+          example: 1
+
+    PipelineStatus:
+      type: string
+      enum:
+        - "Created"
+        - "Submitted"
+        - "Running"
+        - "Completed"
+        - "Failed"
+        -
+  responses:
+    Unauthorized:
+      description: "Unauthorized"
+    Forbidden:
+      description: "Forbidden"
+    NotFound:
+      description: "Resource not found"
+    BadRequest:
+      description: "Bad request"
+    InternalServerError:
+      description: "Internal server error"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+

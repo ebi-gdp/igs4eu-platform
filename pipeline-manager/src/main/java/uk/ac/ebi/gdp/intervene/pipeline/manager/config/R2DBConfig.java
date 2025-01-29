@@ -23,6 +23,7 @@ import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.ReactiveAuditorAware;
 import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
@@ -89,7 +90,8 @@ public class R2DBConfig extends AbstractR2dbcConfiguration {
         return new DatasourceConfigProperties();
     }
 
-    @Bean("r2dbcDatabaseClient")
+    @Primary
+    @Bean("r2dbcDatabaseClientPipelineManager")
     public DatabaseClient r2dbcDatabaseClient(final ConnectionFactory connectionFactory) {
         return DatabaseClient.builder()
                 .connectionFactory(connectionFactory)

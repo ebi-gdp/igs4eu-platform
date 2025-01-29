@@ -67,7 +67,7 @@ public class DefaultKafkaConfig {
     }
 
     protected Map<String, Object> producerConfigs() {
-        final Map<String, Object> properties = kafkaProperties.buildProducerProperties();
+        final Map<String, Object> properties = kafkaProperties.buildProducerProperties(null);
         properties.put(KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         //  properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);//TMP
         return properties;
@@ -91,7 +91,7 @@ public class DefaultKafkaConfig {
     }
 
     protected Map<String, Object> defaultConsumerConfigs() {
-        final Map<String, Object> properties = kafkaProperties.buildConsumerProperties();
+        final Map<String, Object> properties = kafkaProperties.buildConsumerProperties(null);
         properties.put(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         properties.put(MAX_POLL_INTERVAL_MS_CONFIG, maxPollIntervalMs);
         properties.put(GROUP_INSTANCE_ID_CONFIG, groupInstanceId);

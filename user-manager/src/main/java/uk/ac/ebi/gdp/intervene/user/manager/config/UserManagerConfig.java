@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
+import uk.ac.ebi.gdp.intervene.commons.openapi.OpenAPIConfig;
 import uk.ac.ebi.gdp.intervene.user.manager.dpa.AuditLogUserDPAConsentService;
 import uk.ac.ebi.gdp.intervene.user.manager.dpa.IAuditLogUserDPAConsentService;
 import uk.ac.ebi.gdp.intervene.user.manager.persistence.r2dbc.repository.AuthUserAccountRepository;
@@ -37,7 +38,7 @@ import uk.ac.ebi.gdp.intervene.user.manager.persistence.service.UserAccountPersi
  * @see ReactiveExceptionHandler
  * @see IUserAccountPersistenceService
  */
-@Import(ReactiveExceptionHandler.class)
+@Import({ReactiveExceptionHandler.class, OpenAPIConfig.class})
 @Configuration
 public class UserManagerConfig {
 

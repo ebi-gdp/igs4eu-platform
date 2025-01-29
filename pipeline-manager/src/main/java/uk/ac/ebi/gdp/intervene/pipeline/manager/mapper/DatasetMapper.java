@@ -26,8 +26,9 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Fileset
 import java.time.LocalDateTime;
 
 import static org.mapstruct.InjectionStrategy.CONSTRUCTOR;
+import static org.mapstruct.ReportingPolicy.IGNORE;
 
-@Mapper(componentModel = "spring", injectionStrategy = CONSTRUCTOR)
+@Mapper(componentModel = "spring", injectionStrategy = CONSTRUCTOR, unmappedTargetPolicy = IGNORE)
 public interface DatasetMapper {
     @Mapping(target = "datasetId", source = "datasetId")
     @Mapping(target = "filesetType", source = "filesetType")
