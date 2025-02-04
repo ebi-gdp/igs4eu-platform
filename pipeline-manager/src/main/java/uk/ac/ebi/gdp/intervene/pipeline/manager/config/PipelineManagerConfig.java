@@ -56,11 +56,14 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePer
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.PipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.router.validation.FileValidations;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.CloudFileHandlerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.DefaultPipelineSubmissionRateLimiter;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusFileHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.GlobusManagerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.IPipelineSubmissionRateLimiter;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.KeyHandlerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PGSCatalogService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineManagerService;
+import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineSubmissionRateLimiterFilter;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.HttpMessageService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.message.KafkaMessageService;
@@ -523,5 +526,27 @@ public class PipelineManagerConfig {
                                                            @Value("${intervene.file-handler.cloud.list-files.uri}") final URI listFilesOnCloudURI,
                                                            @Value("${intervene.file-handler.cloud.stream-files.uri}") final URI streamFileFromCloudURI) {
         return new CloudFileHandlerService(fileHandlerWebClient, listFilesOnCloudURI, streamFileFromCloudURI);
+    }
+
+    /**
+     * @param pipelinePersistence pipeline persistence service
+     * @param limitNoOfPipelinesPerDayPerUser no. of allowed pipelines
+     *
+     * @return {@link DefaultPipelineSubmissionRateLimiter} instance
+     */
+    @Bean
+    public IPipelineSubmissionRateLimiter pipelineSubmissionRateLimiter(final IPipelinePersistence pipelinePersistence,
+                                                                        @Value("${pipeline.limit.per-day.per-user}") final int limitNoOfPipelinesPerDayPerUser) {
+        return new DefaultPipelineSubmissionRateLimiter(pipelinePersistence, limitNoOfPipelinesPerDayPerUser);
+    }
+
+    /**
+     * @param pipelineSubmissionRateLimiter {@link IPipelineSubmissionRateLimiter} implementation e.g. {@link DefaultPipelineSubmissionRateLimiter}
+     *
+     * @return {@link PipelineSubmissionRateLimiterFilter} instance
+     */
+    @Bean
+    public PipelineSubmissionRateLimiterFilter pipelineSubmissionRateLimiterFilter(final IPipelineSubmissionRateLimiter pipelineSubmissionRateLimiter) {
+        return new PipelineSubmissionRateLimiterFilter(pipelineSubmissionRateLimiter);
     }
 }

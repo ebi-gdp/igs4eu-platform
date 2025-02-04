@@ -30,6 +30,9 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.Pip
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineExecutionStatusRepository;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.PipelineResultRepository;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import static reactor.core.publisher.Mono.empty;
 import static reactor.core.publisher.Mono.error;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.badRequest;
@@ -212,8 +215,22 @@ public class PipelinePersistence implements IPipelinePersistence {
         return pipelineExecutionStatusRepository.save(pipelineExecutionStatus);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Mono<DatasetDetails> getDatasetName(final String pipelineId) {
         return pipelineDetailsRepository.findDatasetName(pipelineId);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Flux<PipelineDetails> getPipelinesForToday(final String userId) {
+        final LocalDateTime startOfDay = LocalDate.now().atStartOfDay(); // Today at 00:00:00
+        final LocalDateTime endOfDay = LocalDate.now().atTime(23, 59, 59); // Today at 23:59:59
+        return pipelineDetailsRepository
+                .findAllByUserIdAndCreatedByAndCreatedOnBetween(userId, userId, startOfDay, endOfDay);
     }
 }

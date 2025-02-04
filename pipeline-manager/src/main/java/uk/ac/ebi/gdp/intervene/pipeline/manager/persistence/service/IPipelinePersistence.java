@@ -164,4 +164,13 @@ public interface IPipelinePersistence {
      * @return dataset details (contains only id & name) represented by {@link DatasetDetails}
      */
     Mono<DatasetDetails> getDatasetName(String pipelineId);
+
+    /**
+     * Get pipelines for current day.
+     *
+     * @param userId user id
+     *
+     * @return {@link Flux} of {@link PipelineDetails}
+     */
+    Flux<PipelineDetails> getPipelinesForToday(String userId);
 }

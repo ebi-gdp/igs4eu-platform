@@ -55,8 +55,10 @@ import static org.springframework.web.reactive.function.server.ServerResponse.ba
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
 import static reactor.core.publisher.Mono.error;
+import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.dataConflict;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.resourceNotFound;
 import static uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil.getJsonObjectMapper;
+import static uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.PipelineStatus.NEW;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.router.UserAccountUtil.userAccount;
 
 /**
@@ -174,21 +176,6 @@ public class PipelineRequestHandler {
     }
 
     /**
-     * Retrieves recent pipeline details.
-     *
-     * @return Pipeline details represented by {@link PipelineDetailsDTO}
-     */
-    public Mono<ServerResponse> getPipelineRecent(final ServerRequest serverRequest) {
-        return userAccount(serverRequest)
-                .doOnNext(userAccountDTO -> LOGGER.info("Retrieving recent pipeline details"))
-                .flatMap(userAccountDTO -> pipelinePersistence.getPipelineFullRecent(userAccountDTO.accountId()))
-                .map(pipelineDetailsMapper::toDTO)
-                .switchIfEmpty(error(resourceNotFound("No recent submission found!")))
-                .flatMap(pipelineDetailsDTO -> ok().bodyValue(pipelineDetailsDTO))
-                .doOnNext(userAccountDTO -> LOGGER.info("Retrieved recent pipeline details"));
-    }
-
-    /**
      * Updates dataset id in pipeline details.
      *
      * @param serverRequest represents a server-side HTTP request, as handled by a {@code HandlerFunction}
@@ -290,7 +277,9 @@ public class PipelineRequestHandler {
         return userAccount(serverRequest)
                 .flatMap(userAccountDTO -> pipelinePersistence
                         .getPipelineFull(pipelineId, userAccountDTO.accountId())
-                        .switchIfEmpty(error(resourceNotFound("Pipeline details not found! %s".formatted(pipelineId)))));
+                        .switchIfEmpty(error(resourceNotFound("Pipeline details not found! %s".formatted(pipelineId)))))
+                .filter(pipelineDetails -> pipelineDetails.getPipelineExecutionStatus().getStatus() == NEW)
+                .switchIfEmpty(error(dataConflict("Pipeline already submitted for {}!")));
     }
 
     private Mono<ServerResponse> updatePipelineExecutionStatus(final PipelineDetails pipelineDetails) {
