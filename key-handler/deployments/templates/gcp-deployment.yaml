@@ -22,6 +22,22 @@ spec:
         - name: {{ .Values.serviceName }}
           image: {{ .Values.image.repository }}:{{ .Values.image.tagPrefix }}-{{ .Values.image.tag }}-{{ .Values.image.tagPostfix }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          livenessProbe:
+            initialDelaySeconds: 120
+            periodSeconds: 120
+            failureThreshold: 3
+            httpGet:
+              path: /key-handler/actuator/health
+              port: 8080
+              scheme: HTTP
+          readinessProbe:
+            initialDelaySeconds: 120
+            periodSeconds: 120
+            failureThreshold: 3
+            httpGet:
+              path: /key-handler/actuator/health
+              port: 8080
+              scheme: HTTP
           resources:
             limits:
               cpu: {{ .Values.resources.limits.cpu }}
