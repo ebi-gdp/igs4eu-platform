@@ -48,7 +48,7 @@ spec:
           ports:
             - containerPort: 8080
           volumeMounts:
-            - mountPath: /config
+            - mountPath: /application/config
               name: config
               readOnly: true
           env:
