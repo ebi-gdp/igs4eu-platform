@@ -17,8 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.config.router.globus;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,8 +27,6 @@ import uk.ac.ebi.gdp.intervene.file.handler.service.globus.collection.IFileOpera
 import uk.ac.ebi.gdp.intervene.file.handler.service.globus.endpoint.AuthService;
 
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
-import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.buildUniqueRequestId;
-import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 import static uk.ac.ebi.gdp.intervene.file.handler.config.OAuth2SecurityConfig.URI_INCLUDE_UNDER_BASIC_AUTH;
 
 /**
@@ -38,8 +34,6 @@ import static uk.ac.ebi.gdp.intervene.file.handler.config.OAuth2SecurityConfig.U
  */
 @Configuration
 public class GlobusRouterConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GlobusRouterConfig.class);
-
     /**
      * @param globusRequestHandler Globus request handler
      * @param globusUserRequestHandler Globus user request handler
@@ -52,7 +46,8 @@ public class GlobusRouterConfig {
                                                        final GlobusUserRequestHandler globusUserRequestHandler,
                                                        final DPAConsentCheck dpaConsentCheck) {
         return route()
-                .filter(logRequestIdHeader(LOGGER))
+                // disabled due implicit support from Micrometer library. This was added to each route in diff. services, kept it here for a reference.
+                //        .filter(logRequestIdHeader(LOGGER))
                 .filter(dpaConsentCheck.hasUserGivenConsent())
                 .path("/globus", gb -> gb
                         .path("/guest-collection", gcb -> gcb
@@ -74,7 +69,6 @@ public class GlobusRouterConfig {
     @Bean
     public RouterFunction<ServerResponse> pipelineRoutesBasicAuth(final GlobusRequestHandler globusRequestHandler) {
         return route()
-                .filter(buildUniqueRequestId(LOGGER))
                 //Make sure this path is secured under basic auth
                 .DELETE(URI_INCLUDE_UNDER_BASIC_AUTH, globusRequestHandler::deleteDirectoryOnGuestCollection)
                 .build();

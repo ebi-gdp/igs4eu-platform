@@ -96,7 +96,6 @@ public class DatasetRequestHandler {
      *
      * @return dataset id represented by {@link String}
      */
-    @Transactional
     public Mono<ServerResponse> createOrUpdateDatasetDetails(final ServerRequest serverRequest) {
         return datasetDetailsDTOValidator
                 .handleRequest(serverRequest)
@@ -222,7 +221,7 @@ public class DatasetRequestHandler {
      *
      * @return {@code HttpStatus}
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Mono<ServerResponse> deleteDataset(final ServerRequest serverRequest) {
         return doGetDatasetDetails(serverRequest)
                 .flatMap(this::deleteCryptographyDetailsForGivenDataset)

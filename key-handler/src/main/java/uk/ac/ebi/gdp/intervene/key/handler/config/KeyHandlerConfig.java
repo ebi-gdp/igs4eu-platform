@@ -17,8 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.key.handler.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -46,11 +44,9 @@ import java.util.List;
 /**
  * Configuration class for setting up beans related to key handling and GCP Secret Manager.
  */
-@Import({ReactiveExceptionHandler.class,  OpenAPIConfig.class})
+@Import({ReactiveExceptionHandler.class, OpenAPIConfig.class})
 @Configuration
 public class KeyHandlerConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(KeyHandlerConfig.class);
-
     /**
      * Creates a SecretConfig bean with properties prefixed with "gcp.secret-manager.config".
      *
@@ -161,7 +157,8 @@ public class KeyHandlerConfig {
      * @return {@link WebClient} to interact with User manager service.
      */
     @Bean
-    public WebClient webClient(@Value("${intervene.user-manager.base-url}") final String baseURL) {
-        return WebClientUtil.webClient(baseURL, LOGGER);
+    public WebClient webClient(final WebClient.Builder builder,
+                               @Value("${intervene.user-manager.base-url}") final String baseURL) {
+        return WebClientUtil.webClient(builder, baseURL);
     }
 }

@@ -17,7 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.commons.utility;
 
-import org.slf4j.Logger;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.security.oauth2.server.resource.web.reactive.function.client.ServerBearerExchangeFilterFunction;
@@ -30,7 +29,6 @@ import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ClientException.clientException;
 import static uk.ac.ebi.gdp.intervene.commons.exception.ServerException.serverException;
-import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.propagateRequestId;
 import static uk.ac.ebi.gdp.intervene.commons.utility.CommonUtil.getJsonObjectMapper;
 
 /**
@@ -62,18 +60,15 @@ public abstract class WebClientUtil {
      * Default web client utility method.
      *
      * @param baseURL base URL of a service to interact with.
-     * @param logger {@link Logger}
      *
      * @return {@link WebClient} default instance to support necessary functionality.
      */
-    public static WebClient webClient(final String baseURL,
-                                      final Logger logger) {
-        return WebClient
-                .builder()
+    public static WebClient webClient(final WebClient.Builder builder,
+                                      final String baseURL) {
+        return builder
                 .baseUrl(baseURL)
                 .filter(errorHandler())
                 .filter(new ServerBearerExchangeFilterFunction())
-                .filter(propagateRequestId(logger))
                 .build();
     }
 

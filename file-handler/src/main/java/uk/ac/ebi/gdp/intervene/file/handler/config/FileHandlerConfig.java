@@ -19,8 +19,6 @@ package uk.ac.ebi.gdp.intervene.file.handler.config;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.cloud.storage.StorageOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -31,8 +29,8 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import uk.ac.ebi.gdp.file.handler.core.properties.WebClientProperties;
 import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
-import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.dpa.DefaultUserManagerService;
+import uk.ac.ebi.gdp.intervene.commons.dpa.IUserManagerService;
 import uk.ac.ebi.gdp.intervene.commons.exception.ReactiveExceptionHandler;
 import uk.ac.ebi.gdp.intervene.commons.openapi.OpenAPIConfig;
 import uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil;
@@ -59,8 +57,6 @@ import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.GCP;
 @Import({ReactiveExceptionHandler.class, OpenAPIConfig.class})
 @Configuration
 public class FileHandlerConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileHandlerConfig.class);
-
     @Bean
     public EGAFileService egaFileService(@Qualifier("egaWebClient") final WebClient webClient,
                                          final RetryTemplate retryTemplate,
@@ -110,8 +106,9 @@ public class FileHandlerConfig {
      * @return {@link WebClient}
      */
     @Bean("userManagerWebClient")
-    public WebClient webClient(@Value("${intervene.user-manager.base-url}") final String baseURL) {
-        return WebClientUtil.webClient(baseURL, LOGGER);
+    public WebClient webClient(final WebClient.Builder builder,
+                               @Value("${intervene.user-manager.base-url}") final String baseURL) {
+        return WebClientUtil.webClient(builder, baseURL);
     }
 
     /**

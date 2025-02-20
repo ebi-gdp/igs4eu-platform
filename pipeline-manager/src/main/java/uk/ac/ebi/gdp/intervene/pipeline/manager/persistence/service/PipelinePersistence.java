@@ -17,7 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service;
 
-import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineStatusDTO;
@@ -60,7 +59,6 @@ public class PipelinePersistence implements IPipelinePersistence {
     /**
      * {@inheritDoc}
      */
-    @Transactional
     @Override
     public Mono<PipelineDetails> createPipeline(final String userId,
                                                 final String datasetId) {
@@ -81,7 +79,6 @@ public class PipelinePersistence implements IPipelinePersistence {
     /**
      * {@inheritDoc}
      */
-    @Transactional
     @Override
     public Mono<PipelineExecutionStatus> updatePipelineStatus(final String pipelineId,
                                                               final PipelineStatusDTO pipelineStatusDTO) {
@@ -190,7 +187,6 @@ public class PipelinePersistence implements IPipelinePersistence {
     /**
      * {@inheritDoc}
      */
-    @Transactional
     @Override
     public Mono<PipelineDetails> save(final PipelineDetails pipelineDetails) {
         return pipelineDetailsRepository.save(pipelineDetails);
@@ -209,7 +205,6 @@ public class PipelinePersistence implements IPipelinePersistence {
     /**
      * {@inheritDoc}
      */
-    @Transactional
     @Override
     public Mono<PipelineExecutionStatus> savePipelineExecutionStatus(final PipelineExecutionStatus pipelineExecutionStatus) {
         return pipelineExecutionStatusRepository.save(pipelineExecutionStatus);

@@ -23,8 +23,6 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -82,6 +80,7 @@ import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.EBI_EMBASSY
 import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.HTTP;
 import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.KAFKA;
 import static uk.ac.ebi.gdp.intervene.commons.constants.PlatformType.S3;
+import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.errorHandler;
 import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.jsonExchangeStrategies;
 import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.webClient;
 
@@ -91,7 +90,6 @@ import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.webClient;
 @Import({ReactiveExceptionHandler.class, OpenAPIConfig.class})
 @Configuration
 public class PipelineManagerConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PipelineManagerConfig.class);
 
     @Bean
     public IPipelinePersistence pipelinePersistence(final PipelineDetailsRepository pipelineDetailsRepository,
@@ -295,10 +293,11 @@ public class PipelineManagerConfig {
                                                        @Value("${intervene.file-handler.globus.user-details.uri}") final URI globusUserURI,
                                                        @Value("${intervene.file-handler.globus.list-files-dir.uri}") final URI globusDirListFilesURI,
                                                        @Value("${intervene.file-handler.globus.create-dir.uri}") final URI globusCreateDirURI,
-                                                       @Value("${intervene.file-handler.globus.delete-dir.uri}") final URI globusDeleteDirURI) {
+                                                       @Value("${intervene.file-handler.globus.delete-dir.uri}") final URI globusDeleteDirURI,
+                                                       final WebClient.Builder webClientBuilder) {
         return new GlobusFileHandlerService(
                 fileHandlerWebClient,
-                basicAuthWebClient(fileHandlerBaseURL, credentials),
+                basicAuthWebClient(fileHandlerBaseURL, credentials, webClientBuilder),
                 globusUserURI,
                 globusDirListFilesURI,
                 globusCreateDirURI,
@@ -307,10 +306,11 @@ public class PipelineManagerConfig {
     }
 
     private WebClient basicAuthWebClient(final String baseURL,
-                                         final String credentials) {
-        return WebClient
-                .builder()
+                                         final String credentials,
+                                         final WebClient.Builder webClientBuilder) {
+        return webClientBuilder
                 .defaultHeader(AUTHORIZATION, credentials)
+                .filter(errorHandler())
                 .baseUrl(baseURL)
                 .build();
     }
@@ -346,8 +346,9 @@ public class PipelineManagerConfig {
      * @return a {@link WebClient} instance configured with the provided base URL.
      */
     @Bean("fileHandlerWebClient")
-    public WebClient fileHandlerWebClient(@Value("${intervene.file-handler.base-url}") final String fileHandlerBaseURL) {
-        return webClient(fileHandlerBaseURL, LOGGER);
+    public WebClient fileHandlerWebClient(final WebClient.Builder builder,
+                                          @Value("${intervene.file-handler.base-url}") final String fileHandlerBaseURL) {
+        return webClient(builder, fileHandlerBaseURL);
     }
 
     /**
@@ -360,8 +361,9 @@ public class PipelineManagerConfig {
      * @return a {@link WebClient} instance configured with the provided base URL.
      */
     @Bean("userManagerWebClient")
-    public WebClient userManagerWebClient(@Value("${intervene.user-manager.base-url}") final String userManagerBaseURL) {
-        return webClient(userManagerBaseURL, LOGGER);
+    public WebClient userManagerWebClient(final WebClient.Builder builder,
+                                          @Value("${intervene.user-manager.base-url}") final String userManagerBaseURL) {
+        return webClient(builder, userManagerBaseURL);
     }
 
     /**
@@ -374,8 +376,9 @@ public class PipelineManagerConfig {
      * @return a {@link WebClient} instance configured with the provided base URL.
      */
     @Bean("keyHandlerWebClient")
-    public WebClient keyHandlerWebClient(@Value("${intervene.key-handler.base-url}") final String keyHandlerBaseURL) {
-        return webClient(keyHandlerBaseURL, LOGGER);
+    public WebClient keyHandlerWebClient(final WebClient.Builder builder,
+                                         @Value("${intervene.key-handler.base-url}") final String keyHandlerBaseURL) {
+        return webClient(builder, keyHandlerBaseURL);
     }
 
     private AmazonS3 amazonS3(final String endpoint,
@@ -424,9 +427,9 @@ public class PipelineManagerConfig {
      * @return a {@link WebClient} instance configured with the specified base URL.
      */
     @Bean("pgsCatalogWebClient")
-    public WebClient webClientPublicURL(@Value("${pgs-catalog.rest.base-url}") final String baseURL) {
-        return WebClient
-                .builder()
+    public WebClient webClientPublicURL(@Value("${pgs-catalog.rest.base-url}") final String baseURL,
+                                        final WebClient.Builder webClientBuilder) {
+        return webClientBuilder
                 .baseUrl(baseURL)
                 .build();
     }

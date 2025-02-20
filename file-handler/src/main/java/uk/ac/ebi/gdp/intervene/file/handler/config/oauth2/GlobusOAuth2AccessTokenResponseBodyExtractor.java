@@ -51,7 +51,6 @@ import static reactor.core.publisher.Mono.error;
  * @see BodyExtractor
  * @see OAuth2AccessTokenResponse
  * @see ReactiveHttpInputMessage
- *
  */
 class GlobusOAuth2AccessTokenResponseBodyExtractor implements BodyExtractor<Mono<OAuth2AccessTokenResponse>, ReactiveHttpInputMessage> {
     private static final String INVALID_TOKEN_RESPONSE_ERROR_CODE = "invalid_token_response";
@@ -77,12 +76,12 @@ class GlobusOAuth2AccessTokenResponseBodyExtractor implements BodyExtractor<Mono
                         ex))
                 .switchIfEmpty(error(() -> new OAuth2AuthorizationException(
                         invalidTokenResponse("Empty OAuth 2.0 Access Token Response"))))
-                .map(GlobusOAuth2AccessTokenResponseBodyExtractor::parse)
-                .flatMap(GlobusOAuth2AccessTokenResponseBodyExtractor::oauth2AccessTokenResponse)
-                .map(GlobusOAuth2AccessTokenResponseBodyExtractor::oauth2AccessTokenResponse);
+                .map(this::parse)
+                .flatMap(this::oauth2AccessTokenResponse)
+                .map(this::oauth2AccessTokenResponse);
     }
 
-    private static TokenResponse parse(final Map<String, Object> json) {
+    protected TokenResponse parse(final Map<String, Object> json) {
         try {
             return TokenResponse.parse(extractTransferAPIAccessToken(json));
         } catch (ParseException ex) {
@@ -93,16 +92,16 @@ class GlobusOAuth2AccessTokenResponseBodyExtractor implements BodyExtractor<Mono
     }
 
     @SuppressWarnings("unchecked")
-    private static JSONObject extractTransferAPIAccessToken(final Map<String, Object> json) {
+    protected JSONObject extractTransferAPIAccessToken(final Map<String, Object> json) {
         final Object otherTokens = ((List<?>) json.get("other_tokens")).get(0);
         return new JSONObject((Map<String, ?>) otherTokens);
     }
 
-    private static OAuth2Error invalidTokenResponse(final String message) {
+    protected OAuth2Error invalidTokenResponse(final String message) {
         return new OAuth2Error(INVALID_TOKEN_RESPONSE_ERROR_CODE, message, null);
     }
 
-    private static Mono<AccessTokenResponse> oauth2AccessTokenResponse(final TokenResponse tokenResponse) {
+    protected Mono<AccessTokenResponse> oauth2AccessTokenResponse(final TokenResponse tokenResponse) {
         if (tokenResponse.indicatesSuccess()) {
             return Mono.just(tokenResponse).cast(AccessTokenResponse.class);
         }
@@ -112,7 +111,7 @@ class GlobusOAuth2AccessTokenResponseBodyExtractor implements BodyExtractor<Mono
         return error(new OAuth2AuthorizationException(oauth2Error));
     }
 
-    private static OAuth2Error getOAuth2Error(final ErrorObject errorObject) {
+    protected OAuth2Error getOAuth2Error(final ErrorObject errorObject) {
         if (errorObject == null) {
             return new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR);
         }
@@ -122,7 +121,7 @@ class GlobusOAuth2AccessTokenResponseBodyExtractor implements BodyExtractor<Mono
         return new OAuth2Error(code, description, uri);
     }
 
-    private static OAuth2AccessTokenResponse oauth2AccessTokenResponse(final AccessTokenResponse accessTokenResponse) {
+    protected OAuth2AccessTokenResponse oauth2AccessTokenResponse(final AccessTokenResponse accessTokenResponse) {
         final AccessToken accessToken = accessTokenResponse.getTokens().getAccessToken();
         OAuth2AccessToken.TokenType accessTokenType = null;
         if (OAuth2AccessToken.TokenType.BEARER.getValue().equalsIgnoreCase(accessToken.getType().getValue())) {

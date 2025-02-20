@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: User Account API
   description: API for managing user accounts and consent data

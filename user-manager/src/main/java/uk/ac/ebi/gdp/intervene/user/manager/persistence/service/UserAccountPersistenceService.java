@@ -49,10 +49,9 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
     /**
      * Build & persist all user account related entities
      * Rollbacks transaction on runtime exception thrown.
-     *
      * {@inheritDoc}
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Mono<UserAccount> createAccount(final String authUserAccountId,
                                            final IUserInfo userInfo) {
