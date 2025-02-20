@@ -17,8 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.file.handler.config.router.cloud;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
@@ -27,15 +25,12 @@ import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
 import uk.ac.ebi.gdp.intervene.file.handler.cloud.ICloudStorage;
 
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
-import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 
 /**
  * Cloud router config.
  */
 @Configuration
 public class CloudRouterConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CloudRouterConfig.class);
-
     /**
      * @param dpaConsentCheck DPA consent check implementation
      *
@@ -45,7 +40,6 @@ public class CloudRouterConfig {
     public RouterFunction<ServerResponse> cloudRoutes(final DPAConsentCheck dpaConsentCheck,
                                                       final CloudRequestHandler cloudRequestHandler) {
         return route()
-                .filter(logRequestIdHeader(LOGGER))
                 .filter(dpaConsentCheck.hasUserGivenConsent())
                 .path("/cloud", gb -> gb
                         .path("/storage", gcb -> gcb

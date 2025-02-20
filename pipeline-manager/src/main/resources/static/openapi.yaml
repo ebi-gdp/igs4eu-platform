@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: Pipeline Management API
   version: 1.0.0
@@ -13,6 +13,8 @@ tags:
 servers:
   - url: /pipeline-manager
     description: Base path for Pipeline Manager API
+security:
+    - bearerAuth: [ ]
 paths:
   /pipeline:
     post:
@@ -983,4 +985,3 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-

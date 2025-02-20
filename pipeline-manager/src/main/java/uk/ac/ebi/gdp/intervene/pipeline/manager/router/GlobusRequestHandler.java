@@ -19,7 +19,6 @@ package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
 import org.slf4j.Logger;
 import org.springframework.http.HttpStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -73,7 +72,6 @@ public class GlobusRequestHandler {
      *
      * @return Globus user details represented by {@link GlobusUserDetailsDTO}
      */
-    @Transactional
     public Mono<ServerResponse> mapGlobusUserId(final ServerRequest serverRequest) {
         return serverRequest
                 .bodyToMono(String.class)

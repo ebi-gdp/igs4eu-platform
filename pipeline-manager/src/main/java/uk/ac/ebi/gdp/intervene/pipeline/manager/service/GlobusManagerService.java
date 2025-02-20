@@ -17,7 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.service;
 
-import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GlobusFileDetailsWrapperDTO;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.GuestCollectionDirReqDTO;
@@ -85,7 +84,6 @@ public class GlobusManagerService {
      *
      * @return Globus details represented by {@link GlobusDetails}
      */
-    @Transactional
     public Mono<GlobusDetails> createOrUpdateGlobusRecord(final String globusUsername,
                                                           final String guestCollectionId,
                                                           final Path dirPathOnGuestCollection) {
@@ -157,9 +155,7 @@ public class GlobusManagerService {
      *
      * @return {@link GlobusUserDetails}
      */
-    @Transactional
     public Mono<GlobusUserDetails> save(final GlobusUserDetails globusUserDetails) {
-        return globusUserRepository
-                .save(globusUserDetails);
+        return globusUserRepository.save(globusUserDetails);
     }
 }

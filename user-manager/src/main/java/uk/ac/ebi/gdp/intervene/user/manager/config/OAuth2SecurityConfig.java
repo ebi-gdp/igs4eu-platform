@@ -34,8 +34,6 @@ import uk.ac.ebi.gdp.intervene.user.manager.service.aai.ElixirAuthenticationServ
 import static java.net.URI.create;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.http.HttpMethod.GET;
-import static org.springframework.web.reactive.function.client.WebClient.builder;
-//import static uk.ac.ebi.gdp.intervene.commons.openapi.OpenAPIConfig.OPEN_API_AUTH_WHITELIST;
 import static uk.ac.ebi.gdp.intervene.commons.openapi.OpenAPIConfig.OPEN_API_AUTH_WHITELIST;
 import static uk.ac.ebi.gdp.intervene.commons.utility.WebClientUtil.errorHandler;
 
@@ -90,18 +88,19 @@ public class OAuth2SecurityConfig extends GenericOAuth2SecurityConfig {
     }
 
     @Bean
-    public WebClient elixirWebClient(@Value("${elixir.oidc.url}") final String elixirOidcUrl) {
-        return webClient(elixirOidcUrl);
+    public WebClient elixirWebClient(@Value("${elixir.oidc.url}") final String elixirOidcUrl,
+                                     final WebClient.Builder webClientBuilder) {
+        return webClient(elixirOidcUrl, webClientBuilder);
     }
 
-    private WebClient webClient(final String baseURL) {
-        return builder()
+    private WebClient webClient(final String baseURL,
+                                final WebClient.Builder webClientBuilder) {
+        return webClientBuilder
                 .baseUrl(baseURL)
                 .filters(exchangeFilterFunctions -> {
                     exchangeFilterFunctions.add(new ServerBearerExchangeFilterFunction());
                     exchangeFilterFunctions.add(errorHandler());
                 })
-                .filter(new ServerBearerExchangeFilterFunction())
                 .build();
     }
 }

@@ -17,7 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.pipeline.manager.router;
 
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,9 +46,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.service.PipelineSubmissionRateLi
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
 
-import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
-import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.buildUniqueRequestId;
 import static uk.ac.ebi.gdp.intervene.pipeline.manager.config.OAuth2SecurityConfig.DATASET_EXPIRED_DIR;
 
 /**
@@ -57,7 +54,6 @@ import static uk.ac.ebi.gdp.intervene.pipeline.manager.config.OAuth2SecurityConf
  */
 @Configuration
 public class PipelineManagerRouterConfig {
-    private final Logger LOGGER = getLogger(PipelineManagerRouterConfig.class);
     private final PipelineSubmissionRateLimiterFilter pipelineSubmissionRateLimiterFilter;
 
     public PipelineManagerRouterConfig(final PipelineSubmissionRateLimiterFilter pipelineSubmissionRateLimiterFilter) {
@@ -71,7 +67,6 @@ public class PipelineManagerRouterConfig {
                                                          final DatasetRequestHandler datasetRequestHandler,
                                                          final DPAConsentCheck dpaConsentCheck) {
         return route()
-                .filter(buildUniqueRequestId(LOGGER))
                 .filter(dpaConsentCheck.hasUserGivenConsent())
                 .path("/pipeline", pb -> pb
                         .GET("/success/result", pipelineResultHandler::listResultFiles)
@@ -104,7 +99,6 @@ public class PipelineManagerRouterConfig {
     @Bean
     public RouterFunction<ServerResponse> pipelineRoutesBasicAuth(final PipelineStatusHandler pipelineStatusHandler) {
         return route()
-                .filter(buildUniqueRequestId(LOGGER))
                 //Make sure this path is secured under basic auth, allows pipeline executor to trigger API
                 .path("/integration/pipeline/{pipelineId}/status", pb -> pb.PATCH(pipelineStatusHandler::updatePipelineStatus))
                 .build();
@@ -113,7 +107,6 @@ public class PipelineManagerRouterConfig {
     @Bean
     public RouterFunction<ServerResponse> datasetRoutesBasicAuth(final DatasetRequestHandler datasetRequestHandler) {
         return route()
-                .filter(buildUniqueRequestId(LOGGER))
                 //Make sure this path is secured under basic auth, allows pipeline executor to trigger API
                 .path(DATASET_EXPIRED_DIR, db -> db.DELETE(serverRequest -> datasetRequestHandler.deleteGlobusDirsOnGuestCollectionInBatches()))
                 .build();

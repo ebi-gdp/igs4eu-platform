@@ -17,8 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.key.handler.router;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
@@ -29,15 +27,12 @@ import java.nio.file.Path;
 
 import static java.nio.file.Paths.get;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
-import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.buildUniqueRequestId;
-import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 
 /**
  * Configuration class for setting up RouterFunction beans to handle web requests.
  */
 @Configuration
 public class KeyHandlerRouterConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(KeyHandlerRouterConfig.class);
     private static final Path keys = get("/key");
     private static final String KEYS_URI = "{keyId}/version/{versionId}";
 
@@ -53,7 +48,6 @@ public class KeyHandlerRouterConfig {
     public RouterFunction<ServerResponse> keyHandlerRoutes(final KeyRequestHandler keyHandler,
                                                            final DPAConsentCheck dpaConsentCheck) {
         return route()
-                .filter(logRequestIdHeader(LOGGER))
                 .filter(dpaConsentCheck.hasUserGivenConsent())
                 .POST(keys.toString(), serverRequest -> keyHandler.generateKeys())
                 .DELETE(keys.toString(), keyHandler::deleteSecret)
@@ -70,7 +64,6 @@ public class KeyHandlerRouterConfig {
     @Bean
     public RouterFunction<ServerResponse> pipelineRoutesBasicAuth(final KeyRequestHandler keyHandler) {
         return route()
-                .filter(buildUniqueRequestId(LOGGER))
                 //Make sure this path is secured under basic auth
                 .GET(keys.resolve(KEYS_URI).toString(), keyHandler::retrievePrivateKey)
                 .build();

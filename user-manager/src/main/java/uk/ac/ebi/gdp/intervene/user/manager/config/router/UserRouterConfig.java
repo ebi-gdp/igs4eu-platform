@@ -17,8 +17,6 @@
  */
 package uk.ac.ebi.gdp.intervene.user.manager.config.router;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
@@ -34,7 +32,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 import static org.springframework.web.reactive.function.server.RequestPredicates.path;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
-import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
 
 /**
  * User router config.
@@ -44,8 +41,6 @@ import static uk.ac.ebi.gdp.intervene.commons.log.LogUtil.logRequestIdHeader;
  */
 @Configuration
 public class UserRouterConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserRouterConfig.class);
-
     @Bean
     public RouterFunction<ServerResponse> userRoutes(final UserHandler userHandler,
                                                      final UserDPAConsentHandler userDPAConsentHandler) {
@@ -56,7 +51,6 @@ public class UserRouterConfig {
     public RouterFunction<ServerResponse> userRoutesConfig(final UserHandler userHandler,
                                                            final UserDPAConsentHandler userDPAConsentHandler) {
         return route()
-                .filter(logRequestIdHeader(LOGGER))
                 .path("/user/account", ub -> ub
                         .path("/consent/data", cub -> cub
                                 .POST(accept(APPLICATION_JSON), serverRequest -> userDPAConsentHandler.giveConsent())
