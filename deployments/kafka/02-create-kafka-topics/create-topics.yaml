@@ -1,0 +1,31 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: pipeline-launch
+  labels:
+    strimzi.io/cluster: "kafka-cluster"
+spec:
+  partitions: 1
+  replicas: 1
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: pipeline-status
+  labels:
+    strimzi.io/cluster: "kafka-cluster"
+spec:
+  partitions: 1
+  replicas: 1
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: topic-test
+  labels:
+    strimzi.io/cluster: "kafka-cluster"
+spec:
+  partitions: 1
+  replicas: 1

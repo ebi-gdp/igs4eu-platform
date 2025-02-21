@@ -1,0 +1,8 @@
+apiVersion: v2
+name: Kafka-cluster-deployment
+description: A Helm chart for deploying a Kafka cluster
+annotations:
+  category: "Message Queue"
+  createdBy: "GDP Team"
+appVersion: "1.0"
+version: 1.0.0
