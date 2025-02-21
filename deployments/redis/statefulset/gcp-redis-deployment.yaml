@@ -1,0 +1,128 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-configuration
+# namespace: intervene-prod
+  labels:
+    app: redis
+data:
+  master.conf: |
+    maxmemory 400mb
+    maxmemory-policy allkeys-lru
+    maxclients 20000
+    timeout 300
+    appendonly no
+    dbfilename dump.rdb
+    dir /data
+  slave.conf: |
+    slaveof redis-ss-0.redis-ss.redis 6379
+    maxmemory 400mb
+    maxmemory-policy allkeys-lru
+    maxclients 20000
+    timeout 300
+    dir /data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+# namespace: intervene-prod
+  labels:
+    app: redis
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      protocol: TCP
+      name: redis-app-port
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+# namespace: intervene-prod
+spec:
+  serviceName: "redis-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      initContainers:
+        - name: init-redis
+          image: redis:latest
+          command:
+            - bash
+            - "-c"
+            - |
+              set -ex
+              # Generate redis server-id from pod ordinal index.
+              [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
+              ordinal=${BASH_REMATCH[1]}
+              # Copy appropriate redis config files from config-map to respective directories.
+              if [[ $ordinal -eq 0 ]]; then
+                cp /mnt/master.conf /etc/redis-config.conf
+              else
+                cp /mnt/slave.conf /etc/redis-config.conf
+              fi
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+            requests:
+              cpu: "200m"
+              memory: "128Mi"
+          volumeMounts:
+            - name: redis-claim
+              mountPath: /etc
+            - name: config-map
+              mountPath: /mnt/
+      containers:
+        - name: redis
+          image: redis:latest
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+            requests:
+              cpu: "200m"
+              memory: "128Mi"
+          ports:
+            - containerPort: 6379
+              name: redis-ss
+          command:
+            - redis-server
+            - "/etc/redis-config.conf"
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+            - name: redis-claim
+              mountPath: /etc
+      volumes:
+        - name: config-map
+          configMap:
+            name: redis-configuration
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-claim
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 1Gi
+    - metadata:
+        name: redis-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 1Gi
