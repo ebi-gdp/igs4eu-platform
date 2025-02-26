@@ -1,4 +1,4 @@
-# Genetic Scoring Pipeline Presentation Layer (Backend Microservices)
+# Genetic Scoring Pipeline Backend Microservices (Presentation Layer)
 
 ## Overview
 This project is a Java Spring Boot application managed with Maven. It consists of five modules, each responsible for a specific aspect of the system.
