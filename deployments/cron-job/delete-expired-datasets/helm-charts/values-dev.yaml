@@ -1,0 +1,6 @@
+namespace: intervene-dev
+
+# username=pipeline-manager basic auth username
+# password=pipeline-manager basic auth password
+# This is base64(Basic base64(username:password))
+basicAuth: {replace-with-pipeline-manager-basic-auth-gcp-secret-manager}

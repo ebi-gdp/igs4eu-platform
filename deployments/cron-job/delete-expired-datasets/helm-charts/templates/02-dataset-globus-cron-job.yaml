@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly-http-trigger-dataset-globus
+  namespace: {{ .Values.namespace }}
+spec:
+  schedule: "0 1 * * *" # Trigger at midnight every day
+  concurrencyPolicy: "Forbid"  # Prevents concurrent runs
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 43200
+      template:
+        spec:
+          containers:
+            - name: http-trigger
+              image: curlimages/curl:7.73.0  # Using curl to make HTTP requests
+              imagePullPolicy: IfNotPresent
+              resources:
+                limits:
+                  cpu: "200m"
+                  memory: "64Mi"
+                requests:
+                  cpu: "200m"
+                  memory: "64Mi"
+              env:
+                - name: BASIC_AUTH
+                  valueFrom:
+                    secretKeyRef:
+                      name: basic-auth-secret-cronjob  # Name of the Kubernetes Secret
+                      key: basic-authorization # Key within the Secret that holds the basic auth
+                - name: NAMESPACE
+                  value: {{ .Values.namespace }}
+              args:
+                - /bin/sh
+                - -c
+                - |
+                  echo "Executing DELETE request with masked Authorization header"
+                  curl -v -X DELETE -H "Authorization: $BASIC_AUTH" http://pipeline-manager.$NAMESPACE.svc.cluster.local:8080/pipeline-manager/dataset/expired/dir \
+                  2>&1 | sed 's/Authorization: Basic [^ ]*/Authorization: Basic [REDACTED]/'
+          restartPolicy: Never
