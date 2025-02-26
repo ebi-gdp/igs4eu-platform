@@ -1,0 +1,28 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pgs-ids-pub-data-update-cron-job
+  namespace: {{ .Values.namespace }}
+spec:
+  schedule: "15 1 * * *"
+  concurrencyPolicy: "Forbid"  # Prevents concurrent runs
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 43200
+      template:
+        spec:
+          containers:
+            - name: pgs-ids
+              image: dockerhub.ebi.ac.uk/gdp/igs4eu-platform:pgs-ids-cron-job-{{ .Values.imageVersion }}-{{ .Values.imagePostfixTag }}
+              imagePullPolicy: Always
+              volumeMounts:
+                - name: pgs-ids-pub-data-updated-date
+                  mountPath: /data/pgs-ids-reference-date
+          imagePullSecrets:
+            - name: gitlabpullimage # base64[gitlab-username:password]
+          restartPolicy: Never
+          volumes:
+            - name: pgs-ids-pub-data-updated-date
+              persistentVolumeClaim:
+                claimName: pgs-ids-pub-data-updated-date-pv-claim
