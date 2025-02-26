@@ -95,11 +95,13 @@ public class EgaOauth2ClientConfig extends Oauth2ClientConfig {
 
     @Bean("egaWebClient")
     public WebClient egaWebClient(@Qualifier("egaReactiveOAuth2AuthorizedClientManager") final ReactiveOAuth2AuthorizedClientManager authorizedClientManager,
+                                  final WebClient.Builder builder,
                                   final WebClientProperties webClientProperties,
                                   @Value("${ega.data-api.url}") final String baseURL) {
 
         return webClient(
                 authorizedClientManager,
+                builder,
                 webClientProperties,
                 baseURL,
                 EGA_RESOURCE_ID
