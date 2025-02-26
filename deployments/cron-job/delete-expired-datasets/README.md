@@ -28,9 +28,19 @@ You can add more `values-{env}.yaml` files according to env.
 helm upgrade --install dataset-cronjob ./helm-charts -f ./helm-charts/values-dev.yaml
 ```
 
-## Production Cluster
+## Production cluster
 ```
 helm upgrade --install dataset-cronjob ./helm-charts -f ./helm-charts/values-prod.yaml
+```
+
+**Delete release**
+
+```
+# command
+helm delete {release-name}
+
+# example
+helm delete dataset-cronjob
 ```
 
 # Check deployment status

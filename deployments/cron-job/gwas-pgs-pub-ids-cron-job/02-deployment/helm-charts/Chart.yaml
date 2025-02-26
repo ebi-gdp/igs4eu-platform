@@ -1,0 +1,8 @@
+apiVersion: v2
+name: gwas-pgs-pub-ids-update-cron-job
+description: A Helm chart for deploying a Cron Job
+annotations:
+  category: "Cron Job"
+  createdBy: "GDP Team"
+appVersion: "1.0"
+version: 1.0.0

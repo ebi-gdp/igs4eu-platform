@@ -1,0 +1,5 @@
+namespace: intervene-prod
+
+imageVersion: 1.0.0
+
+imagePostfixTag: prod
