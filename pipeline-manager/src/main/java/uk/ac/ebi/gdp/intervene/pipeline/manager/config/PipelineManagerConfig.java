@@ -199,9 +199,9 @@ public class PipelineManagerConfig {
          * @return a {@link WebClient} instance configured with the provided base URL and custom exchange strategies.
          */
         @Bean("pipelineRequestWebClient")
-        public WebClient webClientBasic(@Value("${intervene.pipeline-request.base-url}") final String baseURL) {
-            return WebClient
-                    .builder()
+        public WebClient webClientBasic(@Value("${intervene.pipeline-request.base-url}") final String baseURL,
+                                        final WebClient.Builder builder) {
+            return builder
                     .exchangeStrategies(jsonExchangeStrategies())
                     .baseUrl(baseURL)
                     .build();

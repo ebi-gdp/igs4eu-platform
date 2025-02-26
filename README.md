@@ -2,6 +2,12 @@
 
 ## Overview
 This project is a Java Spring Boot application managed with Maven. It consists of five modules, each responsible for a specific aspect of the system.
+Look for `application.properties` & `application-{env}.properties` for each microservice. There are total 3 environments dev, test & prod.
+
+These microservices handle Genetic Scoring Platform's backend operations. Divided into diff. microservices to support whole functionality.
+Services communicate internally via `WebClient`.
+
+You can check out this project & import to preferred IDE e.g. IntelliJ IDEA.
 
 ## Modules
 For more information refer to `README.md` defied inside each module.
@@ -10,8 +16,8 @@ For more information refer to `README.md` defied inside each module.
     - Depends on/ interacts with
       ```
       1. Common Module (direct dependency).
-      2. Interacts with User Manager (Checks for user identity & DPA).
-      3. Globus Integration.
+      2. Interacts with User Manager service (Checks for user identity & DPA).
+      3. Interacts with Globus APIs.
       4. Google Buckets Integration.
       ``` 
 
@@ -39,7 +45,7 @@ For more information refer to `README.md` defied inside each module.
       4. Interacts with File Handler.
       5. PostgreSQL (GCP SaaS).
       6. Redis (Deployed on K8S).
-      7. Kakfka (Deployed on K8S). 
+      7. Kafka (Deployed on K8S). 
       8. Email server (geneticscores.org).
       ```
 
@@ -54,6 +60,20 @@ For more information refer to `README.md` defied inside each module.
 
 5. **Common Module** (intervene-commons)
     - Provides shared libraries and common code for the above modules.
+
+### All services are secured by OAuth2 - Spring Security; interacts with AAI server to validate access token. Currently integrates with Life Science AAI.
+
+## Services intercommunication
+
+Inter-microservice communication take place via `WebClient`, Access Token gets passed/propagated to the service(s) being called.
+
+| Service            | Interacts with | Purpose                                                                        |
+|--------------------|----------------|--------------------------------------------------------------------------------|
+| `File Handler`     | `User Manager` | Checks for `DPA` consent.                                                      |
+| `Pipeline Manager` | `User Manager` | Checks for `DPA` consent.                                                      |
+|                    | `File Handler` | 1. Globus File Operations<br/> 2. Streaming result files from GCP buckets.     |
+|                    | `Key Handler`  | Crypt4gh key generation & storing encrypted secret keys on GCP secret manager. |
+| `Key Handler`      | `User Manager` | Checks for `DPA` consent.                                                      |
 
 ## Prerequisites
 
@@ -157,16 +177,22 @@ Follow these steps to build the project:
    ```
 
 ## Run application locally
-Refer to individual application properties defined in a module, defined these properties in your maven settings.xml Once the project builds successfully, you can run the application locally & deploy on GCP.
-Further instructions are defined in module's README.md.
+Refer to individual application properties defined in a module, defined these properties in your maven `settings.xml` Once the project builds successfully, you can run the application locally & deploy on GCP.
+Further instructions are defined in each module's `README.md` file under `Build & run application` section. Needs service account key generated on GCP console.
+Export `GOOGLE_APPLICATION_CREDENTIALS` variable with referring to service account key file path. This key file is required in order to access GCP services locally.
+Refer to google documentation [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials).
+
+Make sure all modules are built properly with appropriate properties. Run all 4 services, by default it should run on their assigned ports.
+Check whether all services are running. Open API has been integrated & same can be accessed as below for each service
 ```
-1. PostgreSQL instance.
-2. Kafka.
-3. Connects to GCP secret manager. Needs service account key generated on GCP console. 
-Export GOOGLE_APPLICATION_CREDENTIALS variable with referring to service account key file path.
-4. Redis instance.
+http://localhost:8010/file-handler/webjars/swagger-ui/index.html
+
+http://localhost:8020/pipeline-manager/webjars/swagger-ui/index.html
+
+http://localhost:8030/user-manager/webjars/swagger-ui/index.html
+
+http://localhost:8040/key-handler/webjars/swagger-ui/index.html
 ```
-Please refer to google documentation [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials). You can ignore email server connection error! works on GCP. 
 
 ### Releasing Code
 Once the project builds successfully, prepare for release:
@@ -182,3 +208,110 @@ After releasing the project, check tag on [igs4eu-platform](https://github.com/e
 You should see the tag you have just released. This repository is synced with Gitlab, navigate to Gitlab instance [igs4eu-platform-gitlab](https://gitlab.ebi.ac.uk/gdp/igs4eu-platform).
 Further steps to build, containerize & deploy have been mentioned on [Confluence](https://www.ebi.ac.uk/seqdb/confluence/display/GDP/Genetic+Scoring+Platform+Deployment+Guide).
 
+### Deployments - 2 options
+#### 1. Gitlab CI/CD
+Gitlab setup requires to be detailed document, same can be found at 
+
+#### 2. Helm charts without CI/CD
+
+Microservices can be deployed in 2 ways via CI/CD using `gitlab` or individually using `helm` charts; `gitlab` also uses `helm` charts. Use `gitlab` for deployments, it's preferred way.
+Use direct `helm` command in case only individual services are to be deployed e.g. for testing code on deployment. `helm` charts scripts are defined under `deployments` directory for each module.
+
+Helm chart structure
+```
+deployments
+  |- files
+     |- application-gcp-{env}-env.properties
+  |- templates
+     |- configmap.yaml
+     |- gcp-deployment.yaml
+  |- Chart.yaml
+  |- values-gcp-{env}-env.yaml
+```
+Example
+```
+deployments
+  |- files
+     |- application-gcp-dev-env.properties
+     |- application-gcp-test-env.properties
+     |- application-gcp-prod-env.properties
+  |- templates
+     |- configmap.yaml
+     |- gcp-deployment.yaml
+  |- Chart.yaml
+  |- values-gcp-dev-env.yaml
+  |- values-gcp-test-env.yaml
+  |- values-gcp-prod-env.yaml 
+```
+This is standard helm format, in order to deploy services, it is important to look for `files` & `values` files. Whenever there are any property file changes
+make sure you update property files. In case change differs according env. then make those changes inside values files. Deployment file refers values files according to env.
+Also when you release underlying application's new version, you can update `appVersion` inside `Chart.yaml`.
+
+You can deploy individual services directly using `helm` charts. Sometimes after individual deployments, dependant services requires restart. if you face connection issues with other services then restart pods. 
+Run these commands from project's home directory. Before you run these command make sure you have updated `helm` files e.g. `application.properties`. Code should have been released with latest version & `docker` image has been created for the services.
+`image.tag` sets `docker` image tag, you can use temporary tag in case want to test deployment OR use actual released tag for deployment.
+
+1. Build docker image without CI/CD
+   ```
+   # Build the project & generate jar file for services & then run the following
+   # File Handler
+   docker build -f docker/Dockerfile -t dockerhub.ebi.ac.uk/gdp/igs4eu-platform:file-handler-1.0.0-dev --build-arg MODULE_NAME=file-handler --build-arg TARGET_PLATFORM=linux/amd64 .
+   
+   # Pipeline Manager
+   docker build -f docker/Dockerfile -t dockerhub.ebi.ac.uk/gdp/igs4eu-platform:pipeline-manager-1.0.0-dev --build-arg MODULE_NAME=pipeline-manager --build-arg TARGET_PLATFORM=linux/amd64 .
+   
+   # User Manager
+   docker build -f docker/Dockerfile -t dockerhub.ebi.ac.uk/gdp/igs4eu-platform:user-manager-1.0.0-dev --build-arg MODULE_NAME=user-manager --build-arg TARGET_PLATFORM=linux/amd64 .
+   ```
+   
+   Docker image for `key-handler` service is diff. because of additional dependencies, follow this command
+   ```
+   docker build -f docker/key-handler/Dockerfile -t dockerhub.ebi.ac.uk/gdp/igs4eu-platform:key-handler-1.0.0-dev --build-arg MODULE_NAME=key-handler --build-arg TARGET_PLATFORM=linux/amd64 .
+   ```
+2. Push docker image(s) to gitlab container registry, make sure you have access to gitlab project.
+   ```
+   docker push dockerhub.ebi.ac.uk/gdp/igs4eu-platform:file-handler-1.0.0-dev
+   
+   docker push dockerhub.ebi.ac.uk/gdp/igs4eu-platform:pipeline-manager-1.0.0-dev
+   
+   docker push dockerhub.ebi.ac.uk/gdp/igs4eu-platform:user-manager-1.0.0-dev
+   
+   docker push dockerhub.ebi.ac.uk/gdp/igs4eu-platform:key-handler-1.0.0-dev
+   ```
+3. Run helm command to deploy service(s). Run only those commands which are needed i.e. only those services which needs to be deployed!
+   ```
+   helm upgrade --install {module-name} ./{module-name}/deployments -f ./{module-name}/deployments/values-gcp-{env}-env.yaml \
+   --namespace {namespace} \
+   --set image.tag={image-released-tag}
+   ```   
+   Select appropriate `module-name`, `namespace`, `values-file` & `GitHub` released tag.
+
+   Examples:
+   ```
+   helm upgrade --install file-handler ./file-handler/deployments -f ./file-handler/deployments/values-gcp-dev-env.yaml \
+   --namespace intervene-dev \
+   --set image.tag=1.0.0
+   ```
+   
+   ```
+   helm upgrade --install key-handler ./key-handler/deployments -f ./key-handler/deployments/values-gcp-dev-env.yaml \
+   --namespace intervene-dev \
+   --set image.tag=1.0.0
+   ```
+
+   ```
+   helm upgrade --install pipeline-manager ./pipeline-manager/deployments -f ./pipeline-manager/deployments/values-gcp-dev-env.yaml \
+   --namespace intervene-dev \
+   --set image.tag=1.0.0
+   ```
+
+   ```
+   helm upgrade --install user-manager ./user-manager/deployments -f ./user-manager/deployments/values-gcp-dev-env.yaml \
+   --namespace intervene-dev \
+   --set image.tag=1.0.0
+   ```
+
+Check deployment status on kubernetes cluster. e.g. 
+   ```
+   kubectl get pods -n intervene-dev
+   ```

@@ -129,6 +129,7 @@ class Oauth2ClientConfig extends GenericOAuth2SecurityConfig {
      * @see WebClient
      */
     protected WebClient webClient(final ReactiveOAuth2AuthorizedClientManager authorizedClientManager,
+                                  final WebClient.Builder builder,
                                   final WebClientProperties webClientProperties,
                                   final String baseURL,
                                   final String registrationId) {
@@ -142,7 +143,7 @@ class Oauth2ClientConfig extends GenericOAuth2SecurityConfig {
                 new ServerOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
 
         oauth.setDefaultClientRegistrationId(registrationId);
-        return WebClient.builder()
+        return builder
                 .filters(exchangeFilterFunctions -> {
                     exchangeFilterFunctions.add(oauth);
                     exchangeFilterFunctions.add(errorHandler());

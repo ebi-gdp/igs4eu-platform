@@ -82,10 +82,12 @@ public class GlobusOauth2ClientConfig extends Oauth2ClientConfig {
 
     @Bean("globusWebClient")
     public WebClient globusWebClient(@Qualifier("globusReactiveOAuth2AuthorizedClientManager") final ReactiveOAuth2AuthorizedClientManager authorizedClientManager,
+                                     final WebClient.Builder builder,
                                      final WebClientProperties webClientProperties,
                                      @Value("${globus.data-api.url}") final String baseURL) {
         return webClient(
                 authorizedClientManager,
+                builder,
                 webClientProperties,
                 baseURL,
                 GLOBUS_RESOURCE_ID
