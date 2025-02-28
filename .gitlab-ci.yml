@@ -18,16 +18,16 @@ variables:
   RETAG_STAGE: 'RETAG'
   DEPLOY_STAGE: 'DEPLOY'
   DEPLOY_SECRET:
-    description: "Flag to decide whether secret(s) have been changed & needs deployment. Default is false, set to true if there is a change."
+    description: "Flag to decide whether secret(s) have been changed & needs deployment. Default is false, set to true if there is a change. Only required in DEPLOY stage."
     value: "false"
   STAGE:
     description: 'Pipeline stages, BUILD_TEST, CONTAINERIZE, RETAG & DEPLOY. Select appropriately!'
     value: 'BUILD_TEST'
   PLATFORM_ENV:
-    description: 'Platform environment, dev is default. For production use prod'
+    description: 'Platform environment, dev is default. For test platform use test &  production use prod. Only required in DEPLOY stage.'
     value: 'dev'
   GCP_PROJECT_NUMBER:
-    description: 'GCP project id, provide appropriate project id, default is set to dev instance'
+    description: 'GCP project id, provide appropriate project id, default is set to Dev instance. Change this value for deployment on Test & Prod. Only required in DEPLOY stage.'
     value: '968549395092'
 
 # Cache path
@@ -116,6 +116,7 @@ stages:
   stage: deploy
   image: alpine/k8s:1.32.0
   variables:
+    # value refers to gitlab agent located at https://gitlab.ebi.ac.uk/gdp/ga4k/-/tree/main/.gitlab/agents?ref_type=heads
     K8S_CLUSTER_AGENT: gdp/ga4k:gcp-k8s-agent
     ENV_FILE: 'gcp-dev-env'
     NAMESPACE: 'intervene-dev'
@@ -154,6 +155,10 @@ stages:
         export NAMESPACE="intervene-prod"
         export ENV_FILE="gcp-prod-env"
         export K8S_CLUSTER_AGENT="gdp/ga4k:gcp-prod-k8s-agent"
+      elif [[ "$PLATFORM_ENV" == "test" ]]; then
+        export NAMESPACE="intervene-test"
+        export ENV_FILE="gcp-test-env"
+        export K8S_CLUSTER_AGENT="gdp/ga4k:gcp-test-k8s-agent"
       fi
   script:
     - 'echo Deploying to project: $GCP_PROJECT_NUMBER'
