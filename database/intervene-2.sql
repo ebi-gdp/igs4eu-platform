@@ -1,3 +1,6 @@
+--- Set the schema for all subsequent operations ---
+SET search_path TO "geneticscoresplatform";
+
 --- SPRING Session ---
 
 CREATE TABLE SPRING_SESSION (

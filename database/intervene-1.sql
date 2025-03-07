@@ -1,3 +1,11 @@
+--- Create Schema ---
+
+CREATE SCHEMA IF NOT EXISTS "geneticscoresplatform";
+
+-- Set the schema for all subsequent operations ---
+
+SET search_path TO "geneticscoresplatform";
+
 --- Intervene user account sequence ---
 
 CREATE SEQUENCE INTERVENE_USER_ACCOUNT_ID_NUMBER

@@ -7,11 +7,8 @@ pub_data_downloaded_file="publication-data.csv"
 reference_date=""
 
 # Uncomment/comment based on env. currently enabled for development
-redis_host=redis.intervene-dev.svc.cluster.local
-#redis_host=redis.intervene-prod.svc.cluster.local
-#redis_host=localhost
+redis_host="redis.$NAMESPACE.svc.cluster.local"
 redis_port=6379
-#redis_port=9090
 key_prefix_pgs_ids=pgs_ids_set
 key_prefix_pub_data=pub_data_set
 

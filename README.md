@@ -165,16 +165,23 @@ Follow these steps to build the project:
       ``` 
 ## Development Workflow
 
-### Making Changes
-1. Check out a new branch from GitHub:
+### Making changes
+1. Check out a new branch from GitHub
    ```bash
-   git checkout -b feature/<feature-branch>
+   git checkout -b <feature-branch>
    ```
-2. Modify the necessary module(s).
-3. Build the entire project to ensure consistency:
+2. Make necessary changes in the module(s)/project.
+3. Build the project to ensure changes are complied!
    ```bash
-   mvn clean install
+   mvn clean package
    ```
+4. Commit the changes if you are okay with it! You can follow `Git` best practices to commit changes.
+5. Push the branch e.g.
+   ```bash
+   git push origin <feature-branch>
+   ```
+6. In case of code changes, `gitlab` pipeline is expected to trigger. Once gitlab pipeline executes successfully for a branch, raise a pull request. If pull request doesn't have any conflicts, you are good to merge branch with `main` branch.
+7. After merging changes to `main` branch you can release the project. Deployment steps have been mentioned under `Deployments` section below.
 
 ## Run application locally
 Refer to individual application properties defined in a module, defined these properties in your maven `settings.xml` Once the project builds successfully, you can run the application locally & deploy on GCP.
@@ -195,9 +202,9 @@ http://localhost:8040/key-handler/webjars/swagger-ui/index.html
 ```
 
 ### Releasing Code
-Once the project builds successfully, prepare for release:
+Once the project builds successfully, prepare for release, you can use maven wrapper as shown below or maven installed on your system.
 ```bash
-mvn -Darguments=-DskipTests release:clean release:prepare
+./mvnw -Darguments=-DskipTests release:clean release:prepare
 ```
 Provide appropriate version number based on changes e.g. Major, minor & patch etc.
 
@@ -206,14 +213,12 @@ This command cleans up previous release data and prepares a new release while sk
 ***IMPORTANT***:
 After releasing the project, check tag on [igs4eu-platform](https://github.com/ebi-gdp/igs4eu-platform/tags). 
 You should see the tag you have just released. This repository is synced with Gitlab, navigate to Gitlab instance [igs4eu-platform-gitlab](https://gitlab.ebi.ac.uk/gdp/igs4eu-platform).
-Further steps to build, containerize & deploy have been mentioned on [Confluence](https://www.ebi.ac.uk/seqdb/confluence/display/GDP/Genetic+Scoring+Platform+Deployment+Guide).
 
 ### Deployments - 2 options
 #### 1. Gitlab CI/CD
-Gitlab setup requires to be detailed document, same can be found at 
+Gitlab setup detailed document can be found at [Deploy using Gitlab](https://www.ebi.ac.uk/seqdb/confluence/x/c5NEE)
 
 #### 2. Helm charts without CI/CD
-
 Microservices can be deployed in 2 ways via CI/CD using `gitlab` or individually using `helm` charts; `gitlab` also uses `helm` charts. Use `gitlab` for deployments, it's preferred way.
 Use direct `helm` command in case only individual services are to be deployed e.g. for testing code on deployment. `helm` charts scripts are defined under `deployments` directory for each module.
 
@@ -247,13 +252,13 @@ This is standard helm format, in order to deploy services, it is important to lo
 make sure you update property files. In case change differs according env. then make those changes inside values files. Deployment file refers values files according to env.
 Also when you release underlying application's new version, you can update `appVersion` inside `Chart.yaml`.
 
-You can deploy individual services directly using `helm` charts. Sometimes after individual deployments, dependant services requires restart. if you face connection issues with other services then restart pods. 
+You can deploy individual services directly using `helm` charts. Sometimes after individual deployments, dependant services requires restart, if you face connection issues with other services then restart calling & dependant pods. 
 Run these commands from project's home directory. Before you run these command make sure you have updated `helm` files e.g. `application.properties`. Code should have been released with latest version & `docker` image has been created for the services.
 `image.tag` sets `docker` image tag, you can use temporary tag in case want to test deployment OR use actual released tag for deployment.
 
 1. Build docker image without CI/CD
+   Build the project as mentioned [How to build](#How-to-build) & generate jar file for service & then run the following
    ```
-   # Build the project & generate jar file for services & then run the following
    # File Handler
    docker build -f docker/Dockerfile -t dockerhub.ebi.ac.uk/gdp/igs4eu-platform:file-handler-1.0.0-dev --build-arg MODULE_NAME=file-handler --build-arg TARGET_PLATFORM=linux/amd64 .
    
@@ -313,5 +318,14 @@ Run these commands from project's home directory. Before you run these command m
 
 Check deployment status on kubernetes cluster. e.g. 
    ```
+   # Change namespace according to env.
    kubectl get pods -n intervene-dev
    ```
+You can delete release by running following command
+```
+# command
+helm delete {release-name}
+
+# example
+helm delete user-manager
+```

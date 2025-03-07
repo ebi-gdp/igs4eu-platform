@@ -16,11 +16,14 @@ spec:
             - name: pgs-ids
               image: dockerhub.ebi.ac.uk/gdp/igs4eu-platform:pgs-ids-cron-job-{{ .Values.imageVersion }}-{{ .Values.imagePostfixTag }}
               imagePullPolicy: Always
+              env:
+                - name: NAMESPACE
+                  value: {{ .Values.namespace }}
               volumeMounts:
                 - name: pgs-ids-pub-data-updated-date
                   mountPath: /data/pgs-ids-reference-date
           imagePullSecrets:
-            - name: gitlabpullimage # base64[gitlab-username:password]
+            - name: gitlabpullimage # gitlab image pull secret, refer https://www.ebi.ac.uk/seqdb/confluence/x/lI1EE
           restartPolicy: Never
           volumes:
             - name: pgs-ids-pub-data-updated-date
