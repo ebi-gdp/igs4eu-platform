@@ -3,18 +3,18 @@ The User Manager service is responsible for handling platform user accounts and 
 
 # Key responsibilities
 
-### Platform user account & AAI account mapping:
+### Platform user account & AAI account mapping
 * When a user logs in via Life Science AAI, the service checks for an existing platform account, if account doesn't exist, the user is prompted to create one.
 
-### Data processing agreement (DPA) management:
+### Data processing agreement (DPA) management
 * Maintains user consent agreements. 
 * Stores DPA PDF content in Base64-encoded format within the database.
 * Allows users to give or revoke their consent as needed.
 
-### Centralized user consent validation:
+### Centralized user consent validation
 * All microservices must check this service for user consent before granting API access. Let users 
 
-### User account retrieval:
+### User account retrieval
 * Other microservices query this service using the Access Token to retrieve user account details.
 
 This service acts as the single source of truth for user consent management and account details across the platform.
