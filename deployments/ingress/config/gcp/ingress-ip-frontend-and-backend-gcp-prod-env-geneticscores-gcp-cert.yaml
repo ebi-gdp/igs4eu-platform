@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress-front-back-end-config
+  namespace: intervene-prod
+  annotations:
+    # Static IP name must match the one created on GCP.
+    kubernetes.io/ingress.global-static-ip-name: intervene-prod-static-ip
+    networking.gke.io/managed-certificates: managed-cert
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    kubernetes.io/ingress.class: "gce"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      rewrite ^/(.*)/$ /$1 permanent;
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+spec:
+  rules:
+  - host: calculate.geneticscores.org
+    http:
+      paths:
+      - path: /bff/
+        pathType: Prefix
+        backend:
+          service:
+            name: backend-for-frontend
+            port:
+              number: 8080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: igs4eu-frontend
+            port:
+              number: 3000
