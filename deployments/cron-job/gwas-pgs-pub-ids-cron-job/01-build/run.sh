@@ -6,7 +6,6 @@ pgs_ids_downloaded_file="pgs-ids.txt"
 pub_data_downloaded_file="publication-data.csv"
 reference_date=""
 
-# Uncomment/comment based on env. currently enabled for development
 redis_host="redis.$NAMESPACE.svc.cluster.local"
 redis_port=6379
 key_prefix_pgs_ids=pgs_ids_set
@@ -39,15 +38,6 @@ update_pgs_ids_into_redis() {
     redis-cli -h $redis_host -p $redis_port SADD $key_prefix_pgs_ids "$line"
   done <$pgs_ids_downloaded_file
   echo "PGS Ids record(s) have been updated in Redis >>>"
-}
-
-download_publication_data() {
-  file_name="pgs_all_metadata_publications.csv"
-
-  # Save latest list of Publication data to local file
-  echo "Downloading Publication data to ${file_name} >>>"
-  curl -o $pub_data_downloaded_file https://ftp.ebi.ac.uk/pub/databases/spot/pgs/metadata/$file_name
-  echo "Downloaded Publication data; file has been saved! >>>"
 }
 
 update_publication_json_data_into_redis() {
@@ -94,14 +84,15 @@ check_for_update() {
     # Save reference date
     save_reference_date_to_file
 
+    echo "Process is being started...!"
+
     # Download & update PGS Ids
     download_pgs_ids
     update_pgs_ids_into_redis
 
     # Download & update Publication data
-    echo "Process starting...!"
-    #download_publication_data
     update_publication_json_data_into_redis
+
     echo "Process executed successfully!"
   else
     echo "Reference date is still the same; no need to execute update script!"
