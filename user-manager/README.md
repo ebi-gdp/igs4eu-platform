@@ -70,8 +70,8 @@ Please check following dependant services are up & running.
 | `datasource.user-manager.username`                 | `@datasource.intervene.username@` | Database username.                          |
 | `datasource.user-manager.password`                 | `@datasource.intervene.password@` | Database password.                          |
 | `datasource.user-manager.port`                     | `5432`                            | Port for the PostgreSQL database.           |
-| `datasource.user-manager.database`                 | `intervene`                       | Database name.                              |
-| `datasource.user-manager.schema`                   | `geneticscores-dev`               | Database schema used for genetic scores.    |
+| `datasource.user-manager.database`                 | `intervene-dev`                   | Database name.                              |
+| `datasource.user-manager.schema`                   | `geneticscoresplatform`           | Database schema used for genetic scores.    |
 | `datasource.user-manager.ssl-mode`                 | `disable`                         | SSL mode for database connection.           |
 | `datasource.user-manager.driver-class-name`        | `org.postgresql.Driver`           | JDBC driver for PostgreSQL.                 |
 | `datasource.user-manager.hikari.maximum-pool-size` | `3`                               | Maximum connections in the connection pool. |

@@ -155,9 +155,11 @@ public class GlobusRequestHandler {
      * @return deleted dir details represented by {@link DeleteDirResponseDTO}.
      */
     public Mono<ServerResponse> deleteDirectoryOnGuestCollection(final ServerRequest serverRequest) {
+        LOGGER.info("Deleting directory on Guest collection functionality has been called");
         return getPath(serverRequest)
                 .flatMap(path -> fileOperationService
                         .getSubmissionId()
+                        .doOnNext(submissionIdDTO -> LOGGER.info("Globus deleting submission id: {}", submissionIdDTO.submissionId()))
                         .flatMap(submissionIdDTO -> fileOperationService
                                 .deleteDirectoryOnGuestCollection(
                                         submissionIdDTO.submissionId(),

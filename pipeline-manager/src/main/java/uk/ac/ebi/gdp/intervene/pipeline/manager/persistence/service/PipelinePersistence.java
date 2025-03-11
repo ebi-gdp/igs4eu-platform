@@ -31,6 +31,7 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.repository.Pip
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import static reactor.core.publisher.Mono.empty;
 import static reactor.core.publisher.Mono.error;
@@ -223,8 +224,12 @@ public class PipelinePersistence implements IPipelinePersistence {
      */
     @Override
     public Flux<PipelineDetails> getPipelinesForToday(final String userId) {
-        final LocalDateTime startOfDay = LocalDate.now().atStartOfDay(); // Today at 00:00:00
-        final LocalDateTime endOfDay = LocalDate.now().atTime(23, 59, 59); // Today at 23:59:59
+        final ZoneId zoneId = ZoneId.of("UTC");
+        final LocalDate today = LocalDate.now(zoneId);
+
+        final LocalDateTime startOfDay = today.atStartOfDay(); // Today at 00:00:00
+        final LocalDateTime endOfDay = today.atTime(23, 59, 59); // Today at 23:59:59
+
         return pipelineDetailsRepository
                 .findAllByUserIdAndCreatedByAndCreatedOnBetween(userId, userId, startOfDay, endOfDay);
     }

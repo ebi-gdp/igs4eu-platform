@@ -249,12 +249,16 @@ public class DatasetRequestHandler {
      * @return {@code HttpStatus}
      */
     public Mono<ServerResponse> deleteGlobusDirsOnGuestCollectionInBatches() {
-        Mono.defer(this::fetchAndProcessBatch)
-                .subscribeOn(Schedulers.boundedElastic()) // Use boundedElastic for non-blocking background work
-                .subscribe();
-        return accepted()
-                .build();
+        return Mono.defer(this::fetchAndProcessBatch)
+                .subscribeOn(Schedulers.boundedElastic())
+                .onErrorResume(error -> {
+                    LOGGER.error("Error deleting Globus dirs: {}", error.getMessage(), error);
+                    return status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .bodyValue("Batch processing failed: " + error.getMessage()).then();
+                })
+                .then(accepted().build());
     }
+
 
     private Mono<Void> fetchAndProcessBatch() {
         // Fetch a batch of records with the given batch size
@@ -263,14 +267,17 @@ public class DatasetRequestHandler {
                 .collectList()
                 .flatMap(batch -> {
                     if (batch.isEmpty()) {
+                        LOGGER.info("No expired datasets found!");
                         // Terminate if the batch is empty
                         return Mono.empty();
                     } else {
+                        LOGGER.info("Expired datasets found! {} datasets", batch.size());
                         // Process the batch if it's not empty
                         return Flux.fromIterable(batch)
                                 .flatMap(record -> deleteDirOnGuestCollectionDemon(record)
                                         .then(markGlobusDetailsAsDeleted(record))
                                         .onErrorContinue((error, r) -> LOGGER.error("Dir deletion error for Dataset Id: {}", ((DatasetDetails) r).getDatasetId())))
+                                .doOnNext(datasetDetails -> LOGGER.info("--- Fetching next batch if any ---"))
                                 .then(fetchAndProcessBatch()); // Fetch the next batch
                     }
                 });

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public record DeleteDirRequestDTO(@JsonProperty("DATA_TYPE") String dataType,
-                                  String submissionId,
+                                  @JsonProperty("submission_id") String submissionId,
                                   boolean recursive,
                                   @JsonProperty("endpoint") String endpointId,
                                   @JsonProperty("DATA") List<Data> data) {
