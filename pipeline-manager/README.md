@@ -86,8 +86,8 @@ Please check following dependant services are up & running.
 | `datasource.pipeline-manager.username`                 | `@datasource.intervene.username@` | Database username.                          |
 | `datasource.pipeline-manager.password`                 | `@datasource.intervene.password@` | Database password.                          |
 | `datasource.pipeline-manager.port`                     | `5432`                            | Port for the PostgreSQL database.           |
-| `datasource.pipeline-manager.database`                 | `intervene`                       | Database name.                              |
-| `datasource.pipeline-manager.schema`                   | `geneticscores-dev`               | Database schema used for genetic scores.    |
+| `datasource.pipeline-manager.database`                 | `intervene-dev`                   | Database name.                              |
+| `datasource.pipeline-manager.schema`                   | `geneticscoresplatform`           | Database schema used for genetic scores.    |
 | `datasource.pipeline-manager.ssl-mode`                 | `disable`                         | SSL mode for database connection.           |
 | `datasource.pipeline-manager.driver-class-name`        | `org.postgresql.Driver`           | JDBC driver for PostgreSQL.                 |
 | `datasource.pipeline-manager.hikari.maximum-pool-size` | `3`                               | Maximum connections in the connection pool. |

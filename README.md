@@ -321,6 +321,7 @@ Check deployment status on kubernetes cluster. e.g.
    # Change namespace according to env.
    kubectl get pods -n intervene-dev
    ```
+
 You can delete release by running following command
 ```
 # command
@@ -328,4 +329,11 @@ helm delete {release-name}
 
 # example
 helm delete user-manager
+```
+
+### Important NOTE
+This is important, in case if you don't deploy all the services together, sometimes pods are unable to communicate with each other via service endpoints,
+restart the pods by deleting exiting pods e.g.
+```
+kubectl -n intervene-dev delete po {pod-name}
 ```
