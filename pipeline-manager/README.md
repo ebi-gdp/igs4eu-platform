@@ -186,6 +186,78 @@ Please check following dependant services are up & running.
 | `spring.mail.properties.mail.smtp.starttls.enable`         | `true`                       | Enables STARTTLS for secure email transmission. |
 | `spring.mail.properties.mail.smtp.ssl.checkserveridentity` | `false`                      | Disables SSL server identity verification.      |
 
+## Email template configuration
+
+| Property                  | Value                             | Description                                                               |
+|---------------------------|-----------------------------------|---------------------------------------------------------------------------|
+| `spring.thymeleaf.prefix` | `file:/application/config/email/` | Location of the email templates.                                          |
+| `spring.thymeleaf.suffix` | `.html`                           | File extension for the templates.                                         |
+| `spring.thymeleaf.cache`  | `false`                           | Disables template caching for real-time updates. Set true for production. |
+
+### Example templates
+Success email template. `pipeline-success.html`.
+```
+# Success email template. File name: pipeline-success.html. Make sure you create this file at the provided template location
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Pipeline Success Notification</title>
+</head>
+<body>
+<p>Dear <span th:text="${firstName}"></span> <span th:text="${lastName}"></span>,</p>
+<p>Pipeline <strong th:text="${pipelineId}"></strong> has been completed successfully!</p>
+<p>Please find the download link to the result files</p>
+<p><a th:href="${platformURL}" target="_blank">Download files</a></p>
+<p><strong>INTERVENE Team</strong></p>
+</body>
+</html>
+```
+
+Failure email template. `pipeline-failure.html`.
+```
+# Failure email template. File name: pipeline-failure.html. Make sure you create this file at the provided template location
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Pipeline Failure Notification</title>
+    <style>
+        table, th, td {
+            border: 1px solid #FF0000;
+            border-collapse: collapse;
+            text-align: left;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+<p>Dear <span th:text="${firstName}"></span> <span th:text="${lastName}"></span>,</p>
+<p>Your pipeline instance <strong th:text="${pipelineId}"></strong> has failed.</p>
+<p>Please find the error details below:</p>
+<table>
+    <tr>
+        <th>Flag</th>
+        <th>Value</th>
+    </tr>
+    <tr>
+        <td>Status</td>
+        <td>Error</td>
+    </tr>
+    <tr>
+        <td>Trace name</td>
+        <td th:text="${traceName}"></td>
+    </tr>
+    <tr>
+        <td>Trace exit</td>
+        <td th:text="${traceExit}"></td>
+    </tr>
+</table>
+<p><strong>INTERVENE Team</strong></p>
+</body>
+</html>
+```
+
 ## Redis configuration
 
 | Property                        | Value       | Description            |

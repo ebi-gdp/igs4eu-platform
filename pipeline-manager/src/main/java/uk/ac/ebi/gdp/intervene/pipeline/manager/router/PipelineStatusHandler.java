@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.PipelineStatusDTO;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.exception.MailException;
@@ -30,6 +32,9 @@ import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.r2dbc.entity.Pipelin
 import uk.ac.ebi.gdp.intervene.pipeline.manager.persistence.service.IPipelinePersistence;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.service.UserManagerService;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.utility.IEmailSender;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
@@ -42,15 +47,18 @@ public class PipelineStatusHandler {
     private final UserManagerService userManagerService;
     private final IPipelinePersistence pipelinePersistence;
     private final IEmailSender emailService;
+    private final TemplateEngine templateEngine;
     private final String platformURL;
 
     public PipelineStatusHandler(final UserManagerService userManagerService,
                                  final IPipelinePersistence pipelinePersistence,
                                  final IEmailSender emailService,
+                                 final TemplateEngine templateEngine,
                                  final String platformURL) {
         this.userManagerService = userManagerService;
         this.pipelinePersistence = pipelinePersistence;
         this.emailService = emailService;
+        this.templateEngine = templateEngine;
         this.platformURL = platformURL;
     }
 
@@ -127,16 +135,14 @@ public class PipelineStatusHandler {
                                                                final String userId) {
         return userManagerService
                 .getUserAccountDetails(userId)
-                .map(userAccountDTO -> new IEmailSender.EmailData(
-                        userAccountDTO.emailId(),
-                        "Result for Pipeline %s".formatted(pipelineId),
-                        "Dear %s %s, <br/><br/>Pipeline %s has been completed successfully!"
-                                .formatted(userAccountDTO.givenName(),
-                                        userAccountDTO.familyName(),
-                                        pipelineId) +
-                                "<br><br>Please find download link to the result files" +
-                                "<br><br><a href=" + platformURL.formatted(pipelineId) + ">Download files</a>" +
-                                "<br/><br/>INTERVENE Team"));
+                .map(userAccountDTO -> {
+                    final Map<String, Object> variables = buildCommonVariables(pipelineId, userAccountDTO.givenName(), userAccountDTO.familyName());
+                    variables.put("platformURL", platformURL.formatted(pipelineId));
+                    return new IEmailSender.EmailData(
+                            userAccountDTO.emailId(),
+                            "Result for Pipeline %s".formatted(pipelineId),
+                            buildEmailTemplate("pipeline-success", variables));
+                });
     }
 
     private Mono<IEmailSender.EmailData> buildErrorEmailData(final String pipelineId,
@@ -145,34 +151,34 @@ public class PipelineStatusHandler {
                                                              final Byte traceExit) {
         return userManagerService
                 .getUserAccountDetails(userId)
-                .map(userAccountDTO -> new IEmailSender.EmailData(
-                        userAccountDTO.emailId(),
-                        "Error running pipeline %s".formatted(pipelineId),
-                        "Dear %s %s,<br/><br/>Your pipeline instance %s has failed.<br/><br/>Please find error message<br/>%s<br/><br/>INTERVENE Team"
-                                .formatted(userAccountDTO.givenName(),
-                                        userAccountDTO.familyName(),
-                                        pipelineId,
-                                        errorMessage(traceName, traceExit))));
+                .map(userAccountDTO -> {
+                    final Map<String, Object> variables = buildCommonVariables(pipelineId, userAccountDTO.givenName(), userAccountDTO.familyName());
+                    variables.put("traceName", traceName);
+                    variables.put("traceExit", traceExit);
+                    return new IEmailSender.EmailData(
+                            userAccountDTO.emailId(),
+                            "Error running pipeline %s".formatted(pipelineId),
+                            buildEmailTemplate("pipeline-failure", variables));
+                });
     }
 
-    private String errorMessage(final String traceName,
-                                final Byte traceExit) {
-        return "<html>" +
-                "<head>" +
-                "<style>" +
-                "table, th, td {" +
-                " border: 1px solid #FF0000;" +
-                " border-collapse: collapse;" +
-                " text-align: left;" +
-                " padding: 10px" +
-                "}" +
-                "</style>" +
-                "</head>" +
-                "<table>" +
-                "<tr><th>Flag</th><th>Value</th></tr>" +
-                "<tr><td>Status</td><td>Error</td></tr>" +
-                "<tr><td>Trace name</td><td>%s</td></tr>".formatted(traceName) +
-                "<tr><td>Trace exit</td><td>%s</td></tr>".formatted(traceExit) +
-                "</table>";
+    private Map<String, Object> buildCommonVariables(final String pipelineId,
+                                                     final String firstName,
+                                                     final String lastName) {
+        final Map<String, Object> variables = new HashMap<>();
+        variables.put("pipelineId", pipelineId);
+        variables.put("firstName", firstName);
+        variables.put("lastName", lastName);
+        return variables;
+    }
+
+    private String buildEmailTemplate(final String templateName,
+                                      final Map<String, Object> variables) {
+        // Create email context with variables
+        final Context context = new Context();
+        context.setVariables(variables);
+
+        // Process Thymeleaf template
+        return templateEngine.process(templateName, context);
     }
 }

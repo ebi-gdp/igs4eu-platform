@@ -51,6 +51,9 @@ spec:
             - mountPath: /application/config
               name: config
               readOnly: true
+            - mountPath: /application/config/email
+              name: email-templates-volume
+              readOnly: true
           env:
             - name: JAVA_TOOL_OPTIONS
               value: {{ .Values.java.maxSize }}
@@ -87,6 +90,9 @@ spec:
         - name: config
           configMap:
             name: {{ .Values.serviceName }}-config
+        - name: email-templates-volume
+          configMap:
+            name: email-templates-config
 ---
 apiVersion: v1
 kind: Service

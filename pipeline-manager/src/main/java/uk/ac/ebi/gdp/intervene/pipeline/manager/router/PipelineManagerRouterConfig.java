@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import org.thymeleaf.TemplateEngine;
 import uk.ac.ebi.gdp.intervene.commons.dpa.DPAConsentCheck;
 import uk.ac.ebi.gdp.intervene.commons.dto.filehandler.IGlobusFileDetailsWrapper;
 import uk.ac.ebi.gdp.intervene.pipeline.manager.dto.validation.CreateDirDTOValidator;
@@ -180,11 +181,13 @@ public class PipelineManagerRouterConfig {
     public PipelineStatusHandler cscPipelineHandler(final UserManagerService userManagerService,
                                                     final IPipelinePersistence pipelinePersistence,
                                                     final IEmailSender emailService,
+                                                    final TemplateEngine templateEngine,
                                                     @Value("${intervene.platform.url}") final String platformURL) {
         return new PipelineStatusHandler(
                 userManagerService,
                 pipelinePersistence,
                 emailService,
+                templateEngine,
                 platformURL);
     }
 }

@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: email-templates-config
+  namespace: {{ .Values.namespace }}
+data:
+  pipeline-success.html: |
+    <!DOCTYPE html>
+    <html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>Pipeline Success Notification</title>
+    </head>
+    <body>
+    <p>Dear <span th:text="${firstName}"></span> <span th:text="${lastName}"></span>,</p>
+    <p>Pipeline <strong th:text="${pipelineId}"></strong> has been completed successfully!</p>
+    <p>Please find the download link to the result files</p>
+    <p><a th:href="${platformURL}" target="_blank">Download files</a></p>
+    <p><strong>INTERVENE Team</strong></p>
+    </body>
+    </html>
+
+  pipeline-failure.html: |
+    <!DOCTYPE html>
+    <html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>Pipeline Failure Notification</title>
+        <style>
+            table, th, td {
+                border: 1px solid #FF0000;
+                border-collapse: collapse;
+                text-align: left;
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body>
+    <p>Dear <span th:text="${firstName}"></span> <span th:text="${lastName}"></span>,</p>
+    <p>Your pipeline instance <strong th:text="${pipelineId}"></strong> has failed.</p>
+    <p>Please find the error details below:</p>
+    <table>
+        <tr>
+            <th>Flag</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Status</td>
+            <td>Error</td>
+        </tr>
+        <tr>
+            <td>Trace name</td>
+            <td th:text="${traceName}"></td>
+        </tr>
+        <tr>
+            <td>Trace exit</td>
+            <td th:text="${traceExit}"></td>
+        </tr>
+    </table>
+    <p><strong>INTERVENE Team</strong></p>
+    </body>
+    </html>
