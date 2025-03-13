@@ -186,6 +186,14 @@ Please check following dependant services are up & running.
 | `spring.mail.properties.mail.smtp.starttls.enable`         | `true`                       | Enables STARTTLS for secure email transmission. |
 | `spring.mail.properties.mail.smtp.ssl.checkserveridentity` | `false`                      | Disables SSL server identity verification.      |
 
+## Email template configuration
+
+| Property                  | Value                             | Description                                                               |
+|---------------------------|-----------------------------------|---------------------------------------------------------------------------|
+| `spring.thymeleaf.prefix` | `file:/application/config/email/` | Location of the email templates.                                          |
+| `spring.thymeleaf.suffix` | `.html`                           | File extension for the templates.                                         |
+| `spring.thymeleaf.cache`  | `false`                           | Disables template caching for real-time updates. Set true for production. |
+
 ## Redis configuration
 
 | Property                        | Value       | Description            |
