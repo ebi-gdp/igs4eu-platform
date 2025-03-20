@@ -17,7 +17,7 @@ WORKDIR /application
 ## Build crypt4gh library & its dependencies
 # Install required dependencies
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip python3-venv expect && \
+    apt-get install -y python3.10 python3-pip python3.10-venv expect && \
     rm -rf /var/lib/apt/lists/*  # Clean up to reduce image size
 
 # Set environment variable for pipx
