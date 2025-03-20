@@ -15,16 +15,19 @@ FROM --platform=${TARGET_PLATFORM} eclipse-temurin:21-jre-jammy
 WORKDIR /application
 
 ## Build crypt4gh library & its dependencies
-# Install python package
+# Install required dependencies
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip python3-venv expect
+    apt-get install -y python3 python3-pip python3-venv expect && \
+    rm -rf /var/lib/apt/lists/*  # Clean up to reduce image size
 
-# Set environment variable to include pipx in PATH
-ENV PATH=/root/.local/bin:$PATH
+# Set environment variable for pipx
+ENV PIPX_HOME=/opt/pipx
+ENV PIPX_BIN_DIR=/opt/pipx/bin
+ENV PATH="$PIPX_BIN_DIR:$PATH"
 
-# Install pipx
-RUN pip3 install --user pipx && \
-    pipx ensurepath
+# Install pipx and crypt4gh
+RUN python3 -m pip install --no-cache-dir pipx && \
+    pipx install crypt4gh
 
 # Install crypt4gh using pipx
 RUN pipx install crypt4gh
