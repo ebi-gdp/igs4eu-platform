@@ -4,8 +4,8 @@ info:
   version: 1.0.0
   description: API for managing Globus guest collections and users
 servers:
-  - url: http://localhost:8010/file-handler
-    description: Local File Handler API
+  - url: /file-handler
+    description: File Handler API
 security:
   - bearerAuth: [ ]
 components:
