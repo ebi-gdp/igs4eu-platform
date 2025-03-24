@@ -43,7 +43,7 @@ java:
 gcp:
   projectName: "prj-ext-dev-intervene-413412"
   zone: "europe-west2"
-  dbName: "intervene"
+  dbName: "intervene-dev"
 
 # GCP cloud sql proxy resource
 cloudSql:
