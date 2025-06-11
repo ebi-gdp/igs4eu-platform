@@ -104,8 +104,8 @@ Please check following dependant services are up & running.
 
 | Property                                                | Value                                     | Description                         |
 |---------------------------------------------------------|-------------------------------------------|-------------------------------------|
-| `spring.security.oauth2.resourceserver.jwt.issuer-uri`  | `https://login.elixir-czech.org/oidc/`    | Issuer URI for JWT authentication.  |
-| `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | `https://login.elixir-czech.org/oidc/jwk` | JWK set URI for JWT authentication. |
+| `spring.security.oauth2.resourceserver.jwt.issuer-uri`  | `https://login.aai.lifescience-ri.eu/oidc/`    | Issuer URI for JWT authentication.  |
+| `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | `https://login.aai.lifescience-ri.eu/oidc/jwk` | JWK set URI for JWT authentication. |
 
 ## Kafka configuration
 
