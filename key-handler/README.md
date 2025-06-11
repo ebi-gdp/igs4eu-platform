@@ -86,8 +86,8 @@ Please check following dependant services are up & running.
 
 | Property                                                | Value                                     | Description                    |
 |---------------------------------------------------------|-------------------------------------------|--------------------------------|
-| `spring.security.oauth2.resourceserver.jwt.issuer-uri`  | `https://login.elixir-czech.org/oidc/`    | Defines the OAuth2 issuer URI. |
-| `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | `https://login.elixir-czech.org/oidc/jwk` | Specifies the JWK set URI.     |
+| `spring.security.oauth2.resourceserver.jwt.issuer-uri`  | `https://login.aai.lifescience-ri.eu/oidc/`    | Defines the OAuth2 issuer URI. |
+| `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | `https://login.aai.lifescience-ri.eu/oidc/jwk` | Specifies the JWK set URI.     |
 
 ## Basic authentication
 

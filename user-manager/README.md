@@ -88,14 +88,14 @@ Please check following dependant services are up & running.
 
 | Property                                                | Value                                     | Description                         |
 |---------------------------------------------------------|-------------------------------------------|-------------------------------------|
-| `spring.security.oauth2.resourceserver.jwt.issuer-uri`  | `https://login.elixir-czech.org/oidc/`    | Issuer URI for JWT authentication.  |
-| `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | `https://login.elixir-czech.org/oidc/jwk` | JWK set URI for JWT authentication. |
+| `spring.security.oauth2.resourceserver.jwt.issuer-uri`  | `https://login.aai.lifescience-ri.eu/oidc/`    | Issuer URI for JWT authentication.  |
+| `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | `https://login.aai.lifescience-ri.eu/oidc/jwk` | JWK set URI for JWT authentication. |
 
 ## Elixir OIDC configuration
 
 | Property                                 | Value                                  | Description                              |
 |------------------------------------------|----------------------------------------|------------------------------------------|
-| `elixir.oidc.url`                        | `https://login.elixir-czech.org/oidc/` | Base URL for Elixir OIDC authentication. |
+| `elixir.oidc.url`                        | `https://login.aai.lifescience-ri.eu/oidc/` | Base URL for Elixir OIDC authentication. |
 | `elixir.oidc.request.connection.timeout` | `30`                                   | Connection timeout for OIDC requests.    |
 | `elixir.oidc.request.read.timeout`       | `30`                                   | Read timeout for OIDC requests.          |
 

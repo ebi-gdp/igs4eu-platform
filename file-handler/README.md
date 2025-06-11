@@ -158,8 +158,8 @@ Please check following dependant services are up & running.
 ## Spring security OAuth2 client registration
 | Property                                                | Value                                     | Description     |
 |---------------------------------------------------------|-------------------------------------------|-----------------|
-| `spring.security.oauth2.resourceserver.jwt.issuer-uri`  | `https://login.elixir-czech.org/oidc/`    | JWT issuer URI. |
-| `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | `https://login.elixir-czech.org/oidc/jwk` | JWK set URI.    |
+| `spring.security.oauth2.resourceserver.jwt.issuer-uri`  | `https://login.aai.lifescience-ri.eu/oidc/`    | JWT issuer URI. |
+| `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` | `https://login.aai.lifescience-ri.eu/oidc/jwk` | JWK set URI.    |
 
 ## Logging configuration
 | Property                                             | Value                                                          | Description                               |
