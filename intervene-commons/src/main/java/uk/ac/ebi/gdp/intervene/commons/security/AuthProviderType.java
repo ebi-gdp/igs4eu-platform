@@ -18,7 +18,7 @@
 package uk.ac.ebi.gdp.intervene.commons.security;
 
 public enum AuthProviderType {
-    ELIXIR("@elixir-europe.org");
+    ELIXIR("@lifescience-ri.eu");
 
     private final String authProvider;
 

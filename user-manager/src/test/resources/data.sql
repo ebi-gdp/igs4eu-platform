@@ -8,7 +8,7 @@ VALUES ('INTU00000000002', 'INTU00000000002', '2024-01-26 13:09:36', 'INTU000000
 
 INSERT INTO auth_user_account (auth_user_id, user_id, auth_provider, status, created_by, created_on,
                                updated_by, updated_on)
-VALUES ('d75vb06ftg123cfd789f19d93e79c123c56982ff@elixir-europe.org', 'INTU00000000002', 'ELIXIR', 'ENABLED',
+VALUES ('d75vb06ftg123cfd789f19d93e79c123c56982ff@lifescience-ri.eu', 'INTU00000000002', 'ELIXIR', 'ENABLED',
         'INTU00000000002', '2024-01-26 13:09:36', 'INTU00000000002', '2024-01-26 13:09:36');
 
 INSERT INTO user_dpa_consent_details (consent_id, consent_text, version, created_by, created_on, updated_by, updated_on)
