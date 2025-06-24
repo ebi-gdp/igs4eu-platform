@@ -66,7 +66,7 @@ public class UserAccountPersistenceServiceTest {
     private IUserInfo userInfo;
 
     //User 1
-    private static final String authUser1AccountId = "d65ae06ftg456cfd789f19d93e79c123c56982ff@elixir-europe.org";
+    private static final String authUser1AccountId = "d65ae06ftg456cfd789f19d93e79c123c56982ff@lifescience-ri.eu";
     private static final String givenName = "Intervene_User1_Given_Name";
     private static final String familyName = "Intervene_User1_Family_Name";
     private static final String userId1 = "INTU00000000001";
@@ -74,7 +74,7 @@ public class UserAccountPersistenceServiceTest {
     private static final String createdBy1 = userId1;
 
     //User 2
-    private static final String authUser2AccountId = "d75vb06ftg123cfd789f19d93e79c123c56982ff@elixir-europe.org";
+    private static final String authUser2AccountId = "d75vb06ftg123cfd789f19d93e79c123c56982ff@lifescience-ri.eu";
     private static final String userId2 = "INTU00000000002";
     private static final String createdBy2 = userId2;
 
