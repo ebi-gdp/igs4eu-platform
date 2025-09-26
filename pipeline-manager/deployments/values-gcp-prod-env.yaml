@@ -15,7 +15,7 @@ replicaCount: 1
 image:
   repository: dockerhub.ebi.ac.uk/gdp/igs4eu-platform
   tagPrefix: pipeline-manager
-  tag: 0.0.1
+  tag: 5.3.4
   tagPostfix: prod
   pullPolicy: Always
 
