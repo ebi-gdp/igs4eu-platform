@@ -78,7 +78,7 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
                             .save(create(
                                     authUserAccountId,
                                     userAccount.getUserId(),
-                                    ELIXIR,
+                                    getAuthProvider,
                                     userAccount.getUserId()
                             ))
                             .doOnNext(authUserAccount -> LOGGER.info("Persisted new auth user account"))

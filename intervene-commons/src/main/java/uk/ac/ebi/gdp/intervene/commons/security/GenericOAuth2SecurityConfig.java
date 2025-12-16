@@ -95,7 +95,7 @@ public class GenericOAuth2SecurityConfig {
         return NimbusReactiveJwtDecoder
                 .withJwkSetUri(jwkSetURI)
                 .jwtProcessorCustomizer(jwtProcessor -> jwtProcessor
-                        .setJWSTypeVerifier(new DefaultJOSEObjectTypeVerifier<>(new JOSEObjectType("at+jwt"))))
+                        .setJWSTypeVerifier(new DefaultJOSEObjectTypeVerifier<>((JOSEObjectType) null)))
                 .build();
     }
 

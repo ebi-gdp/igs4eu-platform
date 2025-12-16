@@ -17,8 +17,12 @@
  */
 package uk.ac.ebi.gdp.intervene.commons.security;
 
+import java.net.URI;
+
 public enum AuthProviderType {
-    ELIXIR("@lifescience-ri.eu");
+    ELIXIR("@lifescience-ri.eu"),
+
+    KEYCLOAK(null);
 
     private final String authProvider;
 
@@ -37,5 +41,39 @@ public enum AuthProviderType {
             }
         }
         throw new IllegalArgumentException("No matching AuthProvider for value " + authProvider);
+    }
+
+    public static AuthProviderType getAuthProviderByIssuer(final String issuer) {
+        if (issuer == null || issuer.isBlank()) {
+            throw new IllegalArgumentException("No matching AuthProvider for empty issuer");
+        }
+
+        final String normalized = normalizeIssuer(issuer);
+        if (normalized.contains("/realms/")) {
+            return KEYCLOAK;
+        }
+        if (normalized.contains("lifescience")) {
+            return ELIXIR;
+        }
+
+        throw new IllegalArgumentException("No matching AuthProvider for issuer " + issuer);
+    }
+
+    private static String normalizeIssuer(final String issuer) {
+        // Normalize so "https://host/realms/x" and "https://host/realms/x/" match consistently.
+        try {
+            final URI uri = URI.create(issuer.trim());
+            final String normalizedPath = (uri.getPath() == null) ? "" : uri.getPath().replaceAll("/+$", "");
+            return new URI(
+                    uri.getScheme(),
+                    uri.getAuthority(),
+                    normalizedPath,
+                    null,
+                    null
+            ).toString();
+        } catch (final Exception ex) {
+            // Fall back to a trimmed string if it's not a clean URI for any reason.
+            return issuer.trim().replaceAll("/+$", "");
+        }
     }
 }
