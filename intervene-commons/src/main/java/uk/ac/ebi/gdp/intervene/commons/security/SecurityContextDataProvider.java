@@ -23,10 +23,11 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.oauth2.core.AbstractOAuth2Token;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimAccessor;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import reactor.core.publisher.Mono;
 
 import static org.springframework.security.core.context.ReactiveSecurityContextHolder.getContext;
-import static uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType.getAuthProviderByDescription;
+import static uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType.getAuthProviderByIssuer;
 
 /**
  * Security context holder, provides utility functions to extract security data
@@ -35,7 +36,15 @@ import static uk.ac.ebi.gdp.intervene.commons.security.AuthProviderType.getAuthP
 public class SecurityContextDataProvider {
     public static Mono<AuthProviderType> getAuthProvider() {
         return getAuthentication()
-                .map(authentication -> getAuthProviderByDescription(authentication.getName()));
+                .map(authentication -> {
+                    if (authentication instanceof JwtAuthenticationToken jwtAuth) {
+                        final String issuer = jwtAuth.getToken().getIssuer() != null
+                                ? jwtAuth.getToken().getIssuer().toString()
+                                : null;
+                        return getAuthProviderByIssuer(issuer);
+                    }
+                    throw new IllegalStateException("Unsupported authentication type: " + authentication.getClass().getName());
+                });
     }
 
     public static Mono<String> currentUserId() {
