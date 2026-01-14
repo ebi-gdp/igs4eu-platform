@@ -78,7 +78,8 @@ public class UserHandler {
                 .flatMap(IAuthenticationService::userInfo)
                 .flatMap(userInfo -> userAccountPersistenceService.getUserAccountByEmail(userInfo.getEmailId()))
                 .flatMap(userAccount -> userAccountPersistenceService.updateAuthUserAccount(userAccountId, userAccount))
-                .flatMap(userAccount -> ok().bodyValue(userAccountMapper.toDTO(userAccount)))
+                .flatMap(ignore -> userAccountPersistenceService.getUserAccountByAuthUserAccountId(userAccountId))
+                .flatMap(authUserAccount -> ok().bodyValue(userAccountMapper.toDTO(authUserAccount.getUserAccount())))
                 .switchIfEmpty(error(resourceNotFound(format("User account having auth id \"%s\" not found", userAccountId))));
     }
 
