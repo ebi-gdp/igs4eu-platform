@@ -47,4 +47,19 @@ public interface IUserAccountPersistenceService {
      * @return {@link UserAccount}
      */
     Mono<UserAccount> getUserAccountById(String accountId);
+
+    /**
+     * @param email email id
+     *
+     * @return {@link UserAccount}
+     */
+    Mono<UserAccount> getUserAccountByEmail(String email);
+
+    /**
+     * @param authUserAccountId auth user id (sub)
+     * @param userAccount user account
+     *
+     * @return {@link UserAccount}
+     */
+    Mono<UserAccount> updateAuthUserAccount(String authUserAccountId, UserAccount userAccount);
 }

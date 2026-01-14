@@ -69,8 +69,17 @@ public class UserHandler {
                         .flatMap(authUserAccount -> ok()
                                 .bodyValue(userAccountMapper.toDTO(authUserAccount.getUserAccount())))
                         .doOnNext(serverResponse -> LOGGER.info("User account details have been successfully retrieved!"))
-                        .switchIfEmpty(error(resourceNotFound(format("User account having auth id \"%s\" not found",
-                                userAccountId)))));
+                        .switchIfEmpty(handleUserAccountFailover(userAccountId)));
+    }
+
+    private Mono<ServerResponse> handleUserAccountFailover(final String userAccountId) {
+        return authenticationContext.getAuthenticationService()
+                .doOnNext(authService -> LOGGER.info("User account not found by sub, attempting failover with email lookup"))
+                .flatMap(IAuthenticationService::userInfo)
+                .flatMap(userInfo -> userAccountPersistenceService.getUserAccountByEmail(userInfo.getEmailId()))
+                .flatMap(userAccount -> userAccountPersistenceService.updateAuthUserAccount(userAccountId, userAccount))
+                .flatMap(userAccount -> ok().bodyValue(userAccountMapper.toDTO(userAccount)))
+                .switchIfEmpty(error(resourceNotFound(format("User account having auth id \"%s\" not found", userAccountId))));
     }
 
     /**

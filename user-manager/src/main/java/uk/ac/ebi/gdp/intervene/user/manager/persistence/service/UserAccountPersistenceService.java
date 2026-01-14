@@ -98,6 +98,33 @@ public class UserAccountPersistenceService implements IUserAccountPersistenceSer
      * {@inheritDoc}
      */
     @Override
+    public Mono<UserAccount> getUserAccountByEmail(final String email) {
+        return userAccountRepository.findByEmailId(email);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Mono<UserAccount> updateAuthUserAccount(final String authUserAccountId, final UserAccount userAccount) {
+        return authUserAccountRepository
+                .deleteByUserIdAndAuthProviderType(userAccount.getUserId(), ELIXIR)
+                .doOnSuccess(unused -> LOGGER.info("Removed old auth user account for user {}", userAccount.getUserId()))
+                .then(
+                        authUserAccountRepository.save(create(authUserAccountId,
+                        userAccount.getUserId(),
+                        ELIXIR,
+                        userAccount.getUserId()
+                ))
+                .doOnNext(authUserAccount -> LOGGER.info("Updated auth user account with new sub"))
+                .thenReturn(userAccount));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Mono<AuthUserAccount> getUserAccountByAuthUserAccountId(final String authUserAccountId) {
         return authUserAccountRepository.findAuthUserAccount(authUserAccountId);
     }

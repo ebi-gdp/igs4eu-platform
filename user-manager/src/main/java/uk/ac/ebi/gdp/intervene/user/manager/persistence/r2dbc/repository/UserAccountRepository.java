@@ -29,5 +29,7 @@ public interface UserAccountRepository extends ReactiveCrudRepository<UserAccoun
     Mono<String> getNextUserAccount();
 
     Mono<UserAccount> findUserAccountByUserId(String accountId);
+
+    Mono<UserAccount> findByEmailId(String emailId);
 }
 
